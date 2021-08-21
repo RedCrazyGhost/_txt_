@@ -1,8 +1,9 @@
-# _txt_
+# \_txt\_
 
-——————
+欢迎你使用_txt_做知识点笔记、知识点复习巩固
 
-_txt_ 未来规划？
-> 开源？使用什么开源协议？
+页面展示:
+>![（图片）home](IMAG/home.jpeg)
 
-> 计时功能？
+## License
+本项目开源协议:[GPL-3.0 License](LICENSE)
