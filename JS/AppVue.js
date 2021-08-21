@@ -13,6 +13,17 @@ Vue.mixin({
                     return "light";
             }
         },
+        async getQuestionJSON(filename) {
+            let url='QuestionJSON/'+filename+'.json'
+            let _this = this
+            axios.get(url)
+              .then(function (response) {
+                _this.data.QuestionsJSON = response.data
+              })
+              .catch(function (error) {
+                console.log(error);
+              });
+          }
     },
 })
 
@@ -39,7 +50,7 @@ var app = new Vue({
                         name: "RedCrazyGhost",
                         src: "IMAG/Author.jpeg",
                     },
-                    AppVersion: "1.0.1",
+                    AppVersion: "1.0.2",
                     AppColor: "light",
                     AppFontFamily: "HYCuYuanJ"
                 },
@@ -51,7 +62,8 @@ var app = new Vue({
                 QuestionsJSON: {
                     version: "0.0.1",
                     questions: []
-                }
+                },
+                QuestionJSONs:['2021-08-18年某高校试题-C语言-RedCrazyGhost']
             }
         };
     },

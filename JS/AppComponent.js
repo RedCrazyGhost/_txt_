@@ -453,7 +453,12 @@ var AppStep2 = {
                             <div class="accordion-body" >
                                 <p :class="'text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
                                 Step 1 生成的JSON内容会显示在这里，也可以直接加载以往生成的JSON文件</p>
-                                <div class="row">
+                                <div class="row" >
+                                    <div class="col" v-for="(FileName,findex) in data.QuestionJSONs" :key="FileName">
+                                        <button class="btn btn-warning" @click="getQuestionJSON(FileName)">{{FileName}}</button>
+                                    </div>
+                                </div>
+                                <div class="row" style="margin-top: 12px;">
                                     <div class="d-flex">
                                         <input class="form-control" type="file" accept=".json,application/json"
                                             @change="getFile" multiple />
