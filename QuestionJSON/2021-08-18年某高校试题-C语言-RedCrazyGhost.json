@@ -1,0 +1,235 @@
+{
+    "version": "0.0.1",
+    "questions": [{
+        "texts": ["以下说法正确的是(", "c,C", ")\nA. C语言程序总是从第一个函数开始执行\nB. 在C语言程序中，要调用的函数必须在main()函数中定义\nC. C语言程序总是从main()函数开始执行\nD. C语言程序中的main()函数必须放在程序的开始部分"],
+        "answers": [
+            ["c", "C"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["下列关于复合语句和空语句打说法错误的是(", "c,C", ")\nA. 复合语句是由“{”开头，由“}”结尾的\nB. 复合语句在语法上视为一条语句\nC. 复合语句内，可以有执行语句，不可以有定义语句部分\nD. C语言程序中所有语句都必须由一个“;”作为结束"],
+        "answers": [
+            ["c", "C"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["下列关于字符串说法种错误的是(", "b,B", ")\nA. 在C语言中，字符串是借助于字符型的一位数组来存放的，并规定以字符串’\\0’作为字符串结束的标识\nB. ‘\\0’作为标识占用存储空间，计入字符串的实际长度\nC. 在表示字符串常量打时候不需要人为在其末尾加入‘\\0’\nD. 在C语言中，字符串常量隐含处理成以‘\\0’结尾"],
+        "answers": [
+            ["b", "B"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["若变量已正确说明为float型，要通过语句scanf(“%f%f%f”,&a,&b,&c);给a赋予10.0，b赋予22.0，c赋予33.0，\n下列不正确的输入形式是(", "b,B", ")\nA. 10<Enter>22<Enter>33<Enter>\nB. 10.0,22.0,33.0<Enter>\nC. 10.0<Enter>22.0 33.0<Enter>\nD. 10 22<Enter>33<Enter>"],
+        "answers": [
+            ["b", "B"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["请阅读一下程序:\n void main ()\n  { int a=5,b=0,c=0;\n    if (a=b+c) printf(“***\\n”);\n    else printf(“$$$\\n”);\n}\n以上程序(", "a,A", ")\nA. 输出$$$\nB. 可以通过编译但不能通过连接\nC. 输出***\nD. 有语法错误不能通过编译"],
+        "answers": [
+            ["a", "A"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["下列有关for循环的正确描述是(", "d,D", ")\nA. for 循环只能用于循环次数已经确定的情况\nB. for 循环是先执行循环体语句，后判断表达式\nC. 在 for 循环中，不能用break语句跳出循环体\nD. for 循环的循环体语句中，可以包含多条语句，但必须用\"{\"和\"}\"括起来"],
+        "answers": [
+            ["d", "D"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["以下描述正确的是(", "b,B", ")\nA. 函数既不可以嵌套定义也不可以嵌套调用\nB. 函数可以嵌套调用但不可以嵌套定义\nC. 函数可以嵌套定义但不能嵌套调用\nD. 函数既可以嵌套调用也可以嵌套定义"],
+        "answers": [
+            ["b", "B"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["结构体类型变量在程序执行期间(", "A,a", ")\nA. 所有成员一直驻留在内存中\nB. 只有一个成员驻留在内存中\nC. 部分成员驻留在内存中\nD. 没有成员驻留在内存中"],
+        "answers": [
+            ["A", "a"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["现有如下定义语句\n   int*p , s[20] , i ;\n   p=s;\n表示数组元素s[i]的表达式不正确的是(", "c,C", ")\nA. *(s+i)\nB. *(p+i)\nC. *(s=s+i)\nD. *(p=p+i)"],
+        "answers": [
+            ["c", "C"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["对C语言的文件存储方式的论述中，正确的是文件(", "d,D", ")\nA. 只能顺序存取\nB. 只能随机存取\nC. 只能从文件的开头存取\nD. 可以是顺序存取，也可以是随机存取"],
+        "answers": [
+            ["d", "D"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["C语言程序的注释可以出现在程序中的任何地方，一个注释以", "//", "作为开始和结束。\n能表述5<a<=35或a<2的C语言表达式是", "a>5&&a<=35||a<2", "。\nC语言中，循环的嵌套指的是", "循环体中存在一个或多个循环", "。\nC语言中，对于if语句，else子句必须与", "离其最近且未匹配", "的一个if子句配对。\n执行语句for(a=0;a<=9;a++); 后变量的值为", "10", "。\n如果p是结构体指针变量，使p指向结构体变量stu，利用p访问stu成员的方法是", "p->stu,*p.stu", "。\n若有定义:int a[3][4]={{1,2},{0},{4,6,8,10}}; 则初始化后，a[2][1]得到的初值是", "6", "。\nC语言中getchar()函数的功能是", "从控制台获取输入的第一个字符", "。\n在C语言中，引用数组元素只能通过", "逐个引用角标，逐个引用地址", "数组元素来实现，而不能通过整体引用整个数组来实现。\nint*p 的含义是", "定义一个整型指针变量", "。"],
+        "answers": [
+            ["//"],
+            ["a>5&&a<=35||a<2"],
+            ["循环体中存在一个或多个循环"],
+            ["离其最近且未匹配"],
+            ["10"],
+            ["p->stu", "*p.stu"],
+            ["6"],
+            ["从控制台获取输入的第一个字符"],
+            ["逐个引用角标，逐个引用地址"],
+            ["定义一个整型指针变量"]
+        ],
+        "answerslength": [18, 163, 225, 140, 26, 127, 15, 242, 221, 174],
+        "results": [null, null, null, null, null, null, null, null, null, null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["以下程序，其功能是分别求矩阵两对角线元素之和。\n#include<stdio.h>\nvoid main()\n{  int a[3][3]=(1,3,6,7,9,11,14,15,17};\n   int suml=0,sum2=0,i,j; \n   for( i=0;i<3;i++)\n    for( j=0;j<3;j++)\n     if(i==j) ", "sum1+=a[i][j]", ";//矩阵主对角线元素之和\n   for( i=0;i<3;i++)\n    for( j=2;j>=0;j--)\n     if(", "i+j=2", ")sum2+=a[i][j];//矩阵次对角线元素之和\n   printf(\"sum1=%d,sum2=%d\\n\",sum1,sum2);\n}"],
+        "answers": [
+            ["sum1+=a[i][j]"],
+            ["i+j=2"]
+        ],
+        "answerslength": [123, 51],
+        "results": [null, null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["以下程序的功能是调用函数fun计算: m=1-2+3-4+...+19-20， 并输出结果。\nint fun( int n)\n{ int m=0,f=1,i;\n  for(i=1;i<=n; i++)\n  { m+=i*f; f=", "-1*f", ";}\n  return m;}\nvoid main()\n{printf(\"m=%d\\n\",", "fun(20)", ");}"],
+        "answers": [
+            ["-1*f"],
+            ["fun(20)"]
+        ],
+        "answerslength": [40, 73],
+        "results": [null, null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["如下程序，功能是将字符串str中所有的字符a删除，补足所缺语句。\n#include<stdio.h>\nint main(void)\n{ char str[80];\n  int i, j; gets(str);\n  for(i=j=0;str[i]!=", "'\\0'", ";i++)\n   if(str[i]!='a')", "str[j+1]=str[i]", ";\n  str[j]='\\0';\n  puts(str);\n  return 0;\n}"],
+        "answers": [
+            ["'\\0'"],
+            ["str[j+1]=str[i]"]
+        ],
+        "answerslength": [36, 145],
+        "results": [null, null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["下面程序的功能是显示具有n个元素的数组s中的最大元素\n#define N 20\nvoid main()\n{ int i,a[N];\nfor(i=0; i<N; i++)\nscanf(\"%d\",&a[i]);\nprintf(\"%d\\n\",", "a[fmax(a,N)]", ");\n}\nfmax(int s[],int n)\n{ int k,p;\n  for(p=0,k=p;p<n;p++)\n  if(s[p]>s[k])", "k=p", ";\n  return(k);\n}"],
+        "answers": [
+            ["a[fmax(a", "N)]"],
+            ["k=p"]
+        ],
+        "answerslength": [117, 33],
+        "results": [null, null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["裴波那契数列中的头两个数都是1,从第三个数开始，每个数等于前两个数之和。下述程序计算此数列的前20个数，且每行输出5个数，请填空。\n#include <stdio.h>\nvoid main()\n{ int f,f1=1,f2=1;\n  int i;\nprintf(\"%6d%6d\",f1,f2);\nfor (i=3;i<=20;i++)\n{ f=", "f1+f2", ";\n  printf(\"%6d\",f);\n  if(i%5==0) printf(\"\\n\")\n  f1=f2;\n  ", "f2=f", ";}\n}"],
+        "answers": [
+            ["f1+f2"],
+            ["f2=f"]
+        ],
+        "answerslength": [55, 44],
+        "results": [null, null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["以下程序执行后输出结果为", "10", "。\n#include<stdio.h>\nint f(int b[],int m,int n)\n{ int i,s=0;\n  for(i=3;i<n;i=i+2) s=s+b[i];\n  return s;}\nvoid main()\n{ int x,a[]={1,2,3,4,5,6,7,8,9};\n  x=f(a,3,7);\n  printf(\"%d\\n\",x);\n}"],
+        "answers": [
+            ["10"]
+        ],
+        "answerslength": [26],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["定义如下变量：\n  int n=10;\n则下列循环输出的结果是", "987", "。\n  while(n>7)\n  { n--;\n    printf(\"%d\",n);\n  }"],
+        "answers": [
+            ["987"]
+        ],
+        "answerslength": [37],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["有以下程序，执行后输出结果为：", "1-3-2", "。\nvoid f(int v,int w){\nint t;\nt=v;v=w;w=t;\n}\nvoid main(){\nint x=1,y=3,z=2;\nif(x>y) f(x,y);\nelse if(y>z) f(y,z);\nelse f(x,z);\nprintf(\"%d-%d-%d\\n\",x,y,z);}"],
+        "answers": [
+            ["1-3-2"]
+        ],
+        "answerslength": [51],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["如下程序输出结果是", "12 2", "\nint fun(int a,int b,int *p1,int *p2){\n*p1=a+b;\n*p2=a-b;\n}\n#include<stdio.h>\nint main(void){\nint a,b,c,d;\na=7;b=5;\nfun(a,b,&c,&d);\nprintf(\"%d %d\\n\" ,c,d);\nreturn 0;"],
+        "answers": [
+            ["12 2"]
+        ],
+        "answerslength": [37],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["以下程序的输出结果是", "255", "。\nstruct STU\n{ char num[10];float score[3];\n};\nmain(){\nstruct STU s[3]=l(\"20021\",90,80,85}, {\"20022\",95,80,75},{\"20023\",100,95,90},},*p=s;\nint i;float sum=0;\nfor( i=0;i<3;i++)\n sum=sum+p->score[i];\nprintf(\"%6.2f\\n\",sum};\n}"],
+        "answers": [
+            ["255"]
+        ],
+        "answerslength": [37],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["编程题（", "无答案", "）\n用选择法对10个整数按由大到小顺序排序。"],
+        "answers": [
+            ["无答案"]
+        ],
+        "answerslength": [55],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["编程题（", "无答案", "）\n利用循环结构编写程序输出以下图形。"],
+        "answers": [
+            ["无答案"]
+        ],
+        "answerslength": [55],
+        "results": [null],
+        "MD5": false,
+        "image": "data:image/png;base64,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"
+    }, {
+        "texts": ["编程题（", "无答案", "）\n用指针方法编程将键盘输入的字符串逆序存放，并输出转换后的结果。\n（字符串长度不超过30）"],
+        "answers": [
+            ["无答案"]
+        ],
+        "answerslength": [55],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }],
+    "CreateTime": "2021-08-21 16:04:16"
+}
