@@ -49,7 +49,7 @@ var AppQuestion = {
 var AppDaily = {
     props: ['data'],
     created(){
-        this.getQuestionJSON('QuestionJson/daliy/'+this.getTimeYYYYMMDD(new Date())+'-每日','daliy')
+        this.getQuestionJSON('QuestionJSON/daliy/'+this.getTimeYYYYMMDD(new Date())+'-每日','daliy')
     },
     components:{
         'app-question':AppQuestion
