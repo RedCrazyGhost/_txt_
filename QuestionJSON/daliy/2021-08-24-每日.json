@@ -1,0 +1,50 @@
+{
+    "version": "0.0.1",
+    "questions": [{
+        "texts": ["一个C语言程序由", "b,B", "。\nA. 一个主程序和若干子程序组成\nB. 函数组成\nC. 若干过程组成\nD. 若干子程序组成"],
+        "answers": [
+            ["b", "B"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["C语言规定：在一个源程序中，main函数位置", "c,C", "。\nA. 必须在最开始\nB. 必须在系统调用的库函数的后面\nC. 可以任意\nD. 必须在最后面"],
+        "answers": [
+            ["c", "C"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["以下描述不正确的是", "d,D", "。\nA. 一个C源程序可由一个或多个函数组成\nB. 一个C源程序必须包含一个main函数\nC. C程序的基本组成单位是函数\nD. 在C程序中，注释说明只能位于一条语句的后面"],
+        "answers": [
+            ["d", "D"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["一个C语言执行是从", "a,A", "。\nA. 本程序的main函数开始，到main函数结束 \nB. 本程序的第一个函数开始，到本程序文件的最后一个函数结束\nC. 本程序的main函数开始，到本程序文件的最后一个函数结束\nD. 本程序的第一个函数开始，到本程序main函数结束"],
+        "answers": [
+            ["a", "A"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }, {
+        "texts": ["以下描述正确的是", "c,C", "。\nA. 在C程序中，main函数必须位于程序的最前面\nB. C程序的每行中只能写一条语句\nC. C语言本身没有输入输出语句\nD. 在对一个C程序进行编译的过程中，可以发现注释中的拼写错误"],
+        "answers": [
+            ["c", "C"]
+        ],
+        "answerslength": [34],
+        "results": [null],
+        "MD5": false,
+        "image": ""
+    }],
+    "CreateTime": "2021-08-24 14:09:32"
+}

@@ -1,13 +1,12 @@
 const AppRouters = new VueRouter({
     routes: [{
-            name: "home",
-            path: '/home',
+            name: "Home",
+            path: '/Home',
             component: {
                 props:['data'],
                 components: {
                     'app-show': AppShow,
                     'app-service': AppService,
-                    'app-bug-show':AppBUGShow
                 },
                 template: `
                 <div>
@@ -22,8 +21,8 @@ const AppRouters = new VueRouter({
             meta: {}
         },
         {
-            name: "about",
-            path: '/about',
+            name: "About",
+            path: '/About',
             component: {
                 props: ['data'],
                 components: {
@@ -40,19 +39,18 @@ const AppRouters = new VueRouter({
 
             }
         },
-        // 需求不明确（暂不使用）
         {
-            name: "bug",
-            path: '/bug',
+            name: "Daily",
+            path: '/Daily',
             component: {
                 props: ['data'],
                 components: {
 
-                    "app-bug-show": AppBUGShow
+                    "app-daily": AppDaily
                 },
                 template: `
                 <div>
-                  <app-bug-show :data="data"></app-bug-show>
+                  <app-daily :data="data"></app-daily>
                 </div>
                 `,
             },
@@ -62,23 +60,10 @@ const AppRouters = new VueRouter({
         },
         {
             path: '*',
-            redirect: '/home'
+            redirect: '/Home'
         }
     ]
 })
-AppRouters.afterEach((to, from) => {
-    switch (to.name) {
-        case "home":
-            document.title = '_txt_ home'
-            break;
-        case "about":
-            document.title = '_txt_ about'
-            break;
-        case "bug":
-            document.title = '_txt_ bug'
-            break;
-        default:
-            document.title = '_txt_'
-            break;
-    }
+AppRouters.afterEach((to) => {
+    document.title ='_txt_ '+to.name
 })

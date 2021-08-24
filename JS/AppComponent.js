@@ -5,6 +5,70 @@ var AppName = {
     </span>
     `,
 }
+var AppQuestion = {
+    props: ["data","appcolor"],
+    template: `
+    <div>
+    <div class="card h-100 shadow-sm bg-body rounded"  v-for="(question,qindex) in data.questions" :key="'question-'+qindex"
+                                style="margin-bottom:3rem"> 
+                                <div class="card-header">
+                                    题目 {{qindex+1}}
+                                </div>
+                                    <img v-if="question.image!=''" :src="question.image" class="card-img-top" alt="'question-image-'+qindex">
+                                        <i :class="'position-absolute top-0 start-100 translate-middle '+judgeAnswerTrueIClass(question)" ></i>
+                                       
+                                    <div class="card-body" id="question">
+                                            <span @click="answerShow(question)" class="fa-stack fa-lg position-absolute top-100 start-100 translate-middle" v-if="!question.MD5" >
+                                            <i :class="'fa fa-camera fa-stack-1x text-'+judgeColorChangeFontColor(appcolor)"></i>
+                                            <i class="fa fa-ban fa-stack-2x text-danger"></i>
+                                            </span>
+                                      <p>  <span style="white-space: pre-line;" class="card-text" v-for="(text,tindex) in question.texts" :key="'text-'+qindex+'-'+tindex">
+                                                <input :id="'question-'+qindex+'-'+(tindex-1)/2" v-if="tindex%2==1"
+                                                    type="text" v-model="question.results[(tindex-1)/2]"
+                                                    :style="'padding-right: 1px; padding-left: 2px; overflow:hidden;border-left-width: 0px;border-top-width: 0px;border-right-width: 0px;width:'+question.answerslength[(tindex-1)/2]+'px;color:'+resultColor(question,(tindex-1)/2)+';'"
+                                                    />
+                                                <span v-if="tindex%2==0">{{text}}</span>
+                                            </span>
+                                            </p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <small class="text-muted" data-bs-spy="scroll"
+                                            data-bs-target="#question" data-bs-offset="0" tabindex="0">
+                                            <a :href="'#question-'+qindex+'-'+rindex"
+                                                        v-for="(result,rindex) in question.results" :key="'result'+rindex"
+                                                        :style="'color:'+resultColor(question,rindex)+';text-decoration:none;'">
+                                                        第{{rindex+1}}个：{{judgeAnswerTrue(question,rindex)?"正确":"错误"}}
+                                            </a>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+    `,
+}
+var AppDaily = {
+    props: ['data'],
+    created(){
+        this.getQuestionJSON('QuestionJson/daliy/'+this.getTimeYYYYMMDD(new Date())+'-每日','daliy')
+    },
+    components:{
+        'app-question':AppQuestion
+    },
+    template: `
+    <div :class="'container-fluid bg-'+data.WebSiteConfig.AppColor+' text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
+        <div class="row text-center" >
+            <h2 style="margin-top: 3rem;">每日计划</h2>
+            <p>网站作者时不时更新</p>
+        </div>
+        <div class="row text-dark" style="margin-top: 1.5rem;">
+            <div  class="offset-1 col-10">
+                <app-question :appcolor="data.WebSiteConfig.AppColor" :data="data.Daliy"></app-question>
+            </div>
+        </div>
+    </div>
+    `
+}
+
 var AppShow = {
     props: ['data'],
     components: {
@@ -23,57 +87,12 @@ var AppShow = {
     `,
 
 }
-// 需求不明确（暂不使用）
-var AppBUGShow={
-    props: ['data'],
-    
-    template: `
-    <div :class="'container-fluid bg-'+data.WebSiteConfig.AppColor+' text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
-    <div class="row">
-        <div class="offset-1 col-10 text-danger text-center">
-        <p class="fs-3">抓虫！</p>
-        <div class="table-responsive">
-        <table class="table">
-        <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">BUG</th>
-          <th scope="col">解决</th>
-          <th scope="col">备注</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th scope="row">1</th>
-          <td>Mark</td>
-          <td>Otto</td>
-          <td>@mdo</td>
-        </tr>
-        <tr>
-          <th scope="row">2</th>
-          <td>Jacob</td>
-          <td>Thornton</td>
-          <td>@fat</td>
-        </tr>
-        <tr>
-          <th scope="row">3</th>
-          <td>Larry</td>
-          <td>the Bird</td>
-          <td>@twitter</td>
-        </tr>
-      </tbody>
-        </table>
-        </div>
-    </div>
-    </div>
-    `,
-}
 
 var AppAuthorShow = {
     props: ["data"],
-    data(){
+    data() {
         return {
-            QRcodeCollapse:null
+            QRcodeCollapse: null
         }
     },
     components: {
@@ -109,19 +128,19 @@ var AppAuthorShow = {
     </div>
     `,
     // 注入Collapse
-    mounted(){
+    mounted() {
         this.QRcodeCollapse = new bootstrap.Collapse(document.getElementById('QRcodeCollapse'), {
             toggle: false
-          })
+        })
     },
-    methods:{
+    methods: {
         // 显示/隐藏二维码
-        QRcode(){ 
-           if(this.QRcodeCollapse._element.className.indexOf("show")!=-1){
-            this.QRcodeCollapse.hide()
-           }else{
-            this.QRcodeCollapse.show()
-           }
+        QRcode() {
+            if (this.QRcodeCollapse._element.className.indexOf("show") != -1) {
+                this.QRcodeCollapse.hide()
+            } else {
+                this.QRcodeCollapse.show()
+            }
         }
     }
 }
@@ -273,20 +292,20 @@ var AppStep1 = {
     `,
     methods: {
         // 删除图片
-        deleteImage(index){
-            this.data.txts[index].image=""
+        deleteImage(index) {
+            this.data.txts[index].image = ""
         },
         // 通过id触发input
-        triggerInputFile(id){
+        triggerInputFile(id) {
             document.getElementById(id).click()
         },
         // imageFile
-        getImageFile(f,index) {
-            let _this=this
+        getImageFile(f, index) {
+            let _this = this
             let reader = new FileReader();
             reader.readAsDataURL(f.target.files[0])
             reader.onload = function (e) {
-              _this.data.txts[index].image=this.result
+                _this.data.txts[index].image = this.result
             }
         },
         // 判断MD5改变背景颜色
@@ -297,7 +316,7 @@ var AppStep1 = {
                 return ""
             }
         },
-        
+
         // 改变MD5Show样式
         txtObjectMD5ShowIClass(index) {
             if (this.data.txts[index].MD5) {
@@ -317,7 +336,7 @@ var AppStep1 = {
         // txt生成JSON
         _txt_ToQuestionsJSON() {
 
-            let _this=this
+            let _this = this
             let re = /\_.*?\_/g;
             this.data.txts.forEach(txtObject => {
                 if (txtObject.txt.length != 0 && this.txtCharNumber(txtObject.txt, '_') % 2 == 0 && txtObject.txt.match(re) != null) {
@@ -327,13 +346,13 @@ var AppStep1 = {
                             middleArrary.push(i.split(","))
                         }
                     });
-                    let middleTexts=txtObject.txt.split('_')
-                    let MD5Answer=new Array()
-                    let AnswerLength=new Array()
-                
+                    let middleTexts = txtObject.txt.split('_')
+                    let MD5Answer = new Array()
+                    let AnswerLength = new Array()
 
-                    middleTexts.forEach((text,index)=>{
-                        if(index%2==1){
+
+                    middleTexts.forEach((text, index) => {
+                        if (index % 2 == 1) {
                             AnswerLength.push(_this.answerLength(text))
                         }
                     })
@@ -347,26 +366,26 @@ var AppStep1 = {
                             }
                             MD5Answer.push(middleMD5Answer);
                         })
-                        
+
                         for (let index = 0; index < middleTexts.length; index++) {
-                            if(index%2==1){
-                                middleTexts[index]=MD5Answer[(index-1)/2].toString()
+                            if (index % 2 == 1) {
+                                middleTexts[index] = MD5Answer[(index - 1) / 2].toString()
                             }
-                            
+
                         }
-                        middleArrary=MD5Answer
+                        middleArrary = MD5Answer
                     }
 
-                    
-                    
+
+
 
                     this.data.QuestionsJSON.questions.push({
                         texts: middleTexts,
                         answers: middleArrary,
-                        answerslength:AnswerLength,
+                        answerslength: AnswerLength,
                         results: new Array(middleArrary.length),
                         MD5: txtObject.MD5,
-                        image:txtObject.image
+                        image: txtObject.image
                     })
 
                 }
@@ -377,7 +396,7 @@ var AppStep1 = {
             this.data.txts.push({
                 MD5: false,
                 txt: "",
-                image:""
+                image: ""
             })
         },
         // 删除题目
@@ -412,26 +431,26 @@ var AppStep1 = {
         answerLength(text) {
             let length = 0
             text.split("").forEach(i => {
-                    if (new RegExp("[\u4E00-\u9FA5]").test(i)) {
-                        length += 17
-                    }
-                    if (new RegExp("[a-z]").test(i)) {
-                        length += 11
-                    }
-                    if (new RegExp("[A-Z]").test(i)) {
-                        length += 12
-                    }
-                    if (new RegExp("[0-9]").test(i)) {
-                        length += 11
-                    }
-                    if (new RegExp("[\u3002|\uff1f|\uff01|\uff0c|\u3001|\uff1b|\uff1a|\u201c|\u201d|\u2018|\u2019|\uff08|\uff09|\u300a|\u300b|\u3008|\u3009|\u3010|\u3011|\u300e|\u300f|\u300c|\u300d|\ufe43|\ufe44|\u3014|\u3015|\u2026|\u2014|\uff5e|\ufe4f|\uffe5]").test(i)) {
-                        length += 13
-                    }
-                    if (new RegExp("[\u0021-\u002f|\u003a-\u0040|\u005b-\u0060|\u007b-\u007e]").test(i)) {
-                        length += 7
-                    }
-                })
-            return length+4;
+                if (new RegExp("[\u4E00-\u9FA5]").test(i)) {
+                    length += 17
+                }
+                if (new RegExp("[a-z]").test(i)) {
+                    length += 11
+                }
+                if (new RegExp("[A-Z]").test(i)) {
+                    length += 12
+                }
+                if (new RegExp("[0-9]").test(i)) {
+                    length += 11
+                }
+                if (new RegExp("[\u3002|\uff1f|\uff01|\uff0c|\u3001|\uff1b|\uff1a|\u201c|\u201d|\u2018|\u2019|\uff08|\uff09|\u300a|\u300b|\u3008|\u3009|\u3010|\u3011|\u300e|\u300f|\u300c|\u300d|\ufe43|\ufe44|\u3014|\u3015|\u2026|\u2014|\uff5e|\ufe4f|\uffe5]").test(i)) {
+                    length += 13
+                }
+                if (new RegExp("[\u0021-\u002f|\u003a-\u0040|\u005b-\u0060|\u007b-\u007e]").test(i)) {
+                    length += 7
+                }
+            })
+            return length + 4;
         },
     }
 }
@@ -454,8 +473,8 @@ var AppStep2 = {
                                 <p :class="'text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
                                 Step 1 生成的JSON内容会显示在这里，也可以直接加载以往生成的JSON文件</p>
                                 <div class="row" >
-                                    <div class="col" v-for="(FileName,findex) in data.QuestionJSONs" :key="FileName">
-                                        <button class="btn btn-warning" @click="getQuestionJSON(FileName)">{{FileName}}</button>
+                                    <div class="col" v-for="(FileName,findex) in data.Papers" :key="FileName">
+                                        <button class="btn btn-warning" @click="getQuestionJSON('QuestionJSON/paper/'+FileName,'data')">{{FileName}}</button>
                                     </div>
                                 </div>
                                 <div class="row" style="margin-top: 12px;">
@@ -468,7 +487,9 @@ var AppStep2 = {
                                 </div>
                                 <div class="row" style="margin-top: 12px;">
                                     <div class="col-12">
+                                    
                                         <div class="form-floating ">
+                                        <button class="btn btn-warning position-absolute top-0 end-0" @click="deleteQuestionsJSON"><i class="far fa-trash-alt"></i></button>
                                             <textarea class="form-control shadow-sm bg-body rounded"
                                                 placeholder="_json_" id="json" style="min-height: 50em;resize:none;"
                                                 :value="QuestionsJSONShow()" readonly> </textarea>
@@ -481,28 +502,36 @@ var AppStep2 = {
                     </div>
     `,
     methods: {
+        // 清除QuestionsJSON
+        deleteQuestionsJSON(){
+            this.data.QuestionsJSON.questions=[]
+        },
         // 由于图片二进制渲染会导致页面崩溃
-        QuestionsJSONShow(){
-            let arr=new Array()
-            this.data.QuestionsJSON.questions.forEach(q=>{
-                if(q.image!=''){
+        QuestionsJSONShow() {
+            let arr = new Array()
+            this.data.QuestionsJSON.questions.forEach(q => {
+                if (q.image != '') {
                     arr.push({
                         texts: q.texts,
                         answers: q.answers,
-                        answerslength:q.answerslength,
+                        answerslength: q.answerslength,
                         results: q.results,
                         MD5: q.MD5,
-                        image:"因数据过大，不予显示"
+                        image: "因数据过大，不予显示"
                     })
-                }else{
+                } else {
                     arr.push(q)
                 }
             })
-            let json=Object.assign({version:this.data.QuestionsJSON.version},{questions:arr})
+            let json = Object.assign({
+                version: this.data.QuestionsJSON.version
+            }, {
+                questions: arr
+            })
 
             return JSON.stringify(json)
         },
-        
+
         // 加载JSON文件
         getFile(f) {
             let _this = this
@@ -518,10 +547,10 @@ var AppStep2 = {
         },
         // 保存JSON文件
         saveFile() {
-            
-            let time=new Date()
-            var filename = prompt("请编辑文件名称：", getTimeYYYYMM(time)+"-名称-学科-编者.json");
-            this.data.QuestionsJSON.CreateTime=getTime(time)
+
+            let time = new Date()
+            var filename = prompt("请编辑文件名称：", this.getTimeYYYYMM(time) + "-名称-学科-编者.json");
+            this.data.QuestionsJSON.CreateTime = this.getTime(time)
             var string = JSON.stringify(this.data.QuestionsJSON);
             var blob = new Blob([string], {
                 type: "text/json;charset=utf-8"
@@ -535,8 +564,13 @@ var AppStep2 = {
     }
 }
 
+
+
 var AppStep3 = {
     props: ["data"],
+    components: {
+        'app-question': AppQuestion
+    },
     template: `
                     <div class="accordion-item" style="border-bottom-width: 0px;">
                         <h2 class="accordion-header" id="Step">
@@ -554,136 +588,29 @@ var AppStep3 = {
                                     </div>
                                     
                                 <div v-else>
-                                <div :class="'d-flex bd-highlight text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
-                                    <div class="me-auto bd-highlight p-2">题目进度</div>
-                                    <div class="bd-highlight p-2">{{TrueAnswerNumber()}}/{{AllAnswerNumber()}}</div>
-                                    
-                                </div>
-                                <div   class="progress" style="margin-bottom:2rem">
-                                    <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
-                                        role="progressbar"
-                                        :style="'width: '+numberToPercent(TrueAnswerNumber(),AllAnswerNumber())+'%'"
-                                        :aria-valuenow="TrueAnswerNumber()" aria-valuemin="0"
-                                        :aria-valuemax="AllAnswerNumber()"></div>
-                                    <div class="progress-bar bg-danger " role="progressbar"
-                                        :style="'width: '+numberToPercent(AllAnswerNumber()-TrueAnswerNumber(),AllAnswerNumber())+'%'"
-                                        :aria-valuenow="AllAnswerNumber()-TrueAnswerNumber()" aria-valuemin="0"
-                                        :aria-valuemax="AllAnswerNumber()"></div>
-                                </div>
-                                <div class="card h-100 shadow-sm bg-body rounded" v-for="(question,qindex) in data.QuestionsJSON.questions" :key="'question-'+qindex"
-                                style="margin-bottom:3rem"> 
-                                <div class="card-header">
-                                    题目 {{qindex+1}}
-                                </div>
-                                    <img v-if="question.image!=''" :src="question.image" class="card-img-top" alt="'question-image-'+qindex">
-                                        <i :class="'position-absolute top-0 start-100 translate-middle '+judgeAnswerTrueIClass(question)" ></i>
-                                       
-                                    <div class="card-body" id="question">
-                                            <span @click="answerShow(question)" class="fa-stack fa-lg position-absolute top-100 start-100 translate-middle" v-if="!question.MD5" >
-                                            <i :class="'fa fa-camera fa-stack-1x text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)"></i>
-                                            <i class="fa fa-ban fa-stack-2x text-danger"></i>
-                                            </span>
-                                      <p>  <span style="white-space: pre-line;" class="card-text" v-for="(text,tindex) in question.texts" :key="'text-'+qindex+'-'+tindex">
-                                                <input :id="'question-'+qindex+'-'+(tindex-1)/2" v-if="tindex%2==1"
-                                                    type="text" v-model="question.results[(tindex-1)/2]"
-                                                    :style="'padding-right: 1px; padding-left: 2px; overflow:hidden;border-left-width: 0px;border-top-width: 0px;border-right-width: 0px;width:'+question.answerslength[(tindex-1)/2]+'px;color:'+resultColor(question,(tindex-1)/2)+';'"
-                                                    />
-                                                <span v-if="tindex%2==0">{{text}}</span>
-                                            </span>
-                                            </p>
+                                    <div :class="'d-flex bd-highlight text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
+                                        <div class="me-auto bd-highlight p-2">题目进度</div>
+                                        <div class="bd-highlight p-2">{{TrueAnswerNumber()}}/{{AllAnswerNumber()}}</div>
+                                        
                                     </div>
-                                    <div class="card-footer">
-                                        <small class="text-muted" data-bs-spy="scroll"
-                                            data-bs-target="#question" data-bs-offset="0" tabindex="0">
-                                            <a :href="'#question-'+qindex+'-'+rindex"
-                                                        v-for="(result,rindex) in question.results" :key="'result'+rindex"
-                                                        :style="'color:'+resultColor(question,rindex)+';text-decoration:none;'">
-                                                        第{{rindex+1}}个：{{judgeAnswerTrue(question,rindex)?"正确":"错误"}}
-                                            </a>
-                                        </small>
+                                    <div   class="progress" style="margin-bottom:2rem">
+                                        <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                                            role="progressbar"
+                                            :style="'width: '+numberToPercent(TrueAnswerNumber(),AllAnswerNumber())+'%'"
+                                            :aria-valuenow="TrueAnswerNumber()" aria-valuemin="0"
+                                            :aria-valuemax="AllAnswerNumber()"></div>
+                                        <div class="progress-bar bg-danger " role="progressbar"
+                                            :style="'width: '+numberToPercent(AllAnswerNumber()-TrueAnswerNumber(),AllAnswerNumber())+'%'"
+                                            :aria-valuenow="AllAnswerNumber()-TrueAnswerNumber()" aria-valuemin="0"
+                                            :aria-valuemax="AllAnswerNumber()"></div>
                                     </div>
-                                </div>
+                                    <app-question :data="data.QuestionsJSON" :appcolor="data.WebSiteConfig.AppColor"></app-question>
                             </div>
                         </div>
                     </div>
                 </div>
-                </div>
+            </div>
     `,
-    methods: {
-        test(){
-            console.log(1);
-        },
-        // 数量百分比
-        numberToPercent(numer1, number2) {
-            return numer1 / number2 * 100
-        },
-        // 获取所有对的答案数量
-        TrueAnswerNumber() {
-            let trueNumber = 0;
-            this.data.QuestionsJSON.questions.forEach(question => {
-                question.answers.forEach((answer, index) => {
-                    if (this.judgeAnswerTrue(question, index)) {
-                        trueNumber++;
-                    }
-                })
-            })
-            return trueNumber;
-        },
-        // 获取所有答案数量
-        AllAnswerNumber() {
-            let number = 0;
-            this.data.QuestionsJSON.questions.forEach(question => {
-                question.answers.forEach(answer => {
-                        number++;
-                })
-            })
-            return number;
-        },
-        // 判断题目正确错误IClass
-        judgeAnswerTrueIClass(question) {
-            let trueNumber = 0
-            for (let index = 0; index < question.answers.length; index++) {
-                if (this.judgeAnswerTrue(question, index)) {
-                    trueNumber++;
-                }
-            }
-            if (trueNumber == question.results.length) {
-                return "fas fa-check fa-3x text-success"
-            } else {
-                return "fas fa-exclamation fa-3x text-danger"
-            }
-        },
-        
-        // 判断答案正确/错误
-        judgeAnswerTrue(question, index) {
-            let isTrue = false
-            question.answers[index].forEach(answer => {
-                if(question.MD5){
-                    if (md5(question.results[index])== answer) {
-                            isTrue = true
-                        }
-                }else{
-                    if (question.results[index] == answer) {
-                    isTrue = true
-                    }
-                }
-                
-            })
-            return isTrue;
-        },
-        // 答案颜色
-        resultColor(question, index) {
-            return this.judgeAnswerTrue(question, index) ? "var(--bs-green)" : "var(--bs-red)";
-        },
-        // 答案展示（长按功能修改）！！！
-        answerShow(question) {
-            let oldvalue = new Array(question.results.length)
-            question.results = question.answers
-            setTimeout(() => {
-                question.results = oldvalue
-            }, 2000);
-        }
-    }
 }
 
 var AppService = {

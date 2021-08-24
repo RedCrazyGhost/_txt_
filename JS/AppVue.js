@@ -4,6 +4,118 @@ window.addEventListener('beforeunload', function (event) {
 });
 Vue.mixin({
     methods: {
+        // time相关使用
+        zeroFill(i){
+            if (i >= 0 && i <= 9) {
+                return "0" + i;
+            } else {
+                return i;
+            }
+        },
+        // YYYY-MM-DD hh:mm:ss
+         getTime(date) {
+            
+            var month = this.zeroFill(date.getMonth() + 1);//月
+            var day = this.zeroFill(date.getDate());//日
+            var hour = this.zeroFill(date.getHours());//时
+            var minute = this.zeroFill(date.getMinutes());//分
+            var second = this.zeroFill(date.getSeconds());//秒
+            
+            //当前时间
+            var Time = date.getFullYear() + "-" + month + "-" + day
+                    + " " + hour + ":" + minute + ":" + second;
+            
+            return Time;
+        },
+        // YYYY-MM
+         getTimeYYYYMM(date) {
+            var month = this.zeroFill(date.getMonth() + 1);//月
+            
+            //当前时间
+            var Time = date.getFullYear() + "-" + month;
+            
+            return Time;
+        },
+        // YYYY-MM-DD
+         getTimeYYYYMMDD(date) {
+            var month = this.zeroFill(date.getMonth() + 1);//月
+            var day = this.zeroFill(date.getDate());//日
+            //当前时间
+            var Time =date.getFullYear() + "-" + month + "-" + day;
+            
+            return Time;
+        },
+        
+        // 数量百分比
+        numberToPercent(numer1, number2) {
+            return numer1 / number2 * 100
+        },
+        // 获取所有对的答案数量
+        TrueAnswerNumber() {
+            let trueNumber = 0;
+            this.data.QuestionsJSON.questions.forEach(question => {
+                question.answers.forEach((answer, index) => {
+                    if (this.judgeAnswerTrue(question, index)) {
+                        trueNumber++;
+                    }
+                })
+            })
+            return trueNumber;
+        },
+        // 获取所有答案数量
+        AllAnswerNumber() {
+            let number = 0;
+            this.data.QuestionsJSON.questions.forEach(question => {
+                question.answers.forEach(answer => {
+                    number++;
+                })
+            })
+            return number;
+        },
+        // 判断题目正确错误IClass
+        judgeAnswerTrueIClass(question) {
+            let trueNumber = 0
+            for (let index = 0; index < question.answers.length; index++) {
+                if (this.judgeAnswerTrue(question, index)) {
+                    trueNumber++;
+                }
+            }
+            if (trueNumber == question.results.length) {
+                return "fas fa-check fa-3x text-success"
+            } else {
+                return "fas fa-exclamation fa-3x text-danger"
+            }
+        },
+
+        // 判断答案正确/错误
+        judgeAnswerTrue(question, index) {
+            let isTrue = false
+            question.answers[index].forEach(answer => {
+                if (question.MD5) {
+                    if (md5(question.results[index]) == answer) {
+                        isTrue = true
+                    }
+                } else {
+                    if (question.results[index] == answer) {
+                        isTrue = true
+                    }
+                }
+
+            })
+            return isTrue;
+        },
+        // 答案颜色
+        resultColor(question, index) {
+            return this.judgeAnswerTrue(question, index) ? "var(--bs-green)" : "var(--bs-red)";
+        },
+        // 答案展示
+        answerShow(question) {
+            let oldvalue = new Array(question.results.length)
+            question.results = question.answers
+            setTimeout(() => {
+                question.results = oldvalue
+            }, 2000);
+        },
         // 判断主题颜色对字体进行颜色修改
         judgeColorChangeFontColor(color) {
             switch (color) {
@@ -13,17 +125,25 @@ Vue.mixin({
                     return "light";
             }
         },
-        async getQuestionJSON(filename) {
-            let url='QuestionJSON/'+filename+'.json'
+        // 
+        async getQuestionJSON(filepath,toData) {
+            let url =  filepath + '.json'
             let _this = this
             axios.get(url)
-              .then(function (response) {
-                _this.data.QuestionsJSON = response.data
-              })
-              .catch(function (error) {
-                console.log(error);
-              });
-          }
+                .then(function (response) {
+                    switch (toData) {
+                        case "data":
+                             _this.data.QuestionsJSON = response.data
+                            break;
+                        case "daliy":
+                            _this.data.Daliy=response.data
+                            break;
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+        }
     },
 })
 
@@ -32,25 +152,29 @@ var app = new Vue({
     data() {
         return {
             data: {
+                Daliy:{},
                 WebSiteConfig: {
                     AppRouters: [{
-                            to: "/home",
-                            name: "home",
+                            to: "/Home",
+                            name: "Home",
                             class: "active"
-                        },
-                        {
-                            to: "/about",
-                            name: "about",
+                        },{
+                            to: "/Daily",
+                            name: "Daily",
                             class: ""
                         },
-                        // 需求不明确（暂不使用）
-                        // {to:"/bug",name:"bug",class:""}
+                        {
+                            to: "/About",
+                            name: "About",
+                            class: ""
+                        },
+                        
                     ],
                     AppAuthor: {
                         name: "RedCrazyGhost",
                         src: "IMAG/Author.jpeg",
                     },
-                    AppVersion: "1.0.2",
+                    AppVersion: "1.0.3",
                     AppColor: "light",
                     AppFontFamily: "HYCuYuanJ"
                 },
@@ -63,7 +187,7 @@ var app = new Vue({
                     version: "0.0.1",
                     questions: []
                 },
-                QuestionJSONs:['2021-08-18年某高校试题-C语言-RedCrazyGhost']
+                Papers: ['2021-08-18年某高校试题-C语言-RedCrazyGhost']
             }
         };
     },
