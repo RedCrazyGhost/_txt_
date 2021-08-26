@@ -205,16 +205,19 @@ var AppTopNav = {
         }
     }
 }
+
+
 var AppBottomNav = {
     props: ['data'],
     components: {
-        'app-name': AppName
+        'app-name': AppName,
     },
     template: `
     <nav :class="'navbar navbar-'+data.WebSiteConfig.AppColor+' bg-'+data.WebSiteConfig.AppColor">
             <div class="container">
                 <span class="navbar-text">2021 © {{data.WebSiteConfig.AppAuthor.name}}.</span>
                 <a class="nav-link navbar-text" href="http://beian.miit.gov.cn/">鄂ICP备19031343号-1</a>
+                <a class="nav-link navbar-text" target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=42020202000140"><img src="IMAG/AppGA.png" style="float:left;"/>鄂公网安备 42020202000140号</a>
                 <span class="navbar-text">Web Site Version:{{data.WebSiteConfig.AppVersion}}</span>
             </div>
         </nav>

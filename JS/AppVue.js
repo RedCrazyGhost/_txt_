@@ -174,7 +174,7 @@ var app = new Vue({
                         name: "RedCrazyGhost",
                         src: "IMAG/Author.jpeg",
                     },
-                    AppVersion: "1.0.4",
+                    AppVersion: "1.0.5",
                     AppColor: "light",
                     AppFontFamily: "HYCuYuanJ"
                 },
