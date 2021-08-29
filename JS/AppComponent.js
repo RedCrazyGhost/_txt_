@@ -60,7 +60,12 @@ var AppDaily = {
             <h2 style="margin-top: 3rem;">每日计划</h2>
             <p>网站作者时不时更新</p>
         </div>
-        <div class="row text-dark" style="margin-top: 1.5rem;">
+        <div class="row text-center" >
+            <div class="col" v-for="(FileName,findex) in data.Daliys" :key="FileName">
+             <button class="btn btn-warning" @click="getQuestionJSON('QuestionJSON/daliy/'+FileName,'daliy')"><i class="far fa-file"></i> {{FileName}}</button>
+            </div>
+        </div>
+        <div class="row text-dark" style="margin-top: 2.5rem;">
             <div  class="offset-1 col-10">
                 <app-question :appcolor="data.WebSiteConfig.AppColor" :data="data.Daliy"></app-question>
             </div>
@@ -475,9 +480,9 @@ var AppStep2 = {
                             <div class="accordion-body" >
                                 <p :class="'text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
                                 Step 1 生成的JSON内容会显示在这里，也可以直接加载以往生成的JSON文件</p>
-                                <div class="row" >
+                                <div class="row text-center" >
                                     <div class="col" v-for="(FileName,findex) in data.Papers" :key="FileName">
-                                        <button class="btn btn-warning" @click="getQuestionJSON('QuestionJSON/paper/'+FileName,'data')">{{FileName}}</button>
+                                        <button class="btn btn-warning" @click="getQuestionJSON('QuestionJSON/paper/'+FileName,'data')"><i class="far fa-file"></i> {{FileName}}</button>
                                     </div>
                                 </div>
                                 <div class="row" style="margin-top: 12px;">

@@ -138,6 +138,12 @@ Vue.mixin({
                         case "daliy":
                             _this.data.Daliy=response.data
                             break;
+                        case "paperlist":
+                            _this.data.Papers=response.data
+                            break;
+                        case "daliylist":
+                            _this.data.Daliys=response.data
+                            break;   
                     }
                 })
                 .catch(function (error) {
@@ -149,6 +155,10 @@ Vue.mixin({
 
 var app = new Vue({
     el: '#App',
+    created(){
+        this.getQuestionJSON('QuestionJSON/paper/List','paperlist')
+        this.getQuestionJSON('QuestionJSON/daliy/List','daliylist')
+    },
     data() {
         return {
             data: {
@@ -174,7 +184,7 @@ var app = new Vue({
                         name: "RedCrazyGhost",
                         src: "IMAG/Author.jpeg",
                     },
-                    AppVersion: "1.0.5",
+                    AppVersion: "1.0.6",
                     AppColor: "light",
                     AppFontFamily: "HYCuYuanJ"
                 },
@@ -187,7 +197,8 @@ var app = new Vue({
                     version: "0.0.1",
                     questions: []
                 },
-                Papers: ['2021-08-18年某高校试题-C语言-RedCrazyGhost']
+                Papers: [],
+                Daliys:[]
             }
         };
     },
