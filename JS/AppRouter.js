@@ -27,11 +27,11 @@ const AppRouters = new VueRouter({
                 props: ['data'],
                 components: {
 
-                    "app-author-show": AppAuthorShow
+                    "app-about": AppAbout
                 },
                 template: `
                 <div>
-                  <app-author-show :data="data"></app-author-show>
+                  <app-about :data="data"></app-about>
                 </div>
                 `,
             },
