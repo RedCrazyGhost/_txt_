@@ -1391,6 +1391,11 @@ progress {
         width: 16.6666666667%
     }
 
+    .row-cols-lg-7>* {
+        flex: 0 0 auto;
+        width: 14.2857142857%
+    }
+
     .col-lg-auto {
         flex: 0 0 auto;
         width: auto
@@ -1605,6 +1610,11 @@ progress {
         width: 16.6666666667%
     }
 
+    .row-cols-xl-9>* {
+        flex: 0 0 auto;
+        width: 11.1111111111%
+    }
+
     .col-xl-auto {
         flex: 0 0 auto;
         width: auto
@@ -1817,6 +1827,10 @@ progress {
     .row-cols-xxl-6>* {
         flex: 0 0 auto;
         width: 16.6666666667%
+    }
+    .row-cols-xxl-11>* {
+        flex: 0 0 auto;
+        width: 9.0909090909%
     }
 
     .col-xxl-auto {

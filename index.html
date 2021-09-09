@@ -11,6 +11,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>_txt_</title>
+    <script src="JS/AutoBaidu.js"></script>
     <script src="JS/md5.min.js"></script>
     <!-- <script src="JS/vue-dev.js"></script> -->
     <script src="JS/vue.js"></script>
@@ -30,6 +31,7 @@
         <keep-alive>
             <router-view :data="data" ></router-view>
         </keep-alive>
+        <app-user :data="data"></app-user>
         <app-bottom-nav :data="data"></app-bottom-nav>
         
     </div>
