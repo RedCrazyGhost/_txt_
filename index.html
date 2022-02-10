@@ -10,20 +10,28 @@
     <meta name="description" content="_txt_ 是一个帮助人们进行知识巩固的网站">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>_txt_</title>
-    <script src="JS/AutoBaidu.js"></script>
-    <script src="JS/md5.min.js"></script>
-    <!-- <script src="JS/vue-dev.js"></script> -->
-    <script src="JS/vue.js"></script>
+    <title>_txt_ 是一个帮助人们进行知识巩固的网站</title>
     <link href="CSS/bootstrap.min.css" rel="stylesheet">
     <link href="CSS/fontstyle.css" rel="stylesheet">
-    <script src="JS/bootstrap.bundle.min.js"></script>
-    <script src="JS/axios.min.js"></script>
-    <script src="JS/vue-router.js"></script>
-    <script src="JS/AppComponent.js"></script>
+    <link href="CSS/introjs.min.css" rel="stylesheet">
+    <script src="JS/SEO/AutoBaidu.js"></script>
+    <script src="JS/Tool/intro.min.js"></script>
+    <!-- <script src="JS/Tool/vue-dev.js"></script> -->
+    <script src="JS/Tool/vue.js"></script>
+    <script src="JS/Tool/masonry.pkgd.min.js"></script>
+    <script src="JS/Tool/md5.min.js"></script>    
+    <script src="JS/Tool/bootstrap.bundle.min.js"></script>
+    <script src="JS/Tool/axios.min.js"></script>
+    <script src="JS/Tool/vue-router.js"></script>
+    <script src="JS/Tool/FileSaver.js"></script>
+    <script src="JS/Tool/FontAwesome.js"></script>
+    <script src="JS/View/Public/AppPublicComponent.js"></script>
+    <script src="JS/View/AppHome.js"></script>
+    <script src="JS/View/AppCard.js"></script>
+    <script src="JS/View/AppDaily.js"></script>
+    <script src="JS/View/AppAbout.js"></script>
     <script src="JS/AppRouter.js"></script>
-    <script src="JS/FileSaver.js"></script>
-    <script src="JS/FontAwesome.js"></script>
+    
 </head>
 <body>
     <div id="App" :style="'font-family:'+data.WebSiteConfig.AppFontFamily+';background-color:'+data.WebSiteConfig.AppColor+';'">
@@ -31,7 +39,6 @@
         <keep-alive>
             <router-view :data="data" ></router-view>
         </keep-alive>
-        <app-user :data="data"></app-user>
         <app-bottom-nav :data="data"></app-bottom-nav>
         
     </div>

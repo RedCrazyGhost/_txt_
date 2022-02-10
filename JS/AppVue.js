@@ -27,6 +27,10 @@ Vue.mixin({
 
             return Time;
         },
+        // YYYY
+        getTimeYYYY(date) {
+            return date.getFullYear();
+        },
         // YYYY-MM
         getTimeYYYYMM(date) {
             var month = this.zeroFill(date.getMonth() + 1); //月
@@ -114,7 +118,7 @@ Vue.mixin({
             question.results = question.answers
             setTimeout(() => {
                 question.results = oldvalue
-            }, 2000);
+            }, 5000);
         },
         // 判断主题颜色对字体进行颜色修改
         judgeColorChangeFontColor(color) {
@@ -162,6 +166,7 @@ var app = new Vue({
     data() {
         return {
             data: {
+                words:{},
                 Daliy: {},
                 WebSiteConfig: {
                     AppEmoji: [
@@ -211,6 +216,10 @@ var app = new Vue({
                             to: "/Home",
                             name: "Home",
                             class: "active"
+                        },{
+                            to: "/Card",
+                            name: "Card",
+                            class: ""
                         }, {
                             to: "/Daily",
                             name: "Daily",
@@ -221,13 +230,14 @@ var app = new Vue({
                             name: "About",
                             class: ""
                         },
+                        
 
                     ],
                     AppAuthor: {
                         name: "RedCrazyGhost",
                         src: "IMAG/Author.jpeg",
                     },
-                    AppVersion: "1.0.8",
+                    AppVersion: "1.0.9",
                     AppColor: "light",
                     AppFontFamily: "HYCuYuanJ"
                 },
@@ -249,7 +259,6 @@ var app = new Vue({
     components: {
         "app-top-nav": AppTopNav,
         "app-bottom-nav": AppBottomNav,
-        "app-user":AppUser
     },
     router: AppRouters
 })

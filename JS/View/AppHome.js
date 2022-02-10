@@ -1,86 +1,3 @@
-var AppName = {
-    template: `
-    <span>
-    _<span style="color: var(--bs-green);">t</span>x<span style="color: var(--bs-red);">t</span>_
-    </span>
-    `,
-}
-// qq接入user 计划中。。。
-var AppUser={
-    props: ["data"],
-    template:`
-
-    `
-}
-var AppQuestion = {
-    props: ["data","appcolor"],
-    template: `
-    <div>
-    <div class="card h-100 shadow-sm bg-body rounded"  v-for="(question,qindex) in data.questions" :key="'question-'+qindex"
-                                style="margin-bottom:3rem"> 
-                                <div class="card-header">
-                                    题目 {{qindex+1}}
-                                </div>
-                                    <img v-if="question.image!=''" :src="question.image" class="card-img-top" alt="'question-image-'+qindex">
-                                        <i :class="'position-absolute top-0 start-100 translate-middle '+judgeAnswerTrueIClass(question)" ></i>
-                                       
-                                    <div class="card-body" id="question">
-                                            <span @click="answerShow(question)" class="fa-stack fa-lg position-absolute top-100 start-100 translate-middle" v-if="!question.MD5" >
-                                            <i :class="'fa fa-camera fa-stack-1x text-'+judgeColorChangeFontColor(appcolor)"></i>
-                                            <i class="fa fa-ban fa-stack-2x text-danger"></i>
-                                            </span>
-                                      <p>  <span style="white-space: pre-line;" class="card-text" v-for="(text,tindex) in question.texts" :key="'text-'+qindex+'-'+tindex">
-                                                <input :id="'question-'+qindex+'-'+(tindex-1)/2" v-if="tindex%2==1"
-                                                    type="text" v-model="question.results[(tindex-1)/2]"
-                                                    :style="'padding-right: 1px; padding-left: 2px; overflow:hidden;border-left-width: 0px;border-top-width: 0px;border-right-width: 0px;width:'+question.answerslength[(tindex-1)/2]+'px;color:'+resultColor(question,(tindex-1)/2)+';'"
-                                                    />
-                                                <span v-if="tindex%2==0">{{text}}</span>
-                                            </span>
-                                            </p>
-                                    </div>
-                                    <div class="card-footer">
-                                        <small class="text-muted" data-bs-spy="scroll"
-                                            data-bs-target="#question" data-bs-offset="0" tabindex="0">
-                                            <a :href="'#question-'+qindex+'-'+rindex"
-                                                        v-for="(result,rindex) in question.results" :key="'result'+rindex"
-                                                        :style="'color:'+resultColor(question,rindex)+';text-decoration:none;'">
-                                                        第{{rindex+1}}个：{{judgeAnswerTrue(question,rindex)?"正确":"错误"}}
-                                            </a>
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                            </div>
-    `,
-}
-var AppDaily = {
-    props: ['data'],
-    created(){
-        this.getQuestionJSON('QuestionJSON/daliy/'+this.getTimeYYYYMMDD(new Date()),'daliy')
-    },
-    components:{
-        'app-question':AppQuestion
-    },
-    template: `
-    <div :class="'container-fluid bg-'+data.WebSiteConfig.AppColor+' text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
-        <div class="row text-center" >
-            <h2 style="margin-top: 3rem;">每日计划</h2>
-            <p>网站作者时不时更新</p>
-        </div>
-        <div class="row row-cols-3 text-center" >
-            <div class="col" v-for="(FileName,findex) in data.Daliys" :key="FileName" v-if="FileName.indexOf(getTimeYYYYMM(new Date())) != -1&&FileName<getTimeYYYYMMDD(new Date())">
-             <button class="btn btn-warning" @click="getQuestionJSON('QuestionJSON/daliy/'+FileName,'daliy')"><i class="far fa-file"></i> {{FileName}}</button>
-            </div>
-        </div>
-        <div class="row text-dark" style="margin-top: 2.5rem;">
-            <div  class="offset-1 col-10">
-                <app-question :appcolor="data.WebSiteConfig.AppColor" :data="data.Daliy"></app-question>
-            </div>
-        </div>
-    </div>
-    `
-}
-
 var AppShow = {
     props: ['data'],
     components: {
@@ -97,167 +14,7 @@ var AppShow = {
             </div>
         </div>
     `,
-
 }
-
-var AppAbout = {
-    props: ["data"],
-    data() {
-        return {
-            QRcodeCollapse: null
-        }
-    },
-    components: {
-        'app-name': AppName
-    },
-    template: ` 
-    <div :class="'container-fluid bg-'+data.WebSiteConfig.AppColor+' text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
-    <div class="row text-center">
-            <div class="col-12">
-                <p class="fs-1"><app-name></app-name> Author
-                </p>
-            </div>
-            <div class="col-6 offset-3">
-                <img :src="data.WebSiteConfig.AppAuthor.src" class="rounded" alt="头像" height=75px width=75px>
-                
-            </div>
-            <div class="col-12">
-                <p class="fs-3 fst-italic">{{data.WebSiteConfig.AppAuthor.name}}</p>
-            </div>
-            <div class="col-8 offset-2 fs-4">
-                <p>如果你觉得这个开源的帮助学习的网站还不错的话</p>
-                <p>可以在<a :class="'link-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)" href="https://github.com/RedCrazyGhost/_txt_"><i class="fa fa-github fa-2x"></i></a>给这个开源项目一个<i class="far fa-star fa-2x text-warning"></i></p>
-                <p>还可以请作者喝一杯<span class="fa-stack fa-1x"><i class="fa fa-coffee fa-stack-2x text-danger"></i><i class="fa fa-lemon fa-stack-1x text-warning"></i></span></p>
-                <p><a style="text-decoration: none" class="link-primary" href="https://jq.qq.com/?_wv=1027&k=arkE99fw"><i class="fab fa-qq fa-2x"></i>群:921970725</a></p>
-                <p><i  class="far fa-hand-point-right fa-2x "></i> <i @click="QRcode" data-bs-toggle="collapse"class="fab fa-alipay fa-2x text-primary"></i> <i class="far fa-hand-point-left  fa-2x"></i></p>
-                <div class="row collapse" id="QRcodeCollapse">
-                <div class="col">
-                 <img class="img-fluid"  src="IMAG/alipay.jpeg" >
-                 </div>
-                </div>
-                <div class="row text-center" style="color:var(--bs-gray)">
-                    <div class="col-12">
-                        <p class="fs-1">赞助</p>
-                    </div>
-                </div>
-                <div style="color:var(--bs-gray)" class="row text-center row-cols-3 row-cols-sm-5 row-cols-lg-7 row-cols-xl-9 row-cols-xxl-11">
-                    <div class="col " v-for="person in data.WebSiteConfig.AppCoinPerson">
-                        <img v-if="person.src!=''" :src="person.src" class="img-fluid rounded-circle" alt="头像">
-                        <i v-else :class="'far fa-2x fa-'+iclass(person.iclass)"></i>
-                        <p>{{person.name}}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    `,
-    // 注入Collapse
-    mounted() {
-        this.QRcodeCollapse = new bootstrap.Collapse(document.getElementById('QRcodeCollapse'), {
-            toggle: false
-        })
-    },
-    methods: {
-        // 判断Emoji
-        iclass(o){
-            let length=this.data.WebSiteConfig.AppEmoji.length
-            if(o!=''){
-                return o
-            }else{
-                return this.data.WebSiteConfig.AppEmoji[Math.floor(Math.random()*length)]
-            }
-        },
-
-        // 显示/隐藏二维码
-        QRcode() {
-            if (this.QRcodeCollapse._element.className.indexOf("show") != -1) {
-                this.QRcodeCollapse.hide()
-            } else {
-                this.QRcodeCollapse.show()
-            }
-        }
-    }
-}
-var AppTopNav = {
-    props: ['data'],
-    components: {
-        'app-name': AppName
-    },
-    template: `
-    <nav :class="'navbar navbar-expand-lg navbar-'+data.WebSiteConfig.AppColor+' bg-'+data.WebSiteConfig.AppColor">
-        <div class="container">
-            <router-link class="navbar-brand" to="/home">
-                <app-name></app-name>
-            </router-link>
-            <i :class="changeIClass()" :style="changeIStyle()"  @click="changeAppColor()"></i>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav" style="margin-left: auto;">
-                    <li class="nav-item" v-for="(router,index) in data.WebSiteConfig.AppRouters" :key="'router-'+index">
-                        <router-link :to=router.to :class="'nav-link '+routerMateChangeClass($route,router.name)" aria-current="page" >{{router.name}}</router-link>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    `,
-    methods: {
-        // 根据Router元信息修改class
-        routerMateChangeClass(router, name) {
-            if (router.name == name) {
-                return "active"
-            }
-        },
-        // 改变App主题颜色
-        changeAppColor() {
-            if (this.data.WebSiteConfig.AppColor == "light") {
-                this.data.WebSiteConfig.AppColor = "dark"
-            } else {
-                this.data.WebSiteConfig.AppColor = "light"
-            }
-        },
-        // 根据AppColor改变class
-        changeIClass() {
-            switch (this.data.WebSiteConfig.AppColor) {
-                case "light":
-                    return "far fa-sun fa-spin fa-lg";
-                case "dark":
-                    return "fas fa-moon fa-lg";
-            }
-        },
-        // 根据AppColor改变style
-        changeIStyle() {
-            switch (this.data.WebSiteConfig.AppColor) {
-                case "light":
-                    return "color:var(--bs-warning)";
-                case "dark":
-                    return "color:var(--bs-primary)";
-            }
-        }
-    }
-}
-
-
-var AppBottomNav = {
-    props: ['data'],
-    components: {
-        'app-name': AppName,
-    },
-    template: `
-    <nav :class="'navbar navbar-'+data.WebSiteConfig.AppColor+' bg-'+data.WebSiteConfig.AppColor">
-            <div class="container">
-                <span class="navbar-text">2021 © {{data.WebSiteConfig.AppAuthor.name}}.</span>
-                <a class="nav-link navbar-text" href="http://beian.miit.gov.cn/">鄂ICP备19031343号-1</a>
-                <a class="nav-link navbar-text" target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=42020202000140"><img src="IMAG/AppGA.png" style="float:left;"/>鄂公网安备 42020202000140号</a>
-                <span class="navbar-text">Web Site Version:{{data.WebSiteConfig.AppVersion}}</span>
-            </div>
-        </nav>
-    `
-}
-
 var AppStep1 = {
     props: ["data"],
     template: `
@@ -276,7 +33,7 @@ var AppStep1 = {
                                         <div :class="'text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
                                             <p>题目示例:<span style="color: var(--bs-gray);">1+1=_2_</span> </p>
                                         </div>
-                                        <div v-if="data.txts.length==0"><button type="button" class="btn btn-primary"
+                                        <div data-title="Step1" data-intro="点击可添加题目框" v-if="data.txts.length==0"><button type="button" class="btn btn-primary"
                                                 @click="add_txt_()"><i class="fas fa-plus"></i> 添加题目</button></div>
                                         </div>
                                     <div class="row row-col-1">
@@ -285,7 +42,7 @@ var AppStep1 = {
                                             
                                             <img class="img-fluid" :src="value.image" :alt="'imag-'+index"/>
                                         </div>                                           
-                                            <div class="form-floating">
+                                            <div class="form-floating" data-title="Step1" data-intro="根据题目示例编写需要生成的题目">
                                                 
                                                 <textarea class="form-control shadow-sm  rounded" placeholder="_txt_" id="Step-1-textarea"
                                                 :style="'padding-right:2rem;overflow-y:hidden;padding-left:2.5rem;resize:none;min-height:'+BoxMinHeight(value.txt)+'rem;background-color:'+ MD5ChangeColor(value)+';'"
@@ -301,25 +58,27 @@ var AppStep1 = {
                                                     </ol>
                                                 </ul>
                                                 </label>
-                                                <button  class="btn btn-warning position-absolute top-0 start-100 translate-middle" @click="changeMD5(index)" ><i :class=txtObjectMD5ShowIClass(index)></i></button>
-                                                <div style="z-index:1;" class="btn-group position-absolute top-100 start-100 translate-middle" role="group" aria-label="Basic example">
+
+                                                <button data-title="Step1" data-intro="点击可对答案进行加密" class="btn btn-warning position-absolute top-0 start-100 translate-middle" @click="changeMD5(index)" ><i :class=txtObjectMD5ShowIClass(index)></i></button>
+                                                <div data-title="Step1" data-intro="点击可添加图片" style="z-index:1;" class="btn-group position-absolute top-100 start-100 translate-middle" role="group" aria-label="Basic example">
                                                     <button type="button" class="btn btn-warning" @click="triggerInputFile('imageFile-'+index)"><i class="fa fa-camera" ></i><input style="display:none;"  @change="getImageFile($event,index)" :id="'imageFile-'+index" accept="image/*" type="file"></button>
                                                     <button v-if="value.image!=''" type="button" class="btn btn-danger" @click="deleteImage(index)"><i class="fa fa-trash-alt" ></i></button>
                                                 </div>
+
                                                 <div class="position-absolute d-flex justify-content-evenly w-100"
                                                     :style="'top:'+(BoxMinHeight(value.txt)-1)+'rem;'">
-                                                    <div>
+                                                    <div data-title="Step1" data-intro="点击可添加题目框">
                                                         <button type="button" class="btn btn-primary"
                                                             @click="add_txt_()"><i class="fas fa-plus"></i></button>
                                                     </div>
-                                                    <div>
+                                                    <div data-title="Step1" data-intro="点击可移除题目框">
                                                         <button type="button" class="btn btn-danger"
                                                             @click="delete_txt_(index)"><i class="fas fa-minus"></i></button>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <button type="button" class="btn btn-primary"
+                                        <button v-if="data.txts.length!=0" data-title="Step1" data-intro="点击可生成题目JSON" type="button" class="btn btn-primary"
                                         @click="_txt_ToQuestionsJSON()"><i class="fas fa-file-signature fa-1x"></i> 生成JSON</button>
                                     </div>
                                 </div>
@@ -328,6 +87,12 @@ var AppStep1 = {
                     </div>
     `,
     methods: {
+        // 操作引导
+        Intro(num){
+            introJs().setOptions({
+                showBullets: false
+              }).start()
+        },
         // 删除图片
         deleteImage(index) {
             this.data.txts[index].image = ""
@@ -516,9 +281,9 @@ var AppStep2 = {
                                 </div>
                                 <div class="row" style="margin-top: 12px;">
                                     <div class="d-flex">
-                                        <input class="form-control" type="file" accept=".json,application/json"
+                                        <input data-title="Step2" data-intro="点击可将本地题目JSON添加到JSON内容中" class="form-control" type="file" accept=".json,application/json"
                                             @change="getFile" multiple />
-                                        <button style="white-space:nowrap" class="btn btn-primary"
+                                        <button data-title="Step2" data-intro="点击可将题目JSON保存到本地" style="white-space:nowrap" class="btn btn-primary"
                                             @click="saveFile"><i class="fas fa-download"></i> 保存文件</button>
                                     </div>
                                 </div>
@@ -526,7 +291,7 @@ var AppStep2 = {
                                     <div class="col-12">
                                     
                                         <div class="form-floating ">
-                                        <button class="btn btn-warning position-absolute top-0 end-0" @click="deleteQuestionsJSON"><i class="far fa-trash-alt"></i></button>
+                                        <button data-title="Step2" data-intro="点击可将JSON内容重置" class="btn btn-warning position-absolute top-0 end-0" @click="deleteQuestionsJSON"><i class="far fa-trash-alt"></i></button>
                                             <textarea class="form-control shadow-sm bg-body rounded"
                                                 placeholder="_json_" id="json" style="min-height: 50em;resize:none;"
                                                 :value="QuestionsJSONShow()" readonly> </textarea>
@@ -668,6 +433,38 @@ var AppService = {
                 </div>
             </div>
         </div>
+    </div>
+    `
+}
+
+var AppIntro={
+    template: `
+    <div style="position: fixed;bottom: 12px;right: 12px;z-index:1">
+        <button type="button" class="btn btn-secondary"
+        @click="clcikIntro()"><i class="fas fa-question"></i></button>
+    </div>
+    `,
+    methods: {
+        clcikIntro(){
+            introJs().setOptions({
+                showBullets: false
+              }).start()
+        },
+    }
+}
+
+var AppHome={
+    props: ["data"],
+    components: {
+        'app-show': AppShow,
+        'app-service': AppService,
+        'app-intro': AppIntro
+    },
+    template: `
+    <div> 
+        <app-show :data="data"></app-show>
+        <app-service :data="data"></app-service>
+        <app-intro></app-intro>
     </div>
     `
 }

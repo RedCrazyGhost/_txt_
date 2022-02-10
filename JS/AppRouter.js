@@ -5,15 +5,28 @@ const AppRouters = new VueRouter({
             component: {
                 props:['data'],
                 components: {
-                    'app-show': AppShow,
-                    'app-service': AppService,
+                    'app-home':AppHome
                 },
                 template: `
                 <div>
-                
-                <app-show :data="data"></app-show>
-                
-                <app-service :data="data"></app-service>
+                <app-home :data="data"></app-home>
+                </div>
+                `
+            },
+            // 元信息
+            meta: {}
+        },
+        {
+            name: "Card",
+            path: '/Card',
+            component: {
+                props:['data'],
+                components: {
+                    'app-card':AppCard
+                },
+                template: `
+                <div>
+                <app-card :data="data"></app-card>
                 </div>
                 `
             },
@@ -65,5 +78,10 @@ const AppRouters = new VueRouter({
     ]
 })
 AppRouters.afterEach((to) => {
-    document.title ='_txt_ '+to.name
+    if (to.name=="Home") {
+        suffixtext="是一个帮助人们进行知识巩固的网站"
+    }else{
+        suffixtext=to.name
+    }
+    document.title ='_txt_ '+suffixtext
 })

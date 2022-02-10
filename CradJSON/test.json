@@ -1,0 +1,20 @@
+{
+    "CardName":"test",
+    "CardHead":{
+        "use":true,
+        "title":"",
+        "author":""
+    },
+    "CardBody":{
+        "title":"",
+        "text":""
+    },
+    "CradFoot":{
+        "use":true,
+        "datetime":"",
+        "author":""
+    },
+    "CardStyle":{
+        "color":""
+    }
+}
