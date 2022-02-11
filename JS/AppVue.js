@@ -166,7 +166,7 @@ var app = new Vue({
     data() {
         return {
             data: {
-                words:{},
+                words:[],
                 Daliy: {},
                 WebSiteConfig: {
                     AppEmoji: [
@@ -237,7 +237,7 @@ var app = new Vue({
                         name: "RedCrazyGhost",
                         src: "IMAG/Author.jpeg",
                     },
-                    AppVersion: "1.0.9",
+                    AppVersion: "1.0.10",
                     AppColor: "light",
                     AppFontFamily: "HYCuYuanJ"
                 },

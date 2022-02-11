@@ -11,6 +11,7 @@ var AppDaily = {
         <div class="row text-center" >
             <h2 style="margin-top: 3rem;">每日计划</h2>
             <p>网站作者时不时更新</p>
+            <p>咕咕咕～</p>
         </div>
         <div class="row row-cols-3 text-center" >
             <div class="col" v-for="(FileName,findex) in data.Daliys" :key="FileName" v-if="FileName.indexOf(getTimeYYYYMM(new Date())) != -1&&FileName<getTimeYYYYMMDD(new Date())">

@@ -27,11 +27,13 @@ var AppCard = {
                 });
     },
     components: {
-        "app-knowledge-card": AppKnowledgeCard
+        "app-knowledge-card": AppKnowledgeCard,
+        "app-loding":AppLoding
     },
     template: `
     <div :class="'container-fluid bg-'+data.WebSiteConfig.AppColor+' text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
-        <div class="row col-10 offset-1" data-masonry="{&quot;percentPosition&quot;: true }">
+        <app-loding v-if="data.words.length===0"></app-loding>
+        <div v-else class="row col-10 offset-1" data-masonry="{&quot;percentPosition&quot;: true }">
             <div v-for="i in data.words" class="col-sm-6 col-lg-4 mb-4" >
                 <app-knowledge-card :card="i[0]"></app-knowledge-card>
             </div>

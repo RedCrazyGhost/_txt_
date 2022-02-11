@@ -1,7 +1,7 @@
 var AppShow = {
     props: ['data'],
     components: {
-        'app-name': AppName
+        'app-name': AppName,
     },
     template: `
     <div :class="'container-fluid bg-'+data.WebSiteConfig.AppColor+' text-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)">
@@ -458,7 +458,7 @@ var AppHome={
     components: {
         'app-show': AppShow,
         'app-service': AppService,
-        'app-intro': AppIntro
+        'app-intro': AppIntro,
     },
     template: `
     <div> 
