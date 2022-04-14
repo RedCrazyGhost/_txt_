@@ -17,23 +17,6 @@ const AppRouters = new VueRouter({
             meta: {}
         },
         {
-            name: "Card",
-            path: '/Card',
-            component: {
-                props:['data'],
-                components: {
-                    'app-card':AppCard
-                },
-                template: `
-                <div>
-                <app-card :data="data"></app-card>
-                </div>
-                `
-            },
-            // 元信息
-            meta: {}
-        },
-        {
             name: "About",
             path: '/About',
             component: {

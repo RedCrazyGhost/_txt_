@@ -216,10 +216,6 @@ var app = new Vue({
                             to: "/Home",
                             name: "Home",
                             class: "active"
-                        },{
-                            to: "/Card",
-                            name: "Card",
-                            class: ""
                         }, {
                             to: "/Daily",
                             name: "Daily",
@@ -230,14 +226,12 @@ var app = new Vue({
                             name: "About",
                             class: ""
                         },
-                        
-
                     ],
                     AppAuthor: {
                         name: "RedCrazyGhost",
                         src: "IMAG/Author.jpeg",
                     },
-                    AppVersion: "1.0.10",
+                    AppVersion: "1.0.11",
                     AppColor: "light",
                     AppFontFamily: "HYCuYuanJ"
                 },
