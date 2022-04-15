@@ -7,9 +7,9 @@ window.FontAwesomeKitConfig = {
     },
     "baseUrl": "https://ka-f.fontawesome.com",
     "baseUrlKit": "https://kit.fontawesome.com",
-    "detectConflictsUntil": null,
+    "detectConflictsUntil": "2022-04-15T14:03:06Z",
     "iconUploads": {},
-    "id": 95136816,
+    "id": 16968804,
     "license": "free",
     "method": "css",
     "minify": {
@@ -22,7 +22,10 @@ window.FontAwesomeKitConfig = {
     "v4shim": {
         "enabled": true
     },
-    "version": "5.15.3"
+    "v5FontFaceShim": {
+        "enabled": true
+    },
+    "version": "6.1.1"
 };
 ! function (t) {
     "function" == typeof define && define.amd ? define("kit-loader", t) : t()
@@ -49,44 +52,44 @@ window.FontAwesomeKitConfig = {
     function n(t, e) {
         var n = Object.keys(t);
         if (Object.getOwnPropertySymbols) {
-            var r = Object.getOwnPropertySymbols(t);
-            e && (r = r.filter((function (e) {
+            var o = Object.getOwnPropertySymbols(t);
+            e && (o = o.filter((function (e) {
                 return Object.getOwnPropertyDescriptor(t, e).enumerable
-            }))), n.push.apply(n, r)
+            }))), n.push.apply(n, o)
         }
         return n
     }
 
-    function r(t) {
-        for (var r = 1; r < arguments.length; r++) {
-            var o = null != arguments[r] ? arguments[r] : {};
-            r % 2 ? n(Object(o), !0).forEach((function (n) {
-                e(t, n, o[n])
-            })) : Object.getOwnPropertyDescriptors ? Object.defineProperties(t, Object.getOwnPropertyDescriptors(o)) : n(Object(o)).forEach((function (e) {
-                Object.defineProperty(t, e, Object.getOwnPropertyDescriptor(o, e))
+    function o(t) {
+        for (var o = 1; o < arguments.length; o++) {
+            var r = null != arguments[o] ? arguments[o] : {};
+            o % 2 ? n(Object(r), !0).forEach((function (n) {
+                e(t, n, r[n])
+            })) : Object.getOwnPropertyDescriptors ? Object.defineProperties(t, Object.getOwnPropertyDescriptors(r)) : n(Object(r)).forEach((function (e) {
+                Object.defineProperty(t, e, Object.getOwnPropertyDescriptor(r, e))
             }))
         }
         return t
     }
 
-    function o(t, e) {
+    function r(t, e) {
         return function (t) {
             if (Array.isArray(t)) return t
         }(t) || function (t, e) {
             if ("undefined" == typeof Symbol || !(Symbol.iterator in Object(t))) return;
             var n = [],
-                r = !0,
-                o = !1,
+                o = !0,
+                r = !1,
                 i = void 0;
             try {
-                for (var c, a = t[Symbol.iterator](); !(r = (c = a.next()).done) && (n.push(c.value), !e || n.length !== e); r = !0);
+                for (var c, a = t[Symbol.iterator](); !(o = (c = a.next()).done) && (n.push(c.value), !e || n.length !== e); o = !0);
             } catch (t) {
-                o = !0, i = t
+                r = !0, i = t
             } finally {
                 try {
-                    r || null == a.return || a.return()
+                    o || null == a.return || a.return()
                 } finally {
-                    if (o) throw i
+                    if (r) throw i
                 }
             }
             return n
@@ -104,17 +107,17 @@ window.FontAwesomeKitConfig = {
 
     function i(t, e) {
         (null == e || e > t.length) && (e = t.length);
-        for (var n = 0, r = new Array(e); n < e; n++) r[n] = t[n];
-        return r
+        for (var n = 0, o = new Array(e); n < e; n++) o[n] = t[n];
+        return o
     }
 
     function c(t, e) {
         var n = e && e.addOn || "",
-            r = e && e.baseFilename || t.license + n,
-            o = e && e.minify ? ".min" : "",
+            o = e && e.baseFilename || t.license + n,
+            r = e && e.minify ? ".min" : "",
             i = e && e.fileSuffix || t.method,
             c = e && e.subdir || t.method;
-        return t.baseUrl + "/releases/" + ("latest" === t.version ? "latest" : "v".concat(t.version)) + "/" + c + "/" + r + o + "." + i
+        return t.baseUrl + "/releases/" + ("latest" === t.version ? "latest" : "v".concat(t.version)) + "/" + c + "/" + o + r + "." + i
     }
 
     function a(t) {
@@ -123,15 +126,15 @@ window.FontAwesomeKitConfig = {
 
     function u(t, e) {
         var n = e || ["fa"],
-            r = "." + Array.prototype.join.call(n, ",."),
-            o = t.querySelectorAll(r);
-        Array.prototype.forEach.call(o, (function (e) {
+            o = "." + Array.prototype.join.call(n, ",."),
+            r = t.querySelectorAll(o);
+        Array.prototype.forEach.call(r, (function (e) {
             var n = e.getAttribute("title");
             e.setAttribute("aria-hidden", "true");
-            var r = !e.nextElementSibling || !e.nextElementSibling.classList.contains("sr-only");
-            if (n && r) {
-                var o = t.createElement("span");
-                o.innerHTML = n, o.classList.add("sr-only"), e.parentNode.insertBefore(o, e.nextSibling)
+            var o = !e.nextElementSibling || !e.nextElementSibling.classList.contains("sr-only");
+            if (n && o) {
+                var r = t.createElement("span");
+                r.innerHTML = n, r.classList.add("sr-only"), e.parentNode.insertBefore(r, e.nextSibling)
             }
         }))
     }
@@ -149,43 +152,43 @@ window.FontAwesomeKitConfig = {
         h.push([t, e]), f || (f = !0, l(m, 0))
     }
 
-    function y(t) {
+    function v(t) {
         var e = t.owner,
             n = e._state,
-            r = e._data,
-            o = t[n],
+            o = e._data,
+            r = t[n],
             i = t.then;
-        if ("function" == typeof o) {
+        if ("function" == typeof r) {
             n = "fulfilled";
             try {
-                r = o(r)
+                o = r(o)
             } catch (t) {
                 w(i, t)
             }
         }
-        b(i, r) || ("fulfilled" === n && v(i, r), "rejected" === n && w(i, r))
+        y(i, o) || ("fulfilled" === n && b(i, o), "rejected" === n && w(i, o))
     }
 
-    function b(e, n) {
-        var r;
+    function y(e, n) {
+        var o;
         try {
             if (e === n) throw new TypeError("A promises callback cannot return that same promise.");
             if (n && ("function" == typeof n || "object" === t(n))) {
-                var o = n.then;
-                if ("function" == typeof o) return o.call(n, (function (t) {
-                    r || (r = !0, n === t ? g(e, t) : v(e, t))
+                var r = n.then;
+                if ("function" == typeof r) return r.call(n, (function (t) {
+                    o || (o = !0, n === t ? g(e, t) : b(e, t))
                 }), (function (t) {
-                    r || (r = !0, w(e, t))
+                    o || (o = !0, w(e, t))
                 })), !0
             }
         } catch (t) {
-            return r || w(e, t), !0
+            return o || w(e, t), !0
         }
         return !1
     }
 
-    function v(t, e) {
-        t !== e && b(t, e) || g(t, e)
+    function b(t, e) {
+        t !== e && y(t, e) || g(t, e)
     }
 
     function g(t, e) {
@@ -197,7 +200,7 @@ window.FontAwesomeKitConfig = {
     }
 
     function A(t) {
-        t._then = t._then.forEach(y)
+        t._then = t._then.forEach(v)
     }
 
     function S(t) {
@@ -222,7 +225,7 @@ window.FontAwesomeKitConfig = {
                 }
                 try {
                     t((function (t) {
-                        v(e, t)
+                        b(e, t)
                     }), n)
                 } catch (t) {
                     n(t)
@@ -242,7 +245,7 @@ window.FontAwesomeKitConfig = {
                 fulfilled: t,
                 rejected: e
             };
-            return !e && !t || this._handled || (this._handled = !0, "rejected" === this._state && d && p(j, this)), "fulfilled" === this._state || "rejected" === this._state ? p(y, n) : this._then.push(n), n.then
+            return !e && !t || this._handled || (this._handled = !0, "rejected" === this._state && d && p(j, this)), "fulfilled" === this._state || "rejected" === this._state ? p(v, n) : this._then.push(n), n.then
         },
         catch: function (t) {
             return this.then(null, t)
@@ -250,22 +253,22 @@ window.FontAwesomeKitConfig = {
     }, E.all = function (t) {
         if (!Array.isArray(t)) throw new TypeError("You must pass an array to Promise.all().");
         return new E((function (e, n) {
-            var r = [],
-                o = 0;
+            var o = [],
+                r = 0;
 
             function i(t) {
-                return o++,
+                return r++,
                     function (n) {
-                        r[t] = n, --o || e(r)
+                        o[t] = n, --r || e(o)
                     }
             }
-            for (var c, a = 0; a < t.length; a++)(c = t[a]) && "function" == typeof c.then ? c.then(i(a), n) : r[a] = c;
-            o || e(r)
+            for (var c, a = 0; a < t.length; a++)(c = t[a]) && "function" == typeof c.then ? c.then(i(a), n) : o[a] = c;
+            r || e(o)
         }))
     }, E.race = function (t) {
         if (!Array.isArray(t)) throw new TypeError("You must pass an array to Promise.race().");
         return new E((function (e, n) {
-            for (var r, o = 0; o < t.length; o++)(r = t[o]) && "function" == typeof r.then ? r.then(e, n) : e(r)
+            for (var o, r = 0; r < t.length; r++)(o = t[r]) && "function" == typeof o.then ? o.then(e, n) : e(o)
         }))
     }, E.resolve = function (e) {
         return e && "object" === t(e) && e.constructor === E ? e : new E((function (t) {
@@ -278,12 +281,12 @@ window.FontAwesomeKitConfig = {
     };
     var _ = "function" == typeof Promise ? Promise : E;
 
-    function P(t, e) {
+    function F(t, e) {
         var n = e.fetch,
-            r = e.XMLHttpRequest,
-            o = e.token,
+            o = e.XMLHttpRequest,
+            r = e.token,
             i = t;
-        return "URLSearchParams" in window ? (i = new URL(t)).searchParams.set("token", o) : i = i + "?token=" + encodeURIComponent(o), i = i.toString(), new _((function (t, e) {
+        return "URLSearchParams" in window ? (i = new URL(t)).searchParams.set("token", r) : i = i + "?token=" + encodeURIComponent(r), i = i.toString(), new _((function (t, e) {
             if ("function" == typeof n) n(i, {
                 mode: "cors",
                 cache: "default"
@@ -293,56 +296,59 @@ window.FontAwesomeKitConfig = {
             })).then((function (e) {
                 t(e)
             })).catch(e);
-            else if ("function" == typeof r) {
-                var o = new r;
-                o.addEventListener("loadend", (function () {
+            else if ("function" == typeof o) {
+                var r = new o;
+                r.addEventListener("loadend", (function () {
                     this.responseText ? t(this.responseText) : e(new Error(""))
                 }));
                 ["abort", "error", "timeout"].map((function (t) {
-                    o.addEventListener(t, (function () {
+                    r.addEventListener(t, (function () {
                         e(new Error(""))
                     }))
-                })), o.open("GET", i), o.send()
+                })), r.open("GET", i), r.send()
             } else {
                 e(new Error(""))
             }
         }))
     }
 
-    function C(t, e, n) {
-        var r = t;
+    function P(t, e, n) {
+        var o = t;
         return [
             [/(url\("?)\.\.\/\.\.\/\.\./g, function (t, n) {
                 return "".concat(n).concat(e)
             }],
-            [/(url\("?)\.\.\/webfonts/g, function (t, r) {
-                return "".concat(r).concat(e, "/releases/v").concat(n, "/webfonts")
+            [/(url\("?)\.\.\/webfonts/g, function (t, o) {
+                return "".concat(o).concat(e, "/releases/v").concat(n, "/webfonts")
             }],
             [/(url\("?)https:\/\/kit-free([^.])*\.fontawesome\.com/g, function (t, n) {
                 return "".concat(n).concat(e)
             }]
         ].forEach((function (t) {
-            var e = o(t, 2),
+            var e = r(t, 2),
                 n = e[0],
                 i = e[1];
-            r = r.replace(n, i)
-        })), r
+            o = o.replace(n, i)
+        })), o
     }
 
-    function F(t, e) {
+    function C(t, e) {
         var n = arguments.length > 2 && void 0 !== arguments[2] ? arguments[2] : function () {},
-            o = e.document || o,
-            i = u.bind(u, o, ["fa", "fab", "fas", "far", "fal", "fad", "fak"]),
+            r = e.document || r,
+            i = u.bind(u, r, ["fa", "fab", "fas", "far", "fal", "fad", "fak"]),
             f = Object.keys(t.iconUploads || {}).length > 0;
         t.autoA11y.enabled && n(i);
         var s = [{
             id: "fa-main",
             addOn: void 0
         }];
-        t.v4shim.enabled && s.push({
+        t.v4shim && t.v4shim.enabled && s.push({
             id: "fa-v4-shims",
             addOn: "-v4-shims"
-        }), t.v4FontFaceShim.enabled && s.push({
+        }), t.v5FontFaceShim && t.v5FontFaceShim.enabled && s.push({
+            id: "fa-v5-font-face",
+            addOn: "-v5-font-face"
+        }), t.v4FontFaceShim && t.v4FontFaceShim.enabled && s.push({
             id: "fa-v4-font-face",
             addOn: "-v4-font-face"
         }), f && s.push({
@@ -350,17 +356,17 @@ window.FontAwesomeKitConfig = {
             customCss: !0
         });
         var d = s.map((function (n) {
-            return new _((function (o, i) {
-                P(n.customCss ? a(t) : c(t, {
+            return new _((function (r, i) {
+                F(n.customCss ? a(t) : c(t, {
                     addOn: n.addOn,
                     minify: t.minify.enabled
                 }), e).then((function (i) {
-                    o(U(i, r(r({}, e), {}, {
+                    r(U(i, o(o({}, e), {}, {
                         baseUrl: t.baseUrl,
                         version: t.version,
                         id: n.id,
                         contentFilter: function (t, e) {
-                            return C(t, e.baseUrl, e.version)
+                            return P(t, e.baseUrl, e.version)
                         }
                     })))
                 })).catch(i)
@@ -373,54 +379,54 @@ window.FontAwesomeKitConfig = {
         var n = e.contentFilter || function (t, e) {
                 return t
             },
-            r = document.createElement("style"),
-            o = document.createTextNode(n(t, e));
-        return r.appendChild(o), r.media = "all", e.id && r.setAttribute("id", e.id), e && e.detectingConflicts && e.detectionIgnoreAttr && r.setAttributeNode(document.createAttribute(e.detectionIgnoreAttr)), r
+            o = document.createElement("style"),
+            r = document.createTextNode(n(t, e));
+        return o.appendChild(r), o.media = "all", e.id && o.setAttribute("id", e.id), e && e.detectingConflicts && e.detectionIgnoreAttr && o.setAttributeNode(document.createAttribute(e.detectionIgnoreAttr)), o
     }
 
     function k(t, e) {
         e.autoA11y = t.autoA11y.enabled, "pro" === t.license && (e.autoFetchSvg = !0, e.fetchSvgFrom = t.baseUrl + "/releases/" + ("latest" === t.version ? "latest" : "v".concat(t.version)) + "/svgs", e.fetchUploadedSvgFrom = t.uploadsUrl);
         var n = [];
-        return t.v4shim.enabled && n.push(new _((function (n, o) {
-            P(c(t, {
+        return t.v4shim.enabled && n.push(new _((function (n, r) {
+            F(c(t, {
                 addOn: "-v4-shims",
                 minify: t.minify.enabled
             }), e).then((function (t) {
-                n(I(t, r(r({}, e), {}, {
+                n(I(t, o(o({}, e), {}, {
                     id: "fa-v4-shims"
                 })))
-            })).catch(o)
-        }))), n.push(new _((function (n, o) {
-            P(c(t, {
+            })).catch(r)
+        }))), n.push(new _((function (n, r) {
+            F(c(t, {
                 minify: t.minify.enabled
             }), e).then((function (t) {
-                var o = I(t, r(r({}, e), {}, {
+                var r = I(t, o(o({}, e), {}, {
                     id: "fa-main"
                 }));
                 n(function (t, e) {
                     var n = e && void 0 !== e.autoFetchSvg ? e.autoFetchSvg : void 0,
-                        r = e && void 0 !== e.autoA11y ? e.autoA11y : void 0;
-                    void 0 !== r && t.setAttribute("data-auto-a11y", r ? "true" : "false");
+                        o = e && void 0 !== e.autoA11y ? e.autoA11y : void 0;
+                    void 0 !== o && t.setAttribute("data-auto-a11y", o ? "true" : "false");
                     n && (t.setAttributeNode(document.createAttribute("data-auto-fetch-svg")), t.setAttribute("data-fetch-svg-from", e.fetchSvgFrom), t.setAttribute("data-fetch-uploaded-svg-from", e.fetchUploadedSvgFrom));
                     return t
-                }(o, e))
-            })).catch(o)
+                }(r, e))
+            })).catch(r)
         }))), _.all(n)
     }
 
     function I(t, e) {
         var n = document.createElement("SCRIPT"),
-            r = document.createTextNode(t);
-        return n.appendChild(r), n.referrerPolicy = "strict-origin", e.id && n.setAttribute("id", e.id), e && e.detectingConflicts && e.detectionIgnoreAttr && n.setAttributeNode(document.createAttribute(e.detectionIgnoreAttr)), n
+            o = document.createTextNode(t);
+        return n.appendChild(o), n.referrerPolicy = "strict-origin", e.id && n.setAttribute("id", e.id), e && e.detectingConflicts && e.detectionIgnoreAttr && n.setAttributeNode(document.createAttribute(e.detectionIgnoreAttr)), n
     }
 
     function L(t) {
         var e, n = [],
-            r = document,
-            o = r.documentElement.doScroll,
-            i = (o ? /^loaded|^c/ : /^loaded|^i|^c/).test(r.readyState);
-        i || r.addEventListener("DOMContentLoaded", e = function () {
-            for (r.removeEventListener("DOMContentLoaded", e), i = 1; e = n.shift();) e()
+            o = document,
+            r = o.documentElement.doScroll,
+            i = (r ? /^loaded|^c/ : /^loaded|^i|^c/).test(o.readyState);
+        i || o.addEventListener("DOMContentLoaded", e = function () {
+            for (o.removeEventListener("DOMContentLoaded", e), i = 1; e = n.shift();) e()
         }), i ? setTimeout(t, 0) : n.push(t)
     }
 
@@ -446,7 +452,7 @@ window.FontAwesomeKitConfig = {
             (function () {
                 var t = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : {},
                     e = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : {};
-                return "js" === t.method ? k(t, e) : "css" === t.method ? F(t, e, (function (t) {
+                return "js" === t.method ? k(t, e) : "css" === t.method ? C(t, e, (function (t) {
                     L(t), T(t)
                 })) : void 0
             })(x, M).then((function (t) {

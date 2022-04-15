@@ -2,5 +2,6 @@
     font-family: HYCuYuanJ;
     /*自定义的字体名*/
     src: url('https://cdn.jsdelivr.net/gh/RedCrazyGhost/CDN/TTF/HYCuYuanJ.ttf');
+    src: url('../TTF/HYCuYuanJ.ttf');
     /*引入字体包*/
 }

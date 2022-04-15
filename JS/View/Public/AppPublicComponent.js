@@ -75,6 +75,12 @@ var AppTopNav = {
                     <li class="nav-item" v-for="(router,index) in data.WebSiteConfig.AppRouters" :key="'router-'+index">
                         <router-link :to=router.to :class="'nav-link '+routerMateChangeClass($route,router.name)" aria-current="page" >{{router.name}}</router-link>
                     </li>
+                    <!--Blog友链-->
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://blog.redcrazyghost.vip" target="_blank">
+                        Blog<i class="fa-brands fa-markdown"></i>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
