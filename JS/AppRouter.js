@@ -35,25 +35,25 @@ const AppRouters = new VueRouter({
 
             }
         },
-        {
-            name: "Daily",
-            path: '/Daily',
-            component: {
-                props: ['data'],
-                components: {
-
-                    "app-daily": AppDaily
-                },
-                template: `
-                <div>
-                  <app-daily :data="data"></app-daily>
-                </div>
-                `,
-            },
-            meta: {
-
-            }
-        },
+//        {
+//            name: "Daily",
+//            path: '/Daily',
+//            component: {
+//                props: ['data'],
+//                components: {
+//
+//                    "app-daily": AppDaily
+//                },
+//                template: `
+//                <div>
+//                  <app-daily :data="data"></app-daily>
+//                </div>
+//                `,
+//            },
+//            meta: {
+//
+//            }
+//        },
         {
             path: '*',
             redirect: '/Home'

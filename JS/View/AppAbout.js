@@ -25,14 +25,6 @@ var AppAbout = {
             <div class="col-8 offset-2 fs-4">
                 <p>如果你觉得这个开源的帮助学习的网站还不错的话</p>
                 <p>可以在<a :class="'link-'+judgeColorChangeFontColor(data.WebSiteConfig.AppColor)" href="https://github.com/RedCrazyGhost/_txt_"><i class="fa fa-github fa-2x"></i></a>给这个开源项目一个<i class="far fa-star fa-2x text-warning"></i></p>
-                <p>还可以请作者喝一杯<span class="fa-stack fa-1x"><i class="fa fa-coffee fa-stack-2x text-danger"></i><i class="fa fa-lemon fa-stack-1x text-warning"></i></span></p>
-                <p><a style="text-decoration: none" class="link-primary" href="https://jq.qq.com/?_wv=1027&k=arkE99fw"><i class="fab fa-qq fa-2x"></i>群:921970725</a></p>
-                <p><i  class="far fa-hand-point-right fa-2x "></i> <i @click="QRcode" data-bs-toggle="collapse"class="fab fa-alipay fa-2x text-primary"></i> <i class="far fa-hand-point-left  fa-2x"></i></p>
-                <div class="row collapse" id="QRcodeCollapse">
-                <div class="col">
-                 <img class="img-fluid"  src="IMAG/alipay.jpeg" >
-                 </div>
-                </div>
                 <div class="row text-center" style="color:var(--bs-gray)">
                     <div class="col-12">
                         <p class="fs-1">赞助</p>

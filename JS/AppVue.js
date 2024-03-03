@@ -213,14 +213,14 @@ var app = new Vue({
                         iclass: "kiss"
                     }],
                     AppRouters: [{
-                            to: "/Home",
-                            name: "Home",
-                            class: "active"
-                        }, {
-                            to: "/Daily",
-                            name: "Daily",
-                            class: ""
-                        },
+                        to: "/Home",
+                        name: "Home",
+                        class: "active"},
+//                        }, {
+//                            to: "/Daily",
+//                            name: "Daily",
+//                            class: ""
+//                        },
                         {
                             to: "/About",
                             name: "About",
