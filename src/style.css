@@ -1,0 +1,90 @@
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "@fortawesome/fontawesome-free/css/all.min.css";
+
+@font-face {
+  font-family: HYCuYuanJ;
+  src:
+    url("/_txt_/TTF/HYCuYuanJ.ttf");
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+#app {
+  min-height: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.app-root {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.app-root.bg-light {
+  background-color: #f6f8fb !important;
+}
+
+.app-root.bg-dark {
+  background-color: #0f172a !important;
+}
+
+.app-root .card,
+.app-root .list-group-item,
+.app-root .form-control,
+.app-root .form-select,
+.app-root .alert {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.app-root.bg-light .card,
+.app-root.bg-light .list-group-item {
+  background-color: #ffffff;
+  border-color: #dbe2ea;
+}
+
+.app-root.bg-dark .card,
+.app-root.bg-dark .list-group-item {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.app-root.bg-dark .text-muted {
+  color: #94a3b8 !important;
+}
+
+.app-root.bg-dark .form-control,
+.app-root.bg-dark .form-select {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.app-root.bg-dark .form-control::placeholder {
+  color: #94a3b8;
+}
+
+.app-root.bg-dark .alert {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.question-bank-page .card {
+  border-color: var(--bs-border-color-translucent);
+}
+
+.question-bank-page .list-group-item {
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}

@@ -1,0 +1,34 @@
+{
+  "name": "_txt_",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite-ssg build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lighthouse": "node scripts/lighthouse-check.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "axios": "^1.9.0",
+    "bootstrap": "^5.3.6",
+    "file-saver": "^2.0.5",
+    "intro.js": "^7.2.0",
+    "js-md5": "^0.8.3",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "lighthouse": "^12.5.1",
+    "vite": "^5.4.19",
+    "vite-plugin-static-copy": "^2.2.0",
+    "vite-ssg": "^26.1.1",
+    "vitest": "^2.1.9",
+    "typescript": "^5.9.3"
+  }
+}

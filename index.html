@@ -1,48 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="google-site-verification" content="f1CLtQNTuXJ9z3oe8aq7OFdvYxhUfw7znaCHLH9tcQg" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="RedCrazyGhost" />
+    <meta
+      name="description"
+      content="_txt_ 是一个帮助人们进行知识巩固的网站"
+    />
+    <meta
+      name="google-site-verification"
+      content="f1CLtQNTuXJ9z3oe8aq7OFdvYxhUfw7znaCHLH9tcQg"
+    />
     <meta name="baidu-site-verification" content="code-7Cmg5yLQ1m" />
     <meta name="baidu-site-verification" content="code-fqH9aMDmbU" />
-    <meta name="author" content="RedCrazyGhost">
-    <meta name="description" content="_txt_ 是一个帮助人们进行知识巩固的网站">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="_txt_ 是一个帮助人们进行知识巩固的网站" />
+    <meta property="og:description" content="做知识点笔记、复习巩固、每日练习" />
+    <meta property="og:url" content="https://redcrazyghost.github.io/_txt_/" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="canonical" href="https://redcrazyghost.github.io/_txt_/" />
     <title>_txt_ 是一个帮助人们进行知识巩固的网站</title>
-    <link href="CSS/bootstrap.min.css" rel="stylesheet">
-    <link href="CSS/fontstyle.css" rel="stylesheet">
-    <link href="CSS/introjs.min.css" rel="stylesheet">
-    <script src="JS/SEO/AutoBaidu.js"></script>
-    <!-- <script src="JS/DEBUG/debug.js"></script> -->
-    <script src="JS/Tool/intro.min.js"></script>
-    <script src="JS/Tool/vue-dev.js"></script>
-    <!-- <script src="JS/Tool/vue.js"></script> -->
-    <script src="JS/Tool/masonry.pkgd.min.js"></script>
-    <script src="JS/Tool/md5.min.js"></script>    
-    <script src="JS/Tool/bootstrap.bundle.min.js"></script>
-    <script src="JS/Tool/axios.min.js"></script>
-    <script src="JS/Tool/vue-router.js"></script>
-    <script src="JS/Tool/FileSaver.js"></script>
-    <script src="JS/Tool/FontAwesome.js" crossorigin="anonymous"></script>
-    <script src="JS/View/Public/AppPublicComponent.js"></script>
-    <script src="JS/View/AppHome.js"></script>
-    <script src="JS/View/AppCard.js"></script>
-    <script src="JS/View/AppDaily.js"></script>
-    <script src="JS/View/AppAbout.js"></script>
-    <script src="JS/AppRouter.js"></script>
-    
-</head>
-<body>
-    <div id="App" :style="'font-family:'+data.WebSiteConfig.AppFontFamily+';background-color:'+data.WebSiteConfig.AppColor+';'">
-        <app-top-nav :data="data"></app-top-nav>
-        <keep-alive>
-            <router-view :data="data" ></router-view>
-        </keep-alive>
-        <app-bottom-nav :data="data"></app-bottom-nav>
-        
-    </div>
-</body>
-    <script src="JS/AppVue.js"></script>
+    <script async src="https://zz.bdstatic.com/linksubmit/push.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
