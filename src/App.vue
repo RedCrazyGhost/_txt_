@@ -19,9 +19,11 @@ function judgeColorChangeFontColor(color) {
   >
     <AppTopNav :state="appState" />
     <main class="app-main">
-      <keep-alive>
-        <router-view />
-      </keep-alive>
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
     </main>
     <AppBottomNav :state="appState" />
   </div>
