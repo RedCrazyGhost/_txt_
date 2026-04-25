@@ -3,7 +3,7 @@ import vue from "@vitejs/plugin-vue";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 export default defineConfig({
-  base: "/_txt_/",
+  base: "/",
   plugins: [
     vue(),
     viteStaticCopy({

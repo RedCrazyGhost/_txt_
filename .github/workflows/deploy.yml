@@ -41,7 +41,7 @@ jobs:
           npm run preview -- --host 127.0.0.1 --port 4173 &
           PREVIEW_PID=$!
           sleep 8
-          LIGHTHOUSE_URL=http://127.0.0.1:4173/_txt_/ \
+          LIGHTHOUSE_URL=http://127.0.0.1:4173/ \
           LH_THRESHOLD_PERFORMANCE=70 \
           LH_THRESHOLD_SEO=85 \
           LH_THRESHOLD_BEST_PRACTICES=85 \
