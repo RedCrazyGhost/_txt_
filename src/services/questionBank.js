@@ -85,9 +85,9 @@ export function deleteBankById(source, id) {
 export function exportBankAsJson(bank) {
   return JSON.stringify(
     {
-      version: "0.0.1",
-      title: bank.title,
-      subject: bank.subject,
+      version: "0.0.2",
+      name: bank.title,
+      type: bank.subject,
       author: bank.author,
       source: bank.source,
       updatedAt: bank.updatedAt,
@@ -104,8 +104,8 @@ export function importBanksFromJson(source, payload) {
   const normalized = list.map((item) => ({
     id: `${source}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
     source,
-    title: item.title || "未命名题库",
-    subject: item.subject || "",
+    title: item.name || item.title || "未命名题库",
+    subject: item.type || item.subject || "",
     author: item.author || "",
     updatedAt: new Date().toISOString(),
     questions: Array.isArray(item.questions) ? item.questions : []

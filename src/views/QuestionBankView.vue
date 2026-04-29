@@ -19,10 +19,6 @@ const sharedSearch = ref({
   quickKeyword: ""
 });
 
-const remoteDirectoryConfigs = [
-  { key: "paper", label: "C语言", paths: ["paper", "daliy"] },
-  { key: "DB", label: "数据库", paths: ["DB"] }
-];
 const remoteExpandedState = ref({});
 const router = useRouter();
 let statusMessageTimer = null;
@@ -205,40 +201,45 @@ function downloadRemoteToLocal(id) {
 }
 
 async function loadRemotePapers() {
-  const groupedBanks = await Promise.all(
-    remoteDirectoryConfigs.map(async (config) => {
-      const loadedByPaths = await Promise.all(
-        config.paths.map(async (pathKey) => {
-          try {
-            const list = await getQuestionJSON(`/QuestionJSON/${pathKey}/List`);
-            const fileNames = Array.isArray(list) ? list : [];
-            const loadedBanks = await Promise.all(
-              fileNames.map(async (fileName) => {
-                const loaded = await getQuestionJSON(`/QuestionJSON/${pathKey}/${fileName}`);
-                return {
-                  id: `${pathKey}-${fileName}`,
-                  source: "remote",
-                  directory: pathKey,
-                  groupKey: config.key,
-                  groupLabel: config.label,
-                  title: loaded?.name || fileName.replace(/\.json$/i, ""),
-                  subject: loaded?.type || "",
-                  author: loaded?.author || "",
-                  updatedAt: new Date().toISOString(),
-                  questions: Array.isArray(loaded?.questions) ? loaded.questions : []
-                };
-              })
-            );
-            return loadedBanks;
-          } catch (_error) {
-            return [];
-          }
-        })
-      );
-      return loadedByPaths.flat();
+  let typeDirectories = [];
+  try {
+    const loadedTypes = await getQuestionJSON("/QuestionJSON/List");
+    typeDirectories = Array.isArray(loadedTypes) ? loadedTypes : [];
+  } catch (_error) {
+    typeDirectories = [];
+  }
+
+  const loadedByTypes = await Promise.all(
+    typeDirectories.map(async (typeName) => {
+      try {
+        const list = await getQuestionJSON(`/QuestionJSON/${typeName}/List`);
+        const fileNames = Array.isArray(list) ? list : [];
+        const loadedBanks = await Promise.all(
+          fileNames.map(async (fileName) => {
+            const loaded = await getQuestionJSON(`/QuestionJSON/${typeName}/${fileName}`);
+            return {
+              id: `${typeName}-${fileName}`,
+              source: "remote",
+              directory: typeName,
+              groupKey: typeName,
+              groupLabel: typeName,
+              title: loaded?.name || fileName.replace(/\.json$/i, ""),
+              subject: loaded?.type || typeName,
+              author: loaded?.author || "",
+              updatedAt: loaded?.CreateTime || new Date().toISOString(),
+              CreateTime: loaded?.CreateTime || "",
+              version: loaded?.version || "0.0.2",
+              questions: Array.isArray(loaded?.questions) ? loaded.questions : []
+            };
+          })
+        );
+        return loadedBanks;
+      } catch (_error) {
+        return [];
+      }
     })
   );
-  questionBankState.remoteBanks = groupedBanks.flat().reverse();
+  questionBankState.remoteBanks = loadedByTypes.flat().reverse();
 }
 
 onMounted(() => {

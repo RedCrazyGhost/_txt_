@@ -1,6 +1,5 @@
 {
-    "version": "0.0.1",
-    "questions": [{
+    "version":"0.0.2","name":"2021-08-24","type":"C语言","author":"RedCrazyGhost","questions": [{
         "texts": ["一个C语言程序由", "b,B", "。\nA. 一个主程序和若干子程序组成\nB. 函数组成\nC. 若干过程组成\nD. 若干子程序组成"],
         "answers": [
             ["b", "B"]

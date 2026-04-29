@@ -52,7 +52,7 @@ export const appState = reactive({
       name: "RedCrazyGhost",
       src: `${BASE_URL}IMAG/Author.jpeg`
     },
-    appVersion: "2.0.0",
+    appVersion: "2.0.1",
     appColor: "light",
     appFontFamily: "HYCuYuanJ"
   },

@@ -1,6 +1,5 @@
 {
-    "version": "0.0.1",
-    "questions": [{
+    "version":"0.0.2","name":"2021-08-18年某高校试题-1-C语言-RedCrazyGhost","type":"C语言","author":"RedCrazyGhost","questions": [{
         "texts": ["以下说法正确的是(", "c,C", ")\nA. C语言程序总是从第一个函数开始执行\nB. 在C语言程序中，要调用的函数必须在main()函数中定义\nC. C语言程序总是从main()函数开始执行\nD. C语言程序中的main()函数必须放在程序的开始部分"],
         "answers": [
             ["c", "C"]
