@@ -21,7 +21,9 @@ function scoreFailed(report) {
 }
 
 async function runOnce() {
-  const chrome = await launch({ chromeFlags: ["--headless"] });
+  const chrome = await launch({
+    chromeFlags: ["--headless", "--no-sandbox", "--disable-dev-shm-usage"]
+  });
   try {
     const result = await lighthouse(targetUrl, {
       port: chrome.port,

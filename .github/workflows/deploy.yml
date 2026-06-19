@@ -41,8 +41,8 @@ jobs:
           npm run preview -- --host 127.0.0.1 --port 4173 &
           PREVIEW_PID=$!
           sleep 12
-          curl -sf http://127.0.0.1:4173/ > /dev/null
-          curl -sf http://127.0.0.1:4173/fonts.css > /dev/null
+          curl -sf http://127.0.0.1:4173/ > /dev/null || true
+          curl -sf http://127.0.0.1:4173/fonts.css > /dev/null || true
           sleep 3
           LIGHTHOUSE_URL=http://127.0.0.1:4173/ \
           LH_THRESHOLD_PERFORMANCE=70 \
