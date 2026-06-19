@@ -1,14 +1,12 @@
 <script setup>
-import { ref } from "vue";
+import { ref, defineAsyncComponent } from "vue";
 import { saveAs } from "file-saver";
-import AppQuestion from "../components/AppQuestion.vue";
+const AppQuestion = defineAsyncComponent(() => import("../components/AppQuestion.vue"));
 import AppName from "../components/AppName.vue";
 import { appState } from "../state/appState";
 import { createBankFromQuestions } from "../services/questionBank";
-import { resetQuestionProgress } from "../models/question/progress";
 import {
   buildQuestionsFromTxt,
-  normalizeQuestionWithDetection,
   resolveQuestionBankVersion,
   txtCharNumber
 } from "../utils/questions";
@@ -88,18 +86,23 @@ function deleteImage(index) {
   appState.txts[index].image = "";
 }
 
-function generateQuestionsJSON() {
+async function generateQuestionsJSON() {
+  const [{ normalizeQuestionWithDetection }, { resetQuestionProgress }] = await Promise.all([
+    import("../utils/questions"),
+    import("../models/question/progress")
+  ]);
   appState.questionsJSON.questions = buildQuestionsFromTxt(appState.txts, []).map((question) =>
     normalizeQuestionWithDetection(question)
   );
   resetQuestionProgress(appState.questionsJSON.questions);
 }
 
-function deleteQuestionsJSON() {
+async function deleteQuestionsJSON() {
   appState.questionsJSON.questions = [];
   appState.questionsJSON.name = "";
   appState.questionsJSON.type = "";
   appState.questionsJSON.author = "";
+  const { resetQuestionProgress } = await import("../models/question/progress");
   resetQuestionProgress([]);
 }
 
@@ -107,7 +110,9 @@ function getFile(event) {
   for (let index = 0; index < event.target.files.length; index += 1) {
     const reader = new FileReader();
     reader.readAsText(event.target.files[index]);
-    reader.onload = function load() {
+    reader.onload = async function load() {
+      const [{ normalizeQuestionWithDetection, resolveQuestionBankVersion: resolveVersion }, { resetQuestionProgress }] =
+        await Promise.all([import("../utils/questions"), import("../models/question/progress")]);
       const imported = normalizeQuestionJSON(JSON.parse(this.result));
       if (!appState.questionsJSON.type && imported.type) {
         appState.questionsJSON.type = imported.type;
@@ -121,7 +126,7 @@ function getFile(event) {
       Object.values(imported.questions || {}).forEach((i) => {
         appState.questionsJSON.questions.push(normalizeQuestionWithDetection(i));
       });
-      appState.questionsJSON.version = resolveQuestionBankVersion(appState.questionsJSON.questions);
+      appState.questionsJSON.version = resolveVersion(appState.questionsJSON.questions);
       resetQuestionProgress(appState.questionsJSON.questions);
     };
   }

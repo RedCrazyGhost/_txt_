@@ -1,12 +1,6 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
 @import "@fortawesome/fontawesome-free/css/all.min.css";
 
-@font-face {
-  font-family: HYCuYuanJ;
-  src:
-    url("/TTF/HYCuYuanJ.ttf");
-}
-
 html,
 body {
   margin: 0;
