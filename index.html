@@ -24,7 +24,14 @@
     <link rel="stylesheet" href="/fonts.css" media="print" onload="this.media='all'" />
     <noscript><link rel="stylesheet" href="/fonts.css" /></noscript>
     <title>_txt_ 是一个帮助人们进行知识巩固的网站</title>
-    <script async src="https://zz.bdstatic.com/linksubmit/push.js"></script>
+    <script>
+      if (location.hostname !== "127.0.0.1" && location.hostname !== "localhost") {
+        const script = document.createElement("script");
+        script.src = "https://zz.bdstatic.com/linksubmit/push.js";
+        script.async = true;
+        document.head.appendChild(script);
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>
