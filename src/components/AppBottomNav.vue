@@ -9,7 +9,7 @@ const gaIconUrl = `${import.meta.env.BASE_URL}IMAG/AppGA.png`;
 </script>
 
 <template>
-  <nav :class="`by-4 navbar navbar-${state.webSiteConfig.appColor} bg-${state.webSiteConfig.appColor}`">
+  <nav :class="`by-4 navbar navbar-${state.webSiteConfig.appColor} bg-body app-chrome`">
     <div class="container">
       <span class="navbar-text"
         >2021-{{ getTimeYYYY(new Date()) }} © {{ state.webSiteConfig.appAuthor.name }}</span

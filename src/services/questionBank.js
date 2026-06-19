@@ -5,6 +5,8 @@ function storageKey(source) {
   return source === "remote" ? REMOTE_BANKS_KEY : LOCAL_BANKS_KEY;
 }
 
+import { resolveQuestionBankVersion } from "../utils/questions.ts";
+
 function parseQuestions(questionsText) {
   return questionsText
     .split("\n")
@@ -83,15 +85,16 @@ export function deleteBankById(source, id) {
 }
 
 export function exportBankAsJson(bank) {
+  const questions = Array.isArray(bank.questions) ? bank.questions : [];
   return JSON.stringify(
     {
-      version: "0.0.2",
+      version: resolveQuestionBankVersion(questions),
       name: bank.title,
       type: bank.subject,
       author: bank.author,
       source: bank.source,
       updatedAt: bank.updatedAt,
-      questions: bank.questions
+      questions
     },
     null,
     2

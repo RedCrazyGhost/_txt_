@@ -2,16 +2,15 @@
 import { computed } from "vue";
 import { appState } from "../state/appState";
 import AppQuestion from "../components/AppQuestion.vue";
-import { allAnswerNumber, numberToPercent, trueAnswerNumber } from "../utils/questions";
 
 const hasQuestions = computed(() => Array.isArray(appState.questionsJSON.questions) && appState.questionsJSON.questions.length > 0);
 </script>
 
 <template>
-  <div class="container py-4">
+  <div class="container py-4 practice-page">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
       <div>
-        <h2 class="mb-0">{{ appState.questionsJSON.name || "未命名题集" }}</h2>
+        <h2 class="mb-0 practice-bank-title">{{ appState.questionsJSON.name || "未命名题集" }}</h2>
        <div class="text-muted small">
           <span class="me-3">类型：{{ appState.questionsJSON.type || "-" }}</span>
           <span>作者：{{ appState.questionsJSON.author || "-" }}</span>
@@ -32,22 +31,6 @@ const hasQuestions = computed(() => Array.isArray(appState.questionsJSON.questio
     </div>
 
     <div v-else>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span>答题进度</span>
-        <span>{{ trueAnswerNumber(appState.questionsJSON.questions) }}/{{ allAnswerNumber(appState.questionsJSON.questions) }}</span>
-      </div>
-      <div class="progress mb-4">
-        <div
-          class="progress-bar bg-success progress-bar-striped progress-bar-animated"
-          role="progressbar"
-          :style="`width:${numberToPercent(trueAnswerNumber(appState.questionsJSON.questions), allAnswerNumber(appState.questionsJSON.questions))}%`"
-        ></div>
-        <div
-          class="progress-bar bg-danger"
-          role="progressbar"
-          :style="`width:${numberToPercent(allAnswerNumber(appState.questionsJSON.questions) - trueAnswerNumber(appState.questionsJSON.questions), allAnswerNumber(appState.questionsJSON.questions))}%`"
-        ></div>
-      </div>
       <AppQuestion :data="appState.questionsJSON" :appcolor="appState.webSiteConfig.appColor" />
     </div>
   </div>

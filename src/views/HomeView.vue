@@ -5,18 +5,14 @@ import AppQuestion from "../components/AppQuestion.vue";
 import AppName from "../components/AppName.vue";
 import { appState } from "../state/appState";
 import { createBankFromQuestions } from "../services/questionBank";
+import { resetQuestionProgress } from "../models/question/progress";
 import {
-  allAnswerNumber,
   buildQuestionsFromTxt,
-  numberToPercent,
-  trueAnswerNumber,
+  normalizeQuestionWithDetection,
+  resolveQuestionBankVersion,
   txtCharNumber
 } from "../utils/questions";
 import { getTime } from "../utils/time";
-
-function judgeColorChangeFontColor(color) {
-  return color === "light" ? "dark" : "light";
-}
 
 function boxMinHeight(txt) {
   return 2.5 + txtCharNumber(txt) * 1.5;
@@ -48,7 +44,8 @@ function normalizeQuestionJSON(raw) {
 }
 
 function md5ChangeColor(value) {
-  return value.MD5 ? "#cecece" : "";
+  if (!value.MD5) return "";
+  return appState.webSiteConfig.appColor === "dark" ? "#475569" : "#cecece";
 }
 
 function addTxt() {
@@ -92,7 +89,10 @@ function deleteImage(index) {
 }
 
 function generateQuestionsJSON() {
-  appState.questionsJSON.questions = buildQuestionsFromTxt(appState.txts, []);
+  appState.questionsJSON.questions = buildQuestionsFromTxt(appState.txts, []).map((question) =>
+    normalizeQuestionWithDetection(question)
+  );
+  resetQuestionProgress(appState.questionsJSON.questions);
 }
 
 function deleteQuestionsJSON() {
@@ -100,6 +100,7 @@ function deleteQuestionsJSON() {
   appState.questionsJSON.name = "";
   appState.questionsJSON.type = "";
   appState.questionsJSON.author = "";
+  resetQuestionProgress([]);
 }
 
 function getFile(event) {
@@ -118,9 +119,10 @@ function getFile(event) {
         appState.questionsJSON.name = imported.name;
       }
       Object.values(imported.questions || {}).forEach((i) => {
-        appState.questionsJSON.questions.push(i);
+        appState.questionsJSON.questions.push(normalizeQuestionWithDetection(i));
       });
-      appState.questionsJSON.version = QUESTION_JSON_VERSION;
+      appState.questionsJSON.version = resolveQuestionBankVersion(appState.questionsJSON.questions);
+      resetQuestionProgress(appState.questionsJSON.questions);
     };
   }
 }
@@ -152,6 +154,7 @@ function exportQuestionJSON() {
     ? normalizedFilename
     : `${normalizedFilename}.json`;
   appState.questionsJSON.CreateTime = getTime(time);
+  appState.questionsJSON.version = resolveQuestionBankVersion(appState.questionsJSON.questions);
   const blob = new Blob([JSON.stringify(appState.questionsJSON)], {
     type: "text/json;charset=utf-8"
   });
@@ -214,7 +217,7 @@ function questionJSONShow() {
     }
   });
   return JSON.stringify({
-    version: QUESTION_JSON_VERSION,
+    version: resolveQuestionBankVersion(appState.questionsJSON.questions),
     name: appState.questionsJSON.name || "",
     type: appState.questionsJSON.type || "",
     author: appState.questionsJSON.author || "",
@@ -222,55 +225,32 @@ function questionJSONShow() {
   });
 }
 
-function intro() {
-  Promise.all([import("intro.js"), import("intro.js/minified/introjs.min.css")]).then(
-    ([intro]) => {
-      intro.default().setOptions({ showBullets: false }).start();
-    }
-  );
-}
-
 </script>
 
 <template>
-  <div>
-    <div :class="`container-fluid bg-${appState.webSiteConfig.appColor} text-${judgeColorChangeFontColor(appState.webSiteConfig.appColor)}`">
+  <div class="home-page bg-body">
+    <div class="container-fluid">
       <div class="row">
-        <div class="col-8 offset-2 text-center">
+        <div class="col-8 offset-2 text-center py-3">
           <h1>What is <AppName /> ？</h1>
           <h2><AppName />是一个帮助人们进行知识巩固的网站</h2>
         </div>
       </div>
     </div>
     <div class="container-fluid">
-      <div :class="`row bg-${appState.webSiteConfig.appColor}`">
+      <div class="row">
         <div class="col-10 offset-1">
-          <div class="accordion accordion-flush" id="accordionFlushExample">
-            <div class="accordion-item" style="border-bottom-width: 0">
-              <h2 class="accordion-header" id="Step1">
-                <button
-                  :class="`accordion-button accordion-button-${appState.webSiteConfig.appColor} collapsed fs-3 bg-${appState.webSiteConfig.appColor} text-${judgeColorChangeFontColor(appState.webSiteConfig.appColor)}`"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#Step-1"
-                  aria-expanded="false"
-                  aria-controls="Step-1"
-                >
-                  Step 1
-                </button>
+          <div class="home-steps">
+            <section class="home-step-section">
+              <h2 class="home-step-title fs-3 mb-3">
+                Step 1
               </h2>
-              <div
-                id="Step-1"
-                :class="`accordion-collapse collapse show bg-${appState.webSiteConfig.appColor}`"
-                aria-labelledby="Step1"
-                data-bs-parent="#accordionFlushExample"
-              >
-                <div class="accordion-body">
+              <div class="home-step-body">
                   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div :class="`text-${judgeColorChangeFontColor(appState.webSiteConfig.appColor)}`">
-                      <p>题目示例:<span style="color: var(--bs-gray)">1+1=_2_</span></p>
+                    <div>
+                      <p>题目示例:<span class="text-secondary">1+1=_2_</span></p>
                     </div>
-                    <div data-title="Step1" data-intro="点击可添加题目框" v-if="appState.txts.length === 0">
+                    <div v-if="appState.txts.length === 0">
                       <button type="button" class="btn btn-primary" @click="addTxt">
                         <i class="fas fa-plus"></i> 添加题目
                       </button>
@@ -281,7 +261,7 @@ function intro() {
                       <div class="row" v-if="value.image !== ''">
                         <img class="img-fluid" :src="value.image" :alt="`imag-${index}`" />
                       </div>
-                      <div class="form-floating" data-title="Step1" data-intro="根据题目示例编写需要生成的题目">
+                      <div class="form-floating">
                         <div v-if="value.txt !== '' || activeTxtIndex === index" class="line-number-gutter" aria-hidden="true">
                           <span v-for="number in getLineNumbers(value.txt)" :key="`line-${index}-${number}`">
                             {{ number }}
@@ -300,16 +280,12 @@ function intro() {
                           题目 {{ index + 1 }}
                         </label>
                         <button
-                          data-title="Step1"
-                          data-intro="点击可对答案进行加密"
                           class="btn btn-warning position-absolute top-0 start-100 translate-middle"
                           @click="changeMD5(index)"
                         >
                           <i :class="txtObjectMD5ShowIClass(index)"></i>
                         </button>
                         <div
-                          data-title="Step1"
-                          data-intro="点击可添加图片"
                           style="z-index:1"
                           class="btn-group position-absolute top-100 start-100 translate-middle"
                           role="group"
@@ -333,13 +309,11 @@ function intro() {
                           class="position-absolute d-flex justify-content-evenly align-items-center flex-wrap gap-2 w-100 px-1"
                           :style="`top:${boxMinHeight(value.txt) - 1}rem;`"
                         >
-                          <div data-title="Step1" data-intro="点击可添加题目框">
+                          <div>
                             <button type="button" class="btn btn-primary" @click="addTxt"><i class="fas fa-plus"></i></button>
                           </div>
                           <div class="btn-group" role="group" aria-label="删除与锁定">
                             <button
-                              data-title="Step1"
-                              data-intro="点击可移除题目框"
                               type="button"
                               class="btn btn-danger"
                               :disabled="value.noDelete"
@@ -349,8 +323,6 @@ function intro() {
                               <i class="fas fa-minus"></i>
                             </button>
                             <button
-                              data-title="Step1"
-                              data-intro="点击可锁定题目，锁定后不可删除"
                               type="button"
                               class="btn btn-danger"
                               :title="value.noDelete ? '已锁定，点击解锁' : '点击上锁，禁止删除'"
@@ -364,8 +336,6 @@ function intro() {
                     </div>
                     <button
                       v-if="appState.txts.length !== 0"
-                      data-title="Step1"
-                      data-intro="点击可生成题目JSON"
                       type="button"
                       class="btn btn-primary"
                       @click="generateQuestionsJSON"
@@ -373,32 +343,16 @@ function intro() {
                       <i class="fas fa-file-signature fa-1x"></i> 生成JSON
                     </button>
                   </div>
-                </div>
               </div>
-            </div>
+            </section>
 
-            <div class="accordion-item" style="border-bottom-width: 0">
-              <h2 class="accordion-header" id="Step2">
-                <button
-                  :class="`accordion-button accordion-button-${appState.webSiteConfig.appColor} collapsed fs-3 bg-${appState.webSiteConfig.appColor} text-${judgeColorChangeFontColor(appState.webSiteConfig.appColor)}`"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#Step-2"
-                  aria-expanded="false"
-                  aria-controls="Step-2"
-                >
-                  Step 2
-                </button>
+            <section class="home-step-section">
+              <h2 class="home-step-title fs-3 mb-3">
+                Step 2
               </h2>
-              <div
-                id="Step-2"
-                :class="`accordion-collapse collapse show bg-${appState.webSiteConfig.appColor}`"
-                aria-labelledby="Step2"
-                data-bs-parent="#accordionFlushExample"
-              >
-                <div class="accordion-body">
+              <div class="home-step-body">
                   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <p class="mb-0" :class="`text-${judgeColorChangeFontColor(appState.webSiteConfig.appColor)}`">
+                    <p class="mb-0">
                       Step 1 点击「生成JSON」会按当前题目<strong>整份替换</strong>下方内容（不累加）；也可直接加载或合并本地 JSON 文件
                     </p>
                     <div>
@@ -410,8 +364,6 @@ function intro() {
                   <div class="row" style="margin-top: 12px">
                     <div class="d-flex">
                       <input
-                        data-title="Step2"
-                        data-intro="点击可将本地题目JSON添加到JSON内容中"
                         class="form-control"
                         type="file"
                         accept=".json,application/json"
@@ -447,18 +399,15 @@ function intro() {
                       </div>
                       <div class="form-floating">
                         <button
-                          data-title="Step2"
-                          data-intro="点击可将JSON内容重置"
                           class="btn btn-danger position-absolute top-0 end-0"
                           @click="deleteQuestionsJSON"
                         >
                           <i class="far fa-trash-alt"></i>
                         </button>
                         <textarea
-                          class="form-control shadow-sm bg-body rounded"
+                          class="form-control shadow-sm rounded home-json-textarea"
                           placeholder="_json_"
                           id="json"
-                          style="min-height: 50em;resize:none"
                           :value="questionJSONShow()"
                           readonly
                         />
@@ -466,63 +415,28 @@ function intro() {
                       </div>
                     </div>
                   </div>
-                </div>
               </div>
-            </div>
+            </section>
 
-            <div class="accordion-item" style="border-bottom-width: 0">
-              <h2 class="accordion-header" id="Step3">
-                <button
-                  :class="`accordion-button accordion-button-${appState.webSiteConfig.appColor} collapsed fs-3 bg-${appState.webSiteConfig.appColor} text-${judgeColorChangeFontColor(appState.webSiteConfig.appColor)}`"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#Step-3"
-                  aria-expanded="false"
-                  aria-controls="Step-3"
-                >
-                  Step 3
-                </button>
+            <section class="home-step-section">
+              <h2 class="home-step-title fs-3 mb-3">
+                Step 3
               </h2>
-              <div
-                id="Step-3"
-                :class="`accordion-collapse collapse show bg-${appState.webSiteConfig.appColor}`"
-                aria-labelledby="Step3"
-                data-bs-parent="#accordionFlushExample"
-              >
-                <div class="accordion-body">
-                  <div v-if="appState.questionsJSON.questions.length === 0" :class="`text-${judgeColorChangeFontColor(appState.webSiteConfig.appColor)}`">
+              <div class="home-step-body">
+                  <div v-if="appState.questionsJSON.questions.length === 0" class="text-secondary">
                     目前没有题目哦！～ 请从前两步生成题目！
                   </div>
                   <div v-else>
-                    <div :class="`d-flex bd-highlight text-${judgeColorChangeFontColor(appState.webSiteConfig.appColor)}`">
-                      <div class="me-auto bd-highlight p-2">题目进度</div>
-                      <div class="bd-highlight p-2">
-                        {{ trueAnswerNumber(appState.questionsJSON.questions) }}/{{ allAnswerNumber(appState.questionsJSON.questions) }}
-                      </div>
-                    </div>
-                    <div class="progress" style="margin-bottom:2rem">
-                      <div
-                        class="progress-bar bg-success progress-bar-striped progress-bar-animated"
-                        role="progressbar"
-                        :style="`width: ${numberToPercent(trueAnswerNumber(appState.questionsJSON.questions), allAnswerNumber(appState.questionsJSON.questions))}%`"
-                      ></div>
-                      <div
-                        class="progress-bar bg-danger"
-                        role="progressbar"
-                        :style="`width: ${numberToPercent(allAnswerNumber(appState.questionsJSON.questions) - trueAnswerNumber(appState.questionsJSON.questions), allAnswerNumber(appState.questionsJSON.questions))}%`"
-                      ></div>
-                    </div>
-                    <AppQuestion :data="appState.questionsJSON" :appcolor="appState.webSiteConfig.appColor" />
+                    <AppQuestion
+                      :data="appState.questionsJSON"
+                      :appcolor="appState.webSiteConfig.appColor"
+                    />
                   </div>
-                </div>
               </div>
-            </div>
+            </section>
           </div>
         </div>
       </div>
-    </div>
-    <div style="position: fixed; bottom: 12px; right: 12px; z-index: 1">
-      <button type="button" class="btn btn-secondary" @click="intro"><i class="fas fa-question"></i></button>
     </div>
 
     <div class="modal fade" id="saveLocalBankModal" tabindex="-1" aria-labelledby="saveLocalBankModalLabel" aria-hidden="true">
@@ -589,8 +503,9 @@ function intro() {
           </div>
           <div class="modal-body">
             <p class="small text-muted mb-3">
-              当前系统内部统一按 <code>0.0.2</code> 处理，导出统一写出 <code>0.0.2</code>。导入旧版
-              <code>0.0.1</code> 时会自动补齐缺失元数据字段。
+              纯填空题集导入/导出使用 <code>0.0.2</code>；含 <code>questionType</code> 或单选题结构化字段时导出
+              <code>0.0.3</code>。导入 <code>0.0.1</code> / <code>0.0.2</code> / <code>0.0.3</code> 均可。练习时：题干含
+              A/B/C/D 且答案为字母的 <code>0.0.2</code> 题会自动识别为单选题 UI；纯填空题仍用填空样式。JSON 文件本身无需修改。
             </p>
             <div class="table-responsive">
               <table class="table table-sm align-middle json-doc-table">
@@ -605,8 +520,51 @@ function intro() {
                   </tr>
                 </thead>
                 <tbody>
+                  <tr class="json-version-group-head json-version-003-head">
+                    <td colspan="6"><strong>0.0.3 题目扩展字段</strong></td>
+                  </tr>
+                  <tr class="json-version-003-row">
+                    <td><span class="badge text-bg-success">0.0.3</span></td>
+                    <td><code>version</code></td>
+                    <td>string</td>
+                    <td>是</td>
+                    <td>含多题型字段时使用 <code>0.0.3</code></td>
+                    <td>纯填空题集仍可导出为 <code>0.0.2</code></td>
+                  </tr>
+                  <tr class="json-version-003-row">
+                    <td><span class="badge text-bg-success">0.0.3</span></td>
+                    <td><code>questionType</code></td>
+                    <td>string</td>
+                    <td>否</td>
+                    <td>题目类型：<code>fillBlank</code>（默认）、<code>singleChoice</code> 等</td>
+                    <td>省略时视为填空题</td>
+                  </tr>
+                  <tr class="json-version-003-row">
+                    <td><span class="badge text-bg-success">0.0.3</span></td>
+                    <td><code>explanation</code></td>
+                    <td>string</td>
+                    <td>否</td>
+                    <td>题目解析（可选）</td>
+                    <td>本版预留字段</td>
+                  </tr>
+                  <tr class="json-version-003-row">
+                    <td><span class="badge text-bg-success">0.0.3</span></td>
+                    <td><code>stem</code></td>
+                    <td>string</td>
+                    <td>单选建议</td>
+                    <td>单选题题干</td>
+                    <td>与 <code>texts</code> 二选一，按 <code>questionType</code> 使用</td>
+                  </tr>
+                  <tr class="json-version-003-row">
+                    <td><span class="badge text-bg-success">0.0.3</span></td>
+                    <td><code>options</code></td>
+                    <td>array</td>
+                    <td>单选建议</td>
+                    <td>选项列表，元素为 <code>{ key, text }</code></td>
+                    <td>仅 <code>singleChoice</code> 使用</td>
+                  </tr>
                   <tr class="json-version-group-head json-version-002-head">
-                    <td colspan="6"><strong>0.0.2 数据模型</strong></td>
+                    <td colspan="6"><strong>0.0.2 数据模型（填空题）</strong></td>
                   </tr>
                   <tr class="json-version-002-row">
                     <td><span class="badge text-bg-primary">0.0.2</span></td>
@@ -648,6 +606,14 @@ function intro() {
                     <td>题目数组（与旧版核心结构兼容）</td>
                     <td>向后兼容 <code>0.0.1</code> 的题目内容</td>
                   </tr>
+                  <tr class="json-version-002-row">
+                    <td><span class="badge text-bg-primary">0.0.2</span></td>
+                    <td><code>texts/answers/answerslength</code></td>
+                    <td>array</td>
+                    <td>填空建议</td>
+                    <td>填空题题干片段、答案与输入框宽度</td>
+                    <td><code>0.0.3</code> 填空题仍使用这组字段</td>
+                  </tr>
                   <tr class="json-version-group-head json-version-001-head">
                     <td colspan="6"><strong>0.0.1 数据模型</strong></td>
                   </tr>
@@ -686,6 +652,35 @@ function intro() {
 </template>
 
 <style scoped>
+.home-page {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+.home-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.home-step-section {
+  padding-bottom: 0.5rem;
+}
+
+.home-step-title {
+  font-weight: 600;
+}
+
+.home-step-body {
+  padding-bottom: 0.25rem;
+}
+
+.home-json-textarea {
+  min-height: 50em;
+  resize: none;
+  background-color: var(--bs-tertiary-bg);
+}
+
 .form-floating {
   position: relative;
 }
@@ -720,6 +715,14 @@ function intro() {
   border-top-width: 2px;
 }
 
+.json-version-003-head td {
+  background-color: rgba(25, 135, 84, 0.16);
+}
+
+.json-version-003-row td {
+  background-color: rgba(25, 135, 84, 0.06);
+}
+
 .json-version-001-head td {
   background-color: rgba(108, 117, 125, 0.16);
 }
@@ -734,5 +737,29 @@ function intro() {
 
 .json-version-002-row td {
   background-color: rgba(13, 110, 253, 0.06);
+}
+
+:global([data-bs-theme="dark"]) .json-version-003-head td {
+  background-color: rgba(25, 135, 84, 0.2);
+}
+
+:global([data-bs-theme="dark"]) .json-version-003-row td {
+  background-color: rgba(25, 135, 84, 0.08);
+}
+
+:global([data-bs-theme="dark"]) .json-version-001-head td {
+  background-color: rgba(148, 163, 184, 0.18);
+}
+
+:global([data-bs-theme="dark"]) .json-version-002-head td {
+  background-color: rgba(96, 165, 250, 0.18);
+}
+
+:global([data-bs-theme="dark"]) .json-version-001-row td {
+  background-color: rgba(148, 163, 184, 0.08);
+}
+
+:global([data-bs-theme="dark"]) .json-version-002-row td {
+  background-color: rgba(96, 165, 250, 0.08);
 }
 </style>

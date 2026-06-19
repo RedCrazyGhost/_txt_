@@ -29,7 +29,7 @@ function changeIStyle() {
 
 <template>
   <nav
-    :class="`by-4 navbar navbar-expand-lg navbar-${state.webSiteConfig.appColor} bg-${state.webSiteConfig.appColor}`"
+    :class="`by-4 navbar navbar-expand-lg navbar-${state.webSiteConfig.appColor} bg-body app-chrome`"
   >
     <div class="container">
       <router-link class="navbar-brand" to="/home">

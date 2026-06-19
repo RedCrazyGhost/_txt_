@@ -34,7 +34,6 @@ const currentYear = computed(() => new Date().getFullYear());
           <li><strong>Font Awesome</strong>：界面图标支持。</li>
           <li><strong>Axios</strong>：题库数据请求与加载。</li>
           <li><strong>FileSaver</strong>：本地文件导出能力。</li>
-          <li><strong>Intro.js</strong>：新手引导与步骤提示。</li>
         </ul>
       </div>
     </section>
@@ -45,7 +44,7 @@ const currentYear = computed(() => new Date().getFullYear());
         <p class="mb-2">如果你觉得这个开源的帮助学习的网站还不错的话，欢迎在 GitHub 给项目一个 Star。</p>
         <p class="mb-3">
           可以在
-          <a class="link-dark fw-semibold text-decoration-none" href="https://github.com/RedCrazyGhost/_txt_" target="_blank" rel="noreferrer">
+          <a class="link-body-emphasis fw-semibold text-decoration-none" href="https://github.com/RedCrazyGhost/_txt_" target="_blank" rel="noreferrer">
             <i class="fab fa-github me-1"></i>GitHub
           </a>
           给这个开源项目一个 <i class="far fa-star text-warning"></i>
@@ -71,7 +70,7 @@ const currentYear = computed(() => new Date().getFullYear());
           <li>通过 GitHub Issue / PR 参与功能优化与缺陷修复。</li>
           <li>分享 _txt_ 给身边有学习巩固需求的朋友。</li>
         </ul>
-        <a class="btn btn-outline-dark btn-sm" href="https://github.com/RedCrazyGhost/_txt_" target="_blank" rel="noreferrer">
+        <a class="btn btn-outline-secondary btn-sm" href="https://github.com/RedCrazyGhost/_txt_" target="_blank" rel="noreferrer">
           <i class="fab fa-github me-1"></i>前往 GitHub 仓库
         </a>
       </div>

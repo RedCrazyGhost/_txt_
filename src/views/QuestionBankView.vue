@@ -7,6 +7,8 @@ import { getQuestionJSON } from "../services/api";
 import { addBankFromExisting, exportBankAsJson, updateBank } from "../services/questionBank";
 import { appState } from "../state/appState";
 import { initQuestionBankState, questionBankState, removeLocal } from "../state/questionBankState";
+import { resetQuestionProgress } from "../models/question/progress";
+import { normalizeQuestionWithDetection, resolveQuestionBankVersion } from "../utils/questions";
 
 const localEditState = ref({
   id: "",
@@ -143,53 +145,20 @@ function toggleRemoteGroup(groupKey) {
   remoteExpandedState.value[groupKey] = !remoteExpandedState.value[groupKey];
 }
 
-function normalizeQuestion(question) {
-  if (Array.isArray(question)) {
-    return {
-      texts: [question.join(" ")],
-      answers: [],
-      answerslength: [],
-      results: [],
-      MD5: false,
-      image: ""
-    };
-  }
-  if (typeof question === "string") {
-    return {
-      texts: [question],
-      answers: [],
-      answerslength: [],
-      results: [],
-      MD5: false,
-      image: ""
-    };
-  }
-  const answers = Array.isArray(question?.answers) ? question.answers : [];
-  return {
-    ...question,
-    texts: Array.isArray(question?.texts) ? question.texts : [String(question?.texts || "")],
-    answers,
-    answerslength: Array.isArray(question?.answerslength) ? question.answerslength : [],
-    results:
-      Array.isArray(question?.results) && question.results.length === answers.length
-        ? question.results
-        : new Array(answers.length),
-    MD5: Boolean(question?.MD5),
-    image: question?.image || ""
-  };
-}
-
 function startPractice(id) {
   const allBanks = [...questionBankState.localBanks, ...questionBankState.remoteBanks];
   const target = allBanks.find((item) => item.id === id);
   if (!target) return;
+  const rawQuestions = Array.isArray(target.questions) ? target.questions : [];
+  const questions = rawQuestions.map((question) => normalizeQuestionWithDetection(question));
   appState.questionsJSON = {
-    version: target.version || "0.0.2",
+    version: resolveQuestionBankVersion(questions),
     name: target.title || target.name || "未命名题集",
     type: target.subject || target.type || "",
     author: target.author || "",
-    questions: (Array.isArray(target.questions) ? target.questions : []).map((question) => normalizeQuestion(question))
+    questions
   };
+  resetQuestionProgress(questions);
   router.push("/practice");
 }
 

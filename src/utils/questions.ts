@@ -1,13 +1,15 @@
 import { md5 } from "js-md5";
+import type { Question, QuestionType } from "../models/question/types";
+import { isMultipleChoiceQuestion } from "../models/question/types";
 
-export interface Question {
-  texts?: string[];
-  answers: string[][];
-  answerslength?: number[];
-  results: Array<string | undefined>;
-  MD5: boolean;
-  image?: string;
-}
+export type { Question, QuestionType, FillBlankQuestion, SingleChoiceQuestion } from "../models/question/types";
+export {
+  normalizeQuestion,
+  normalizeQuestionWithDetection,
+  usesExtendedQuestionSchema,
+  resolveQuestionBankVersion
+} from "../models/question/normalize";
+export { getQuestionTypeLabel, getQuestionTypeBadgeClass } from "../models/question/labels";
 
 export interface TxtObject {
   txt: string;
@@ -17,12 +19,41 @@ export interface TxtObject {
   noDelete?: boolean;
 }
 
+export function getQuestionType(question: Question): QuestionType {
+  return question.questionType ?? "fillBlank";
+}
+
+export function getAnswerSlotCount(question: Question): number {
+  return question.answers.length;
+}
+
+function normalizeSelectedKeys(value: unknown): string[] {
+  return String(value ?? "")
+    .split(",")
+    .map((item) => item.trim().toUpperCase())
+    .filter(Boolean)
+    .sort();
+}
+
+function judgeMultipleChoiceSlot(correctAnswers: string[], userValue: unknown): boolean {
+  const correct = correctAnswers.map((item) => item.toUpperCase()).sort().join(",");
+  const user = normalizeSelectedKeys(userValue).join(",");
+  return correct.length > 0 && correct === user;
+}
+
 export function judgeAnswerTrue(question: Question, index: number): boolean {
+  const slot = question.answers[index] || [];
+  if (!slot.length) return false;
+
+  if (isMultipleChoiceQuestion(question)) {
+    return judgeMultipleChoiceSlot(slot, question.results?.[index]);
+  }
+
   let isTrue = false;
-  (question.answers[index] || []).forEach((answer) => {
+  slot.forEach((answer) => {
     if (question.MD5) {
-      if (md5(question.results[index] || "") === answer) isTrue = true;
-    } else if (question.results[index] === answer) {
+      if (md5(question.results?.[index] || "") === answer) isTrue = true;
+    } else if (question.results?.[index] === answer) {
       isTrue = true;
     }
   });
@@ -32,15 +63,16 @@ export function judgeAnswerTrue(question: Question, index: number): boolean {
 export function trueAnswerNumber(questions: Question[]): number {
   let count = 0;
   questions.forEach((question) => {
-    question.answers.forEach((_, index) => {
+    const slotCount = getAnswerSlotCount(question);
+    for (let index = 0; index < slotCount; index += 1) {
       if (judgeAnswerTrue(question, index)) count += 1;
-    });
+    }
   });
   return count;
 }
 
 export function allAnswerNumber(questions: Question[]): number {
-  return questions.reduce((total, question) => total + question.answers.length, 0);
+  return questions.reduce((total, question) => total + getAnswerSlotCount(question), 0);
 }
 
 export function numberToPercent(numerator: number, denominator: number): number {

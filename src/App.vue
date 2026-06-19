@@ -2,19 +2,12 @@
 import { appState } from "./state/appState";
 import AppTopNav from "./components/AppTopNav.vue";
 import AppBottomNav from "./components/AppBottomNav.vue";
-
-function judgeColorChangeFontColor(color) {
-  return color === "light" ? "dark" : "light";
-}
 </script>
 
 <template>
   <div
-    :class="[
-      'app-root',
-      `bg-${appState.webSiteConfig.appColor}`,
-      `text-${judgeColorChangeFontColor(appState.webSiteConfig.appColor)}`
-    ]"
+    class="app-root bg-body"
+    :data-bs-theme="appState.webSiteConfig.appColor === 'dark' ? 'dark' : 'light'"
     :style="`font-family:${appState.webSiteConfig.appFontFamily};`"
   >
     <AppTopNav :state="appState" />
