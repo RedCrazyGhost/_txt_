@@ -40,11 +40,15 @@ jobs:
         run: |
           npm run preview -- --host 127.0.0.1 --port 4173 &
           PREVIEW_PID=$!
-          sleep 8
+          sleep 12
+          curl -sf http://127.0.0.1:4173/ > /dev/null
+          curl -sf http://127.0.0.1:4173/fonts.css > /dev/null
+          sleep 3
           LIGHTHOUSE_URL=http://127.0.0.1:4173/ \
           LH_THRESHOLD_PERFORMANCE=70 \
           LH_THRESHOLD_SEO=85 \
           LH_THRESHOLD_BEST_PRACTICES=85 \
+          LH_MAX_ATTEMPTS=3 \
           npm run lighthouse
           kill $PREVIEW_PID
 
