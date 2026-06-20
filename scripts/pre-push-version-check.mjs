@@ -22,9 +22,33 @@ function compareSemver(a, b) {
   return aPatch - bPatch;
 }
 
-function getRemoteVersion(remoteRef) {
+function getRemoteVersion(remoteRef, remoteUrl) {
+  const branch = remoteRef.replace(/^refs\/heads\//, "").replace(/^origin\//, "");
+
+  if (remoteUrl) {
+    try {
+      const ref = `refs/heads/${branch}`;
+      const output = execSync(`git ls-remote "${remoteUrl}" "${ref}"`, {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"]
+      }).trim();
+      const remoteSha = output.split(/\s+/)[0];
+      if (!remoteSha) {
+        return null;
+      }
+      const content = execSync(`git show ${remoteSha}:package.json`, {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"]
+      });
+      return JSON.parse(content).version;
+    } catch {
+      return null;
+    }
+  }
+
   try {
-    const branch = remoteRef.replace(/^refs\/heads\//, "");
     const remoteBranch = branch.startsWith("origin/") ? branch : `origin/${branch}`;
     const content = execSync(`git show ${remoteBranch}:package.json`, {
       cwd: root,
@@ -62,8 +86,9 @@ function readPushRemoteRef() {
 }
 
 const remoteRef = readPushRemoteRef();
+const remoteUrl = process.argv[3] || "";
 const localVersion = readPackageVersion();
-const remoteVersion = getRemoteVersion(remoteRef);
+const remoteVersion = getRemoteVersion(remoteRef, remoteUrl);
 
 if (remoteVersion && compareSemver(localVersion, remoteVersion) <= 0) {
   console.log(
