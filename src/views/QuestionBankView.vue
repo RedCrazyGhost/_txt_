@@ -1,14 +1,17 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onActivated, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import FileSaver from "file-saver";
 import QuestionBankList from "../components/question-bank/QuestionBankList.vue";
-import { getQuestionJSON } from "../services/api";
 import { addBankFromExisting, exportBankAsJson, updateBank } from "../services/questionBank";
+import { loadRemoteQuestionBanks } from "../services/remoteQuestionBanks";
+import { StorageChangeKind, subscribeStorageChanged, unsubscribeStorageChanged } from "../services/appStorageSync";
 import { appState } from "../state/appState";
-import { initQuestionBankState, questionBankState, removeLocal } from "../state/questionBankState";
+import { reloadLocalBanks, questionBankState, removeLocal } from "../state/questionBankState";
 import { resetQuestionProgress } from "../models/question/progress";
+import { applyProgressToQuestions, getProgressRecord } from "../services/practiceProgress";
 import { normalizeQuestionWithDetection, resolveQuestionBankVersion } from "../utils/questions";
+import StorageUsagePanel from "../components/StorageUsagePanel.vue";
 
 const localEditState = ref({
   id: "",
@@ -22,8 +25,13 @@ const sharedSearch = ref({
 });
 
 const remoteExpandedState = ref({});
+const storageRefreshToken = ref(0);
 const router = useRouter();
 let statusMessageTimer = null;
+
+function bumpStorageRefresh() {
+  storageRefreshToken.value += 1;
+}
 
 function setStatusMessage(message) {
   questionBankState.statusMessage = message;
@@ -75,6 +83,12 @@ function saveEditLocalBank() {
   });
   setStatusMessage(`已更新题集《${localEditState.value.title || "未命名题库"}》`);
   cancelEditLocalBank();
+  bumpStorageRefresh();
+}
+
+function handleRemoveLocal(id) {
+  removeLocal(id);
+  bumpStorageRefresh();
 }
 
 function getFieldValue(item, field) {
@@ -152,12 +166,18 @@ function startPractice(id) {
   const rawQuestions = Array.isArray(target.questions) ? target.questions : [];
   const questions = rawQuestions.map((question) => normalizeQuestionWithDetection(question));
   appState.questionsJSON = {
+    bankId: target.id,
+    bankSource: target.source || "local",
     version: resolveQuestionBankVersion(questions),
     name: target.title || target.name || "未命名题集",
     type: target.subject || target.type || "",
     author: target.author || "",
     questions
   };
+  const saved = getProgressRecord(target.id);
+  if (saved) {
+    applyProgressToQuestions(questions, saved);
+  }
   resetQuestionProgress(questions);
   router.push("/practice");
 }
@@ -167,56 +187,39 @@ function downloadRemoteToLocal(id) {
   if (!target) return;
   questionBankState.localBanks = addBankFromExisting("local", target);
   setStatusMessage(`已将网络题库《${target.title || "未命名"}》下载到本地`);
+  bumpStorageRefresh();
 }
 
 async function loadRemotePapers() {
-  let typeDirectories = [];
-  try {
-    const loadedTypes = await getQuestionJSON("/QuestionJSON/List");
-    typeDirectories = Array.isArray(loadedTypes) ? loadedTypes : [];
-  } catch (_error) {
-    typeDirectories = [];
-  }
+  await loadRemoteQuestionBanks({ force: true });
+}
 
-  const loadedByTypes = await Promise.all(
-    typeDirectories.map(async (typeName) => {
-      try {
-        const list = await getQuestionJSON(`/QuestionJSON/${typeName}/List`);
-        const fileNames = Array.isArray(list) ? list : [];
-        const loadedBanks = await Promise.all(
-          fileNames.map(async (fileName) => {
-            const loaded = await getQuestionJSON(`/QuestionJSON/${typeName}/${fileName}`);
-            return {
-              id: `${typeName}-${fileName}`,
-              source: "remote",
-              directory: typeName,
-              groupKey: typeName,
-              groupLabel: typeName,
-              title: loaded?.name || fileName.replace(/\.json$/i, ""),
-              subject: loaded?.type || typeName,
-              author: loaded?.author || "",
-              updatedAt: loaded?.CreateTime || new Date().toISOString(),
-              CreateTime: loaded?.CreateTime || "",
-              version: loaded?.version || "0.0.2",
-              questions: Array.isArray(loaded?.questions) ? loaded.questions : []
-            };
-          })
-        );
-        return loadedBanks;
-      } catch (_error) {
-        return [];
-      }
-    })
-  );
-  questionBankState.remoteBanks = loadedByTypes.flat().reverse();
+function syncQuestionBankPageData() {
+  reloadLocalBanks();
+}
+
+function handleStorageChanged(event) {
+  if (event?.detail?.kind === StorageChangeKind.localBanks) {
+    syncQuestionBankPageData();
+    storageRefreshToken.value += 1;
+  }
 }
 
 onMounted(() => {
-  initQuestionBankState();
+  syncQuestionBankPageData();
   loadRemotePapers();
+  subscribeStorageChanged(handleStorageChanged);
+});
+
+onActivated(() => {
+  syncQuestionBankPageData();
+  if (!questionBankState.remoteBanks.length) {
+    loadRemotePapers();
+  }
 });
 
 onBeforeUnmount(() => {
+  unsubscribeStorageChanged(handleStorageChanged);
   if (statusMessageTimer) {
     clearTimeout(statusMessageTimer);
     statusMessageTimer = null;
@@ -229,6 +232,8 @@ onBeforeUnmount(() => {
     <div v-if="questionBankState.statusMessage" class="alert alert-secondary py-2">
       {{ questionBankState.statusMessage }}
     </div>
+
+    <StorageUsagePanel class="mb-3" :refresh-token="storageRefreshToken" />
 
     <section class="mb-3 question-bank-search">
       <div class="row g-2">
@@ -282,7 +287,7 @@ onBeforeUnmount(() => {
           :show-practice="true"
           :show-upload="false"
           @edit="startEditLocalBank"
-          @remove="removeLocal"
+          @remove="handleRemoveLocal"
           @export="exportBank('local', $event)"
           @practice="startPractice"
         />

@@ -1,6 +1,6 @@
 <script setup>
 import { useWindowVirtualizer } from "@tanstack/vue-virtual";
-import { computed, ref, watch, watchEffect } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect } from "vue";
 import QuestionCard from "./question/QuestionCard.vue";
 import QuestionJumpFab from "./question/QuestionJumpFab.vue";
 import QuestionProgressFab from "./question/QuestionProgressFab.vue";
@@ -11,6 +11,7 @@ import {
   resetQuestionProgress,
   syncQuestionProgress
 } from "../models/question/progress";
+import { buildProgressRecord, saveProgressRecord } from "../services/practiceProgress";
 import { questionProgressState } from "../state/questionProgressState";
 
 /** 超过此题数启用窗口虚拟滚动，保证大题集单页连续做题流畅 */
@@ -86,6 +87,62 @@ const virtualItems = computed(() => rowVirtualizer.value.getVirtualItems());
 const totalVirtualHeight = computed(() => rowVirtualizer.value.getTotalSize());
 
 const peekingIndexes = ref(new Set());
+let saveTimer = null;
+
+function persistProgress() {
+  if (typeof window === "undefined") return;
+  if (!props.data?.bankId || !questions.value.length) return;
+
+  const bankSource = props.data.bankSource || "session";
+  const record = buildProgressRecord(
+    {
+      bankId: props.data.bankId,
+      bankSource,
+      name: props.data.name,
+      type: props.data.type,
+      author: props.data.author,
+      version: props.data.version
+    },
+    questions.value,
+    { includeQuestionsSnapshot: bankSource === "session" }
+  );
+  saveProgressRecord(record);
+}
+
+function schedulePersistProgress() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    persistProgress();
+  }, 400);
+}
+
+function flushPersistProgress() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  persistProgress();
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === "hidden") {
+    flushPersistProgress();
+  }
+}
+
+onMounted(() => {
+  if (typeof window !== "undefined") {
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+  }
+});
+
+onBeforeUnmount(() => {
+  flushPersistProgress();
+  if (typeof window !== "undefined") {
+    window.removeEventListener("visibilitychange", handleVisibilityChange);
+  }
+});
 
 function answerShow(question, qindex) {
   const oldValue = [...(question.results || [])];
@@ -102,6 +159,7 @@ function answerShow(question, qindex) {
 
 function handleSlotChange(qindex, question, slotIndex) {
   notifySlotChanged(qindex, question, slotIndex);
+  schedulePersistProgress();
 }
 
 function isPeeking(qindex) {
@@ -129,6 +187,7 @@ function scrollToQuestion(index) {
       :unanswered-indexes="unansweredIndexes"
       @jump="scrollToQuestion"
     />
+    <QuestionProgressFab v-if="showProgress && questions.length > 0" :bank="data" />
 
     <template v-if="!useVirtualScroll">
       <div
@@ -175,8 +234,6 @@ function scrollToQuestion(index) {
         />
       </div>
     </div>
-
-    <QuestionProgressFab v-if="showProgress && questions.length > 0" :bank="data" />
   </div>
 </template>
 

@@ -58,10 +58,6 @@ const accuracyText = computed(() => {
   return `${numberToPercent(progress.value.correctSlots, progress.value.attemptedSlots).toFixed(1)}%`;
 });
 
-const collapsedSummary = computed(
-  () => `${progress.value.attemptedSlots}/${progress.value.totalSlots}`
-);
-
 const summaryItems = computed(() => [
   { label: "题目总数", value: progress.value.totalQuestions },
   { label: "已做题目", value: progress.value.attemptedQuestions },
@@ -115,7 +111,6 @@ function retryWrongQuestions() {
         <span class="question-progress-fab-icon" aria-hidden="true">
           <i class="fas fa-chart-pie"></i>
         </span>
-        <span class="question-progress-fab-badge">{{ collapsedSummary }}</span>
       </div>
 
       <div class="question-progress-fab-body">
@@ -196,14 +191,18 @@ function retryWrongQuestions() {
   bottom: 12px;
   right: 12px;
   z-index: 1040;
+  max-width: calc(100vw - 24px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .question-progress-fab-panel {
-  width: 52px;
-  border-radius: 26px;
+  width: 42px;
+  border-radius: 21px;
   background: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
   transition:
     width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.25s ease,
@@ -212,7 +211,7 @@ function retryWrongQuestions() {
 
 .question-progress-fab:hover .question-progress-fab-panel,
 .question-progress-fab:focus-within .question-progress-fab-panel {
-  width: 360px;
+  width: min(360px, calc(100vw - 24px));
   border-radius: 16px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
 }
@@ -221,36 +220,18 @@ function retryWrongQuestions() {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 52px;
+  justify-content: flex-end;
+  height: 42px;
 }
 
 .question-progress-fab-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: 42px;
+  height: 42px;
   color: var(--bs-primary);
-  font-size: 1.15rem;
-}
-
-.question-progress-fab-badge {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  max-width: 2.8rem;
-  padding: 0.1rem 0.35rem;
-  border-radius: 999px;
-  background: var(--bs-primary);
-  color: #fff;
-  font-size: 0.62rem;
-  line-height: 1.25;
-  font-weight: 700;
-  text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 1rem;
 }
 
 .question-progress-fab-body {
@@ -363,7 +344,7 @@ function retryWrongQuestions() {
 }
 
 :global([data-bs-theme="dark"]) .question-progress-fab-panel {
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
 }
 
 :global([data-bs-theme="dark"]) .question-progress-fab:hover .question-progress-fab-panel,

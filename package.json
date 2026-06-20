@@ -10,7 +10,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lighthouse": "node scripts/lighthouse-check.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "version:patch": "node scripts/bump-app-version.mjs",
+    "check:version": "node scripts/check-app-version.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
@@ -29,6 +32,7 @@
     "vite": "^5.4.19",
     "vite-plugin-static-copy": "^2.2.0",
     "vite-ssg": "^26.1.1",
+    "husky": "^9.1.7",
     "vitest": "^2.1.9"
   }
 }

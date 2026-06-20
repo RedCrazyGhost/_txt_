@@ -27,6 +27,15 @@ const routes = [
     }
   },
   {
+    name: "PracticeProgress",
+    path: "/practice-progress",
+    component: () => import("../views/PracticeProgressView.vue"),
+    meta: {
+      title: "题集进度 - _txt_",
+      description: "查看与管理本地保存的题集进度，继续未完成练习。"
+    }
+  },
+  {
     name: "Acknowledgements",
     path: "/acknowledgements",
     component: () => import("../views/AcknowledgementsView.vue"),

@@ -2,6 +2,7 @@ import "./style.css";
 import { ViteSSG } from "vite-ssg";
 import App from "./App.vue";
 import routes from "./router";
+import { initAppStorageSync } from "./services/appStorageSync.js";
 
 export const createApp = ViteSSG(
   App,
@@ -9,6 +10,7 @@ export const createApp = ViteSSG(
   async ({ router, isClient }) => {
     if (isClient) {
       await import("bootstrap/dist/js/bootstrap.bundle.min.js");
+      initAppStorageSync();
     }
     if (isClient) {
       router.afterEach((to) => {

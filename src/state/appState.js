@@ -46,6 +46,7 @@ export const appState = reactive({
     appRouters: [
       { to: "/home", name: "Home", label: "首页" },
       { to: "/question-bank", name: "QuestionBank", label: "题库" },
+      { to: "/practice-progress", name: "PracticeProgress", label: "题集进度" },
       { to: "/acknowledgements", name: "Acknowledgements", label: "鸣谢" }
     ],
     appAuthor: {
@@ -58,6 +59,8 @@ export const appState = reactive({
   },
   txts: [{ txt: "", MD5: false, image: "", noDelete: false }],
   questionsJSON: {
+    bankId: "",
+    bankSource: "",
     version: "0.0.2",
     name: "",
     type: "",

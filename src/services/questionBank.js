@@ -1,3 +1,5 @@
+import { notifyStorageChanged, StorageChangeKind } from "./appStorageSync.js";
+
 const LOCAL_BANKS_KEY = "_txt_local_banks";
 const REMOTE_BANKS_KEY = "_txt_remote_cache";
 
@@ -15,9 +17,12 @@ function parseQuestions(questionsText) {
     .map((line) => [line]);
 }
 
-function persistBanks(source, banks) {
+export function persistBanks(source, banks) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(storageKey(source), JSON.stringify(banks));
+  notifyStorageChanged(
+    source === "remote" ? StorageChangeKind.remoteBanks : StorageChangeKind.localBanks
+  );
 }
 
 export function loadBanks(source) {

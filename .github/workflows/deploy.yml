@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check app version consistency
+        run: npm run check:version
+
       - name: Run tests
         run: npm test
 

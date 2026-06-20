@@ -30,9 +30,17 @@ export const questionBankState = reactive({
   statusMessage: ""
 });
 
-export function initQuestionBankState() {
+export function reloadLocalBanks() {
   questionBankState.localBanks = loadBanks("local");
+}
+
+export function reloadRemoteBanksFromCache() {
   questionBankState.remoteBanks = loadBanks("remote");
+}
+
+export function initQuestionBankState() {
+  reloadLocalBanks();
+  reloadRemoteBanksFromCache();
 }
 
 export function removeLocal(id) {

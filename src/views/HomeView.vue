@@ -1,10 +1,11 @@
 <script setup>
-import { ref, defineAsyncComponent } from "vue";
+import { ref, defineAsyncComponent, onMounted } from "vue";
 import { saveAs } from "file-saver";
 const AppQuestion = defineAsyncComponent(() => import("../components/AppQuestion.vue"));
 import AppName from "../components/AppName.vue";
 import { appState } from "../state/appState";
 import { createBankFromQuestions } from "../services/questionBank";
+import { initQuestionBankState, questionBankState } from "../state/questionBankState";
 import {
   buildQuestionsFromTxt,
   resolveQuestionBankVersion,
@@ -30,6 +31,41 @@ const localBankMessage = ref("");
 const exportFileName = ref("");
 const saveTargets = ref(["browser"]);
 const QUESTION_JSON_VERSION = "0.0.2";
+
+async function syncHomeSessionProgress(questions) {
+  const [{ resolveQuestionBankVersion: resolveVersion }, { resetQuestionProgress }] = await Promise.all([
+    import("../utils/questions"),
+    import("../models/question/progress")
+  ]);
+  const { buildSessionBankId, getProgressRecord, applyProgressToQuestions } = await import(
+    "../services/practiceProgress"
+  );
+
+  appState.questionsJSON.bankSource = "session";
+  appState.questionsJSON.version = resolveVersion(questions);
+  appState.questionsJSON.bankId = buildSessionBankId(
+    {
+      name: appState.questionsJSON.name,
+      type: appState.questionsJSON.type,
+      author: appState.questionsJSON.author,
+      version: appState.questionsJSON.version
+    },
+    questions
+  );
+
+  const saved = getProgressRecord(appState.questionsJSON.bankId);
+  if (saved) {
+    applyProgressToQuestions(questions, saved);
+  }
+  resetQuestionProgress(questions);
+}
+
+onMounted(async () => {
+  initQuestionBankState();
+  if (appState.questionsJSON.questions.length > 0) {
+    await syncHomeSessionProgress(appState.questionsJSON.questions);
+  }
+});
 
 function normalizeQuestionJSON(raw) {
   return {
@@ -87,14 +123,11 @@ function deleteImage(index) {
 }
 
 async function generateQuestionsJSON() {
-  const [{ normalizeQuestionWithDetection }, { resetQuestionProgress }] = await Promise.all([
-    import("../utils/questions"),
-    import("../models/question/progress")
-  ]);
+  const [{ normalizeQuestionWithDetection }] = await Promise.all([import("../utils/questions")]);
   appState.questionsJSON.questions = buildQuestionsFromTxt(appState.txts, []).map((question) =>
     normalizeQuestionWithDetection(question)
   );
-  resetQuestionProgress(appState.questionsJSON.questions);
+  await syncHomeSessionProgress(appState.questionsJSON.questions);
 }
 
 async function deleteQuestionsJSON() {
@@ -102,6 +135,8 @@ async function deleteQuestionsJSON() {
   appState.questionsJSON.name = "";
   appState.questionsJSON.type = "";
   appState.questionsJSON.author = "";
+  appState.questionsJSON.bankId = "";
+  appState.questionsJSON.bankSource = "";
   const { resetQuestionProgress } = await import("../models/question/progress");
   resetQuestionProgress([]);
 }
@@ -111,8 +146,8 @@ function getFile(event) {
     const reader = new FileReader();
     reader.readAsText(event.target.files[index]);
     reader.onload = async function load() {
-      const [{ normalizeQuestionWithDetection, resolveQuestionBankVersion: resolveVersion }, { resetQuestionProgress }] =
-        await Promise.all([import("../utils/questions"), import("../models/question/progress")]);
+      const [{ normalizeQuestionWithDetection, resolveQuestionBankVersion: resolveVersion }] =
+        await Promise.all([import("../utils/questions")]);
       const imported = normalizeQuestionJSON(JSON.parse(this.result));
       if (!appState.questionsJSON.type && imported.type) {
         appState.questionsJSON.type = imported.type;
@@ -127,7 +162,7 @@ function getFile(event) {
         appState.questionsJSON.questions.push(normalizeQuestionWithDetection(i));
       });
       appState.questionsJSON.version = resolveVersion(appState.questionsJSON.questions);
-      resetQuestionProgress(appState.questionsJSON.questions);
+      await syncHomeSessionProgress(appState.questionsJSON.questions);
     };
   }
 }
@@ -205,7 +240,7 @@ function saveToLocalBank() {
     return;
   }
   normalizeMetaFromDraft();
-  createBankFromQuestions("local", {
+  questionBankState.localBanks = createBankFromQuestions("local", {
     ...localBankDraft.value,
     questions: appState.questionsJSON.questions
   });
