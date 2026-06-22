@@ -81,6 +81,7 @@ function extractStats(snapshot) {
     totalSlots: snapshot.totalSlots,
     attemptedSlots: snapshot.attemptedSlots,
     correctSlots: snapshot.correctSlots,
+    partialSlots: snapshot.partialSlots,
     wrongSlots: snapshot.wrongSlots,
     unansweredSlots: snapshot.unansweredSlots
   };

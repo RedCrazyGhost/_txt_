@@ -278,6 +278,9 @@ onBeforeUnmount(() => {
               正确：{{ record.stats?.correctSlots ?? 0 }}
             </div>
             <div class="col-6 col-md-3">
+              半对：{{ record.stats?.partialSlots ?? 0 }}
+            </div>
+            <div class="col-6 col-md-3">
               错误：{{ record.stats?.wrongSlots ?? 0 }}
             </div>
             <div class="col-6 col-md-3">

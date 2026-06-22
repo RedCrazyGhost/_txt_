@@ -131,8 +131,8 @@ function jumpNextUnanswered() {
 <style scoped>
 .question-jump-fab {
   position: fixed;
-  bottom: 12px;
-  left: 12px;
+  bottom: var(--app-fab-bottom, 12px);
+  left: calc(var(--app-fab-edge, 12px) + env(safe-area-inset-left, 0px));
   z-index: 1040;
   display: flex;
   flex-direction: column;

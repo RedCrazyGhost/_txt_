@@ -1,11 +1,12 @@
 import type { Question } from "./types";
 import { isSlotAttempted } from "./feedback";
-import { getAnswerSlotCount, judgeAnswerTrue } from "../../utils/questions";
+import type { SlotOutcome } from "../../utils/questions";
+import { getAnswerSlotCount, judgeSlotOutcome } from "../../utils/questions";
 import { questionProgressState } from "../../state/questionProgressState";
 
 export interface SlotState {
   attempted: boolean;
-  correct: boolean;
+  outcome: SlotOutcome;
 }
 
 export interface ProgressAggregates {
@@ -15,6 +16,7 @@ export interface ProgressAggregates {
   totalSlots: number;
   attemptedSlots: number;
   correctSlots: number;
+  partialSlots: number;
   wrongSlots: number;
   unansweredSlots: number;
 }
@@ -27,26 +29,33 @@ let slotStates: SlotState[][] = [];
 let currentQuestions: Question[] = [];
 let unansweredIndexSet = new Set<number>();
 
-const EMPTY_SLOT_STATE: SlotState = { attempted: false, correct: false };
+const EMPTY_SLOT_STATE: SlotState = { attempted: false, outcome: "wrong" };
 
 interface QuestionFlags {
   hasUnanswered: boolean;
   hasWrongAttempt: boolean;
+  hasPartialOnly: boolean;
 }
 
 function getQuestionFlags(states: SlotState[]): QuestionFlags {
   let hasUnanswered = false;
   let hasWrongAttempt = false;
+  let hasPartialAttempt = false;
 
   states.forEach((state) => {
     if (!state.attempted) {
       hasUnanswered = true;
       return;
     }
-    if (!state.correct) hasWrongAttempt = true;
+    if (state.outcome === "wrong") hasWrongAttempt = true;
+    if (state.outcome === "partial") hasPartialAttempt = true;
   });
 
-  return { hasUnanswered, hasWrongAttempt };
+  return {
+    hasUnanswered,
+    hasWrongAttempt,
+    hasPartialOnly: hasPartialAttempt && !hasWrongAttempt
+  };
 }
 
 function setUnansweredQuestionIndexes(indexes: number[]): void {
@@ -89,20 +98,27 @@ function syncQuestionTracking(
   if (oldFlags.hasWrongAttempt !== newFlags.hasWrongAttempt) {
     questionProgressState.wrongQuestionCount += newFlags.hasWrongAttempt ? 1 : -1;
   }
+
+  if (oldFlags.hasPartialOnly !== newFlags.hasPartialOnly) {
+    questionProgressState.partialQuestionCount += newFlags.hasPartialOnly ? 1 : -1;
+  }
 }
 
 function rebuildQuestionTracking(questions: Question[], states: SlotState[][]): void {
   const unanswered: number[] = [];
   let wrongQuestionCount = 0;
+  let partialQuestionCount = 0;
 
   questions.forEach((_, questionIndex) => {
     const flags = getQuestionFlags(states[questionIndex] ?? []);
     if (flags.hasUnanswered) unanswered.push(questionIndex);
     if (flags.hasWrongAttempt) wrongQuestionCount += 1;
+    if (flags.hasPartialOnly) partialQuestionCount += 1;
   });
 
   setUnansweredQuestionIndexes(unanswered);
   questionProgressState.wrongQuestionCount = wrongQuestionCount;
+  questionProgressState.partialQuestionCount = partialQuestionCount;
 }
 
 export function isTrackedQuestionUnanswered(questionIndex: number): boolean {
@@ -113,7 +129,7 @@ function computeSlotState(question: Question, slotIndex: number): SlotState {
   const attempted = isSlotAttempted(question, slotIndex);
   return {
     attempted,
-    correct: attempted && judgeAnswerTrue(question, slotIndex)
+    outcome: attempted ? judgeSlotOutcome(question, slotIndex) : "wrong"
   };
 }
 
@@ -122,10 +138,33 @@ function buildSlotStatesForQuestion(question: Question): SlotState[] {
   return Array.from({ length: slotCount }, (_, index) => computeSlotState(question, index));
 }
 
+function countSlotOutcome(state: SlotState): void {
+  if (!state.attempted) return;
+  if (state.outcome === "correct") {
+    questionProgressState.correctSlots += 1;
+  } else if (state.outcome === "partial") {
+    questionProgressState.partialSlots += 1;
+  } else {
+    questionProgressState.wrongSlots += 1;
+  }
+}
+
+function uncountSlotOutcome(state: SlotState): void {
+  if (!state.attempted) return;
+  if (state.outcome === "correct") {
+    questionProgressState.correctSlots -= 1;
+  } else if (state.outcome === "partial") {
+    questionProgressState.partialSlots -= 1;
+  } else {
+    questionProgressState.wrongSlots -= 1;
+  }
+}
+
 function computeAggregates(questions: Question[], states: SlotState[][]): ProgressAggregates {
   let totalSlots = 0;
   let attemptedSlots = 0;
   let correctSlots = 0;
+  let partialSlots = 0;
   let wrongSlots = 0;
   let attemptedQuestions = 0;
   let fullyCorrectQuestions = 0;
@@ -140,9 +179,11 @@ function computeAggregates(questions: Question[], states: SlotState[][]): Progre
       if (!state.attempted) return;
       attemptedSlots += 1;
       questionAttempted += 1;
-      if (state.correct) {
+      if (state.outcome === "correct") {
         correctSlots += 1;
         questionCorrect += 1;
+      } else if (state.outcome === "partial") {
+        partialSlots += 1;
       } else {
         wrongSlots += 1;
       }
@@ -165,6 +206,7 @@ function computeAggregates(questions: Question[], states: SlotState[][]): Progre
     totalSlots,
     attemptedSlots,
     correctSlots,
+    partialSlots,
     wrongSlots,
     unansweredSlots: totalSlots - attemptedSlots
   };
@@ -177,6 +219,7 @@ function applyAggregates(aggregates: ProgressAggregates): void {
   questionProgressState.totalSlots = aggregates.totalSlots;
   questionProgressState.attemptedSlots = aggregates.attemptedSlots;
   questionProgressState.correctSlots = aggregates.correctSlots;
+  questionProgressState.partialSlots = aggregates.partialSlots;
   questionProgressState.wrongSlots = aggregates.wrongSlots;
   questionProgressState.unansweredSlots = aggregates.unansweredSlots;
 }
@@ -193,7 +236,7 @@ function getQuestionSummary(states: SlotState[]): QuestionSummary {
   states.forEach((state) => {
     if (!state.attempted) return;
     attempted += 1;
-    if (state.correct) correct += 1;
+    if (state.outcome === "correct") correct += 1;
   });
 
   return {
@@ -204,26 +247,21 @@ function getQuestionSummary(states: SlotState[]): QuestionSummary {
 }
 
 function applySlotDelta(oldState: SlotState, newState: SlotState): void {
-  if (oldState.attempted === newState.attempted && oldState.correct === newState.correct) {
+  if (
+    oldState.attempted === newState.attempted &&
+    oldState.outcome === newState.outcome
+  ) {
     return;
   }
 
   if (oldState.attempted) {
     questionProgressState.attemptedSlots -= 1;
-    if (oldState.correct) {
-      questionProgressState.correctSlots -= 1;
-    } else {
-      questionProgressState.wrongSlots -= 1;
-    }
+    uncountSlotOutcome(oldState);
   }
 
   if (newState.attempted) {
     questionProgressState.attemptedSlots += 1;
-    if (newState.correct) {
-      questionProgressState.correctSlots += 1;
-    } else {
-      questionProgressState.wrongSlots += 1;
-    }
+    countSlotOutcome(newState);
   }
 
   questionProgressState.unansweredSlots =

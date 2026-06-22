@@ -127,13 +127,17 @@ export function applyRedoAllQuestions(questionsJSON) {
   return saveProgressToBrowser(questionsJSON);
 }
 
-export function applyRetryWrongQuestions(questionsJSON) {
+export function applyRetryWrongQuestions(questionsJSON, options = {}) {
+  const { includePartial = false } = options;
   const questions = getQuestions(questionsJSON);
   if (!questions.length) {
     return { ok: false, message: "当前没有可重做的题目。" };
   }
 
-  const retrySet = buildWrongQuestionsSet(questionsJSON, questions, { clearResults: true });
+  const retrySet = buildWrongQuestionsSet(questionsJSON, questions, {
+    includePartial,
+    clearResults: true
+  });
   if (!retrySet.questions.length) {
     return { ok: false, message: "当前没有错题可重做。" };
   }

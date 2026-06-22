@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from "vue";
-import { judgeAnswerTrue } from "../../utils/questions";
+import { isSlotAttempted } from "../../models/question/feedback";
+import { judgeSlotOutcome } from "../../utils/questions";
 
 const props = defineProps({
   question: { type: Object, required: true },
@@ -16,6 +17,17 @@ const selectedKeys = computed(() =>
     .filter(Boolean)
 );
 
+const slotOutcome = computed(() => {
+  if (!isSlotAttempted(props.question, 0)) return null;
+  return judgeSlotOutcome(props.question, 0);
+});
+
+const correctKeys = computed(() =>
+  new Set(
+    (props.question.answers?.[0] ?? []).map((item) => String(item).trim().toUpperCase())
+  )
+);
+
 function optionInputId(qindex, optionKey) {
   return `question-${qindex}-option-${optionKey}`;
 }
@@ -24,11 +36,33 @@ function isSelected(optionKey) {
   return selectedKeys.value.includes(optionKey);
 }
 
+function normalizedOptionKey(optionKey) {
+  return String(optionKey).trim().toUpperCase();
+}
+
 function optionClass(optionKey) {
-  if (!isSelected(optionKey)) return "multiple-choice-option";
-  return judgeAnswerTrue(props.question, 0)
-    ? "multiple-choice-option is-correct"
-    : "multiple-choice-option is-wrong";
+  const classes = ["multiple-choice-option"];
+  const key = normalizedOptionKey(optionKey);
+  const selected = isSelected(optionKey);
+  const isCorrectOption = correctKeys.value.has(key);
+  const outcome = slotOutcome.value;
+
+  if (!outcome) return classes.join(" ");
+
+  if (outcome === "correct") {
+    if (selected && isCorrectOption) classes.push("is-correct");
+    return classes.join(" ");
+  }
+
+  if (outcome === "partial") {
+    if (selected && isCorrectOption) classes.push("is-partial-selected");
+    return classes.join(" ");
+  }
+
+  if (selected) {
+    classes.push(isCorrectOption ? "is-wrong-correct" : "is-wrong");
+  }
+  return classes.join(" ");
 }
 
 function toggleOption(optionKey) {
@@ -97,10 +131,24 @@ function toggleOption(optionKey) {
   font-weight: 600;
 }
 
+.multiple-choice-option.is-partial-selected {
+  border-color: var(--bs-warning);
+  background: rgba(var(--bs-warning-rgb), 0.1);
+  color: var(--bs-warning-text-emphasis, var(--bs-warning));
+  font-weight: 600;
+}
+
 .multiple-choice-option.is-wrong {
   border-color: var(--bs-danger);
   background: rgba(var(--bs-danger-rgb), 0.08);
   color: var(--bs-danger);
+  font-weight: 600;
+}
+
+.multiple-choice-option.is-wrong-correct {
+  border-color: var(--bs-success);
+  background: rgba(var(--bs-danger-rgb), 0.04);
+  color: var(--bs-success);
   font-weight: 600;
 }
 </style>

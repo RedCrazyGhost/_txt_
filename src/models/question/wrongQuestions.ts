@@ -1,5 +1,5 @@
 import type { Question } from "./types";
-import { hasAnyWrongAttempt } from "./feedback";
+import { hasAnyPartialAttempt, hasAnyWrongAttempt } from "./feedback";
 import { getAnswerSlotCount } from "../../utils/questions";
 import { resolveQuestionBankVersion } from "./normalize";
 
@@ -18,8 +18,30 @@ export interface WrongQuestionsSet extends QuestionBankMeta {
   questions: Question[];
 }
 
-export function getWrongQuestions(questions: Question[]): Question[] {
+export interface WrongQuestionsOptions {
+  includePartial?: boolean;
+  clearResults?: boolean;
+}
+
+export function getStrictWrongQuestions(questions: Question[]): Question[] {
   return questions.filter((question) => hasAnyWrongAttempt(question));
+}
+
+export function getWrongQuestionsIncludingPartial(questions: Question[]): Question[] {
+  return questions.filter(
+    (question) => hasAnyWrongAttempt(question) || hasAnyPartialAttempt(question)
+  );
+}
+
+/** @deprecated Use getStrictWrongQuestions */
+export function getWrongQuestions(questions: Question[]): Question[] {
+  return getStrictWrongQuestions(questions);
+}
+
+function filterWrongQuestions(questions: Question[], includePartial: boolean): Question[] {
+  return includePartial
+    ? getWrongQuestionsIncludingPartial(questions)
+    : getStrictWrongQuestions(questions);
 }
 
 export function cloneQuestionWithEmptyResults(question: Question): Question {
@@ -29,24 +51,31 @@ export function cloneQuestionWithEmptyResults(question: Question): Question {
   return clone;
 }
 
-function buildWrongBankName(name: string | undefined): string {
-  const base = (name || "未命名题集").replace(/-错题$/, "");
-  return `${base}-错题`;
+function stripWrongBankSuffix(name: string | undefined): string {
+  return (name || "未命名题集")
+    .replace(/-错题含半对$/, "")
+    .replace(/-错题$/, "");
+}
+
+function buildWrongBankName(name: string | undefined, includePartial: boolean): string {
+  const base = stripWrongBankSuffix(name);
+  return includePartial ? `${base}-错题含半对` : `${base}-错题`;
 }
 
 export function buildWrongQuestionsSet(
   meta: QuestionBankMeta,
   questions: Question[],
-  options: { clearResults?: boolean } = {}
+  options: WrongQuestionsOptions = {}
 ): WrongQuestionsSet {
-  const filtered = getWrongQuestions(questions);
-  const wrongQuestions = options.clearResults
+  const { includePartial = false, clearResults = false } = options;
+  const filtered = filterWrongQuestions(questions, includePartial);
+  const wrongQuestions = clearResults
     ? filtered.map(cloneQuestionWithEmptyResults)
     : filtered.map((question) => JSON.parse(JSON.stringify(question)) as Question);
 
   return {
     version: resolveQuestionBankVersion(wrongQuestions),
-    name: buildWrongBankName(meta.name),
+    name: buildWrongBankName(meta.name, includePartial),
     type: meta.type || "",
     author: meta.author || "",
     questions: wrongQuestions
@@ -55,12 +84,17 @@ export function buildWrongQuestionsSet(
 
 export function buildWrongQuestionsExportJson(
   meta: QuestionBankMeta,
-  questions: Question[]
+  questions: Question[],
+  options: WrongQuestionsOptions = {}
 ): string {
-  return JSON.stringify(buildWrongQuestionsSet(meta, questions), null, 2);
+  return JSON.stringify(buildWrongQuestionsSet(meta, questions, options), null, 2);
 }
 
-export function buildWrongQuestionsFilename(name: string | undefined, date = new Date()): string {
+export function buildWrongQuestionsFilename(
+  name: string | undefined,
+  options: { includePartial?: boolean; date?: Date } = {}
+): string {
+  const { includePartial = false, date = new Date() } = options;
   const yyyymmdd = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
-  return `${buildWrongBankName(name)}-${yyyymmdd}.json`;
+  return `${buildWrongBankName(name, includePartial)}-${yyyymmdd}.json`;
 }

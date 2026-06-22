@@ -7,8 +7,10 @@ export const questionProgressState = reactive({
   totalSlots: 0,
   attemptedSlots: 0,
   correctSlots: 0,
+  partialSlots: 0,
   wrongSlots: 0,
   unansweredSlots: 0,
   unansweredQuestionIndexes: [],
-  wrongQuestionCount: 0
+  wrongQuestionCount: 0,
+  partialQuestionCount: 0
 });

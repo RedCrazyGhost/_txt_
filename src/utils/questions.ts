@@ -27,7 +27,9 @@ export function getAnswerSlotCount(question: Question): number {
   return question.answers.length;
 }
 
-function normalizeSelectedKeys(value: unknown): string[] {
+export type SlotOutcome = "correct" | "partial" | "wrong";
+
+export function normalizeSelectedKeys(value: unknown): string[] {
   return String(value ?? "")
     .split(",")
     .map((item) => item.trim().toUpperCase())
@@ -35,10 +37,38 @@ function normalizeSelectedKeys(value: unknown): string[] {
     .sort();
 }
 
+function judgeMultipleChoiceOutcome(correctAnswers: string[], userValue: unknown): SlotOutcome {
+  const correctKeys = new Set(correctAnswers.map((item) => item.toUpperCase()));
+  if (!correctKeys.size) return "wrong";
+
+  const userKeys = normalizeSelectedKeys(userValue);
+  if (!userKeys.length) return "wrong";
+
+  const hasWrongSelection = userKeys.some((key) => !correctKeys.has(key));
+  if (hasWrongSelection) return "wrong";
+
+  if (userKeys.length === correctKeys.size) return "correct";
+  return "partial";
+}
+
 function judgeMultipleChoiceSlot(correctAnswers: string[], userValue: unknown): boolean {
-  const correct = correctAnswers.map((item) => item.toUpperCase()).sort().join(",");
-  const user = normalizeSelectedKeys(userValue).join(",");
-  return correct.length > 0 && correct === user;
+  return judgeMultipleChoiceOutcome(correctAnswers, userValue) === "correct";
+}
+
+export function judgeSlotOutcome(question: Question, index: number): SlotOutcome {
+  const value = question.results?.[index];
+  const attempted =
+    value !== undefined && value !== null && String(value).trim() !== "";
+  if (!attempted) return "wrong";
+
+  const slot = question.answers[index] || [];
+  if (!slot.length) return "wrong";
+
+  if (isMultipleChoiceQuestion(question)) {
+    return judgeMultipleChoiceOutcome(slot, value);
+  }
+
+  return judgeAnswerTrue(question, index) ? "correct" : "wrong";
 }
 
 export function judgeAnswerTrue(question: Question, index: number): boolean {

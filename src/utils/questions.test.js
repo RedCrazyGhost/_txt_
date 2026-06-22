@@ -5,6 +5,7 @@ import {
   getAnswerSlotCount,
   getQuestionType,
   judgeAnswerTrue,
+  judgeSlotOutcome,
   numberToPercent,
   trueAnswerNumber
 } from "./questions.ts";
@@ -74,6 +75,31 @@ describe("questions utils", () => {
     expect(judgeAnswerTrue(question, 0)).toBe(false);
     question.results[0] = "A,B";
     expect(judgeAnswerTrue(question, 0)).toBe(false);
+  });
+
+  it("judgeSlotOutcome distinguishes correct, partial, and wrong for multipleChoice", () => {
+    const question = {
+      questionType: "multipleChoice",
+      stem: "题干",
+      options: [
+        { key: "A", text: "选项A" },
+        { key: "B", text: "选项B" },
+        { key: "C", text: "选项C" }
+      ],
+      answers: [["A", "C"]],
+      results: ["A,C"],
+      MD5: false,
+      image: ""
+    };
+    expect(judgeSlotOutcome(question, 0)).toBe("correct");
+    question.results[0] = "A";
+    expect(judgeSlotOutcome(question, 0)).toBe("partial");
+    question.results[0] = "A,B";
+    expect(judgeSlotOutcome(question, 0)).toBe("wrong");
+    question.results[0] = "A,B,C";
+    expect(judgeSlotOutcome(question, 0)).toBe("wrong");
+    question.results[0] = "B";
+    expect(judgeSlotOutcome(question, 0)).toBe("wrong");
   });
 
   it("getAnswerSlotCount and allAnswerNumber work for singleChoice", () => {

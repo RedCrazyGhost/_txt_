@@ -28,6 +28,11 @@ const canRedoAll = computed(() => questionProgressState.attemptedSlots > 0);
 
 const canRetryWrong = computed(() => questionProgressState.wrongQuestionCount > 0);
 
+const canRetryWrongWithPartial = computed(
+  () =>
+    questionProgressState.wrongQuestionCount + questionProgressState.partialQuestionCount > 0
+);
+
 function showStatus(message, tone = "success") {
   statusMessage.value = message;
   statusTone.value = tone;
@@ -65,12 +70,14 @@ function handleRedoAll() {
   if (result.ok) scrollToTop();
 }
 
-function handleRetryWrong() {
-  if (!canRetryWrong.value) return;
+function handleRetryWrong(includePartial = false) {
+  const canRetry = includePartial ? canRetryWrongWithPartial.value : canRetryWrong.value;
+  if (!canRetry) return;
   const name = appState.questionsJSON.name || "未命名题集";
-  const ok = window.confirm(`确定仅保留《${name}》的错题并清空其答案？`);
+  const label = includePartial ? "错题（含半对）" : "错题";
+  const ok = window.confirm(`确定仅保留《${name}》的${label}并清空其答案？`);
   if (!ok) return;
-  const result = applyRetryWrongQuestions(appState.questionsJSON);
+  const result = applyRetryWrongQuestions(appState.questionsJSON, { includePartial });
   showStatus(result.message, result.ok ? "success" : "warning");
   if (result.ok) scrollToTop();
 }
@@ -116,9 +123,17 @@ function handleRetryWrong() {
             type="button"
             class="btn btn-outline-danger btn-sm"
             :disabled="!canRetryWrong"
-            @click="handleRetryWrong"
+            @click="handleRetryWrong(false)"
           >
             <i class="fas fa-redo me-1"></i>重做错题
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-warning btn-sm"
+            :disabled="!canRetryWrongWithPartial"
+            @click="handleRetryWrong(true)"
+          >
+            <i class="fas fa-redo me-1"></i>重做错题（含半对）
           </button>
         </template>
         <router-link class="btn btn-outline-secondary btn-sm" to="/question-bank">

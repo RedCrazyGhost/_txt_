@@ -7,7 +7,7 @@ import QuestionReportModal from "./QuestionReportModal.vue";
 import SingleChoiceQuestionBody from "./SingleChoiceQuestionBody.vue";
 import { shouldShowExplanationPanel } from "../../models/question/feedback";
 import { getQuestionTypeBadgeClass, getQuestionTypeLabel } from "../../models/question/labels";
-import { getAnswerSlotCount, getQuestionType, judgeAnswerTrue } from "../../utils/questions";
+import { getAnswerSlotCount, getQuestionType, judgeSlotOutcome } from "../../utils/questions";
 
 const props = defineProps({
   question: { type: Object, required: true },
@@ -33,7 +33,8 @@ const attemptedSlotFeedback = computed(() => {
     const attempted =
       value !== undefined && value !== null && String(value).trim() !== "";
     if (!attempted) continue;
-    entries.push({ index, correct: judgeAnswerTrue(question, index) });
+    if (!attempted) continue;
+    entries.push({ index, outcome: judgeSlotOutcome(question, index) });
   }
 
   return entries;
@@ -44,10 +45,14 @@ const answerStatusIconClass = computed(() => {
   if (!feedback.length) return "";
 
   const slotCount = getAnswerSlotCount(props.question);
-  const allCorrect = feedback.every((entry) => entry.correct);
-  return allCorrect && feedback.length === slotCount
-    ? "fas fa-check fa-3x text-success"
-    : "fas fa-exclamation fa-3x text-danger";
+  const allCorrect =
+    feedback.every((entry) => entry.outcome === "correct") && feedback.length === slotCount;
+  if (allCorrect) return "fas fa-check fa-3x text-success";
+
+  const hasWrong = feedback.some((entry) => entry.outcome === "wrong");
+  if (hasWrong) return "fas fa-exclamation fa-3x text-danger";
+
+  return "fas fa-exclamation fa-3x text-warning";
 });
 
 const showExplanation = computed(() =>
@@ -58,8 +63,16 @@ function judgeColorChangeFontColor(color) {
   return color === "light" ? "dark" : "light";
 }
 
-function resultColor(correct) {
-  return correct ? "var(--bs-green)" : "var(--bs-red)";
+function outcomeLabel(outcome) {
+  if (outcome === "correct") return "正确";
+  if (outcome === "partial") return "半对";
+  return "错误";
+}
+
+function resultColor(outcome) {
+  if (outcome === "correct") return "var(--bs-green)";
+  if (outcome === "partial") return "var(--bs-warning)";
+  return "var(--bs-red)";
 }
 
 function isSingleChoice(question) {
@@ -155,9 +168,9 @@ function openReportModal() {
         <span
           v-for="entry in attemptedSlotFeedback"
           :key="`result-${entry.index}`"
-          :style="`color:${resultColor(entry.correct)};margin-right:8px;`"
+          :style="`color:${resultColor(entry.outcome)};margin-right:8px;`"
         >
-          第{{ entry.index + 1 }}个：{{ entry.correct ? "正确" : "错误" }}
+          第{{ entry.index + 1 }}个：{{ outcomeLabel(entry.outcome) }}
         </span>
       </small>
     </div>

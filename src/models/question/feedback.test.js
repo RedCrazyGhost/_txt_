@@ -44,6 +44,39 @@ describe("question feedback", () => {
     expect(shouldShowExplanation(question)).toBe(false);
   });
 
+  it("shows explanation when multipleChoice answer is partial", () => {
+    const question = {
+      questionType: "multipleChoice",
+      stem: "题干",
+      options: [
+        { key: "A", text: "选项A" },
+        { key: "C", text: "选项C" }
+      ],
+      answers: [["A", "C"]],
+      results: ["A"],
+      explanation: "解析",
+      MD5: false,
+      image: ""
+    };
+    expect(shouldShowExplanation(question)).toBe(true);
+  });
+
+  it("treats partial multipleChoice as not wrong", () => {
+    const question = {
+      questionType: "multipleChoice",
+      stem: "题干",
+      options: [
+        { key: "A", text: "选项A" },
+        { key: "C", text: "选项C" }
+      ],
+      answers: [["A", "C"]],
+      results: ["A"],
+      MD5: false,
+      image: ""
+    };
+    expect(hasAnyWrongAttempt(question)).toBe(false);
+  });
+
   it("does not treat null results as attempted", () => {
     expect(isAnswerAttempted(null)).toBe(false);
     expect(isAnswerAttempted(undefined)).toBe(false);

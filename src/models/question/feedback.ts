@@ -1,5 +1,5 @@
 import type { Question } from "./types";
-import { getAnswerSlotCount, judgeAnswerTrue } from "../../utils/questions";
+import { getAnswerSlotCount, judgeSlotOutcome } from "../../utils/questions";
 
 function isAttempted(value: unknown): boolean {
   return value !== undefined && value !== null && String(value).trim() !== "";
@@ -42,7 +42,17 @@ export function getUnansweredQuestionIndexes(questions: Question[]): number[] {
 export function hasAnyWrongAttempt(question: Question): boolean {
   const slotCount = getAnswerSlotCount(question);
   for (let index = 0; index < slotCount; index += 1) {
-    if (isAttempted(question.results?.[index]) && !judgeAnswerTrue(question, index)) {
+    if (isAttempted(question.results?.[index]) && judgeSlotOutcome(question, index) === "wrong") {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function hasAnyPartialAttempt(question: Question): boolean {
+  const slotCount = getAnswerSlotCount(question);
+  for (let index = 0; index < slotCount; index += 1) {
+    if (isAttempted(question.results?.[index]) && judgeSlotOutcome(question, index) === "partial") {
       return true;
     }
   }
@@ -50,7 +60,7 @@ export function hasAnyWrongAttempt(question: Question): boolean {
 }
 
 export function shouldShowExplanation(question: Question): boolean {
-  if (!hasAnyWrongAttempt(question)) return false;
+  if (!hasAnyWrongAttempt(question) && !hasAnyPartialAttempt(question)) return false;
   if (question.explanation?.trim()) return true;
   if (question.MD5) return false;
   return getAnswerSlotCount(question) > 0;
@@ -88,7 +98,18 @@ export function getWrongSlotIndexes(question: Question): number[] {
   const slotCount = getAnswerSlotCount(question);
   const indexes: number[] = [];
   for (let index = 0; index < slotCount; index += 1) {
-    if (isAttempted(question.results?.[index]) && !judgeAnswerTrue(question, index)) {
+    if (isAttempted(question.results?.[index]) && judgeSlotOutcome(question, index) === "wrong") {
+      indexes.push(index);
+    }
+  }
+  return indexes;
+}
+
+export function getPartialSlotIndexes(question: Question): number[] {
+  const slotCount = getAnswerSlotCount(question);
+  const indexes: number[] = [];
+  for (let index = 0; index < slotCount; index += 1) {
+    if (isAttempted(question.results?.[index]) && judgeSlotOutcome(question, index) === "partial") {
       indexes.push(index);
     }
   }

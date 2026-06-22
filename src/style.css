@@ -54,6 +54,11 @@ body {
   --app-bottom-nav-height: 3.75rem;
   --app-fab-gap: 0.75rem;
   --app-fab-size: 3.25rem;
+  --app-fab-edge: 12px;
+  --app-fab-bottom: calc(var(--app-fab-edge) + env(safe-area-inset-bottom, 0px));
+  --app-fab-max-height: calc(
+    100dvh - var(--app-fab-bottom) - var(--app-fab-edge) - env(safe-area-inset-top, 0px)
+  );
   transition:
     background-color 0.2s ease,
     color 0.2s ease;

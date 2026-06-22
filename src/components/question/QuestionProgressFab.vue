@@ -23,6 +23,7 @@ const props = defineProps({
 const panelRef = ref(null);
 const expanded = ref(false);
 const isCompactUi = ref(false);
+const hoverDismissed = ref(false);
 
 let compactMediaQuery = null;
 
@@ -37,20 +38,34 @@ const progress = computed(() => ({
   totalSlots: questionProgressState.totalSlots,
   attemptedSlots: questionProgressState.attemptedSlots,
   correctSlots: questionProgressState.correctSlots,
+  partialSlots: questionProgressState.partialSlots,
   wrongSlots: questionProgressState.wrongSlots,
   unansweredSlots: questionProgressState.unansweredSlots,
   unansweredQuestionCount: questionProgressState.unansweredQuestionIndexes.length,
-  wrongQuestionCount: questionProgressState.wrongQuestionCount
+  wrongQuestionCount: questionProgressState.wrongQuestionCount,
+  partialQuestionCount: questionProgressState.partialQuestionCount
 }));
 
+const wrongWithPartialCount = computed(
+  () => progress.value.wrongQuestionCount + progress.value.partialQuestionCount
+);
+
 const canExportWrong = computed(() => progress.value.wrongQuestionCount > 0);
+
+const canExportWrongWithPartial = computed(() => wrongWithPartialCount.value > 0);
 
 const canExportPractice = computed(() => progress.value.attemptedSlots > 0);
 
 const canRetryWrong = computed(() => progress.value.wrongQuestionCount > 0);
 
+const canRetryWrongWithPartial = computed(() => wrongWithPartialCount.value > 0);
+
 const correctPercent = computed(() =>
   numberToPercent(progress.value.correctSlots, progress.value.totalSlots)
+);
+
+const partialPercent = computed(() =>
+  numberToPercent(progress.value.partialSlots, progress.value.totalSlots)
 );
 
 const wrongPercent = computed(() =>
@@ -76,6 +91,7 @@ const summaryItems = computed(() => [
     value: `${progress.value.attemptedSlots}/${progress.value.totalSlots}`
   },
   { label: "正确", value: progress.value.correctSlots, tone: "success" },
+  { label: "半对", value: progress.value.partialSlots, tone: "warning" },
   { label: "错误", value: progress.value.wrongSlots, tone: "danger" },
   { label: "未答空位", value: progress.value.unansweredSlots, tone: "secondary" },
   { label: "正确率", value: accuracyText.value, tone: "primary" }
@@ -110,10 +126,23 @@ function closeExpanded() {
   blurPanelFocus();
 }
 
-function exportWrongQuestions() {
-  if (!canExportWrong.value) return;
-  const json = buildWrongQuestionsExportJson(props.bank, questions.value);
-  const filename = buildWrongQuestionsFilename(props.bank.name);
+function handleClose() {
+  if (isCompactUi.value) {
+    closeExpanded();
+    return;
+  }
+  hoverDismissed.value = true;
+  blurPanelFocus();
+}
+
+function onFabMouseLeave() {
+  hoverDismissed.value = false;
+}
+
+function exportWrongQuestions(includePartial = false) {
+  if (includePartial ? !canExportWrongWithPartial.value : !canExportWrong.value) return;
+  const json = buildWrongQuestionsExportJson(props.bank, questions.value, { includePartial });
+  const filename = buildWrongQuestionsFilename(props.bank.name, { includePartial });
   saveAs(new Blob([json], { type: "application/json;charset=utf-8" }), filename);
 }
 
@@ -124,10 +153,13 @@ function exportPracticeRecord() {
   saveAs(new Blob([json], { type: "application/json;charset=utf-8" }), filename);
 }
 
-function retryWrongQuestions() {
-  if (!canRetryWrong.value) return;
+function retryWrongQuestions(includePartial = false) {
+  if (includePartial ? !canRetryWrongWithPartial.value : !canRetryWrong.value) return;
 
-  const retrySet = buildWrongQuestionsSet(props.bank, questions.value, { clearResults: true });
+  const retrySet = buildWrongQuestionsSet(props.bank, questions.value, {
+    includePartial,
+    clearResults: true
+  });
   props.bank.name = retrySet.name;
   props.bank.type = retrySet.type;
   props.bank.author = retrySet.author;
@@ -155,7 +187,12 @@ onUnmounted(() => {
 <template>
   <div
     class="question-progress-fab"
-    :class="{ 'is-expanded': expanded, 'is-compact': isCompactUi }"
+    :class="{
+      'is-expanded': expanded,
+      'is-compact': isCompactUi,
+      'is-hover-dismissed': hoverDismissed
+    }"
+    @mouseleave="onFabMouseLeave"
   >
     <div
       ref="panelRef"
@@ -177,28 +214,31 @@ onUnmounted(() => {
             <i class="fas fa-chart-pie"></i>
           </span>
         </button>
-        <button
-          v-if="isCompactUi && expanded"
-          type="button"
-          class="question-progress-fab-close"
-          aria-label="关闭"
-          @click="closeExpanded"
-        >
-          <i class="fas fa-times" aria-hidden="true"></i>
-        </button>
       </div>
 
       <div class="question-progress-fab-body">
           <div class="question-progress-fab-headline">
-            <div id="question-progress-fab-title" class="question-progress-fab-title">答题进度</div>
+            <div class="question-progress-fab-headline-row">
+              <div id="question-progress-fab-title" class="question-progress-fab-title">答题进度</div>
+              <button
+                v-if="isCompactUi ? expanded : true"
+                type="button"
+                class="question-progress-fab-close question-progress-fab-close-inline"
+                aria-label="关闭"
+                @click="handleClose"
+              >
+                <i class="fas fa-times" aria-hidden="true"></i>
+              </button>
+            </div>
             <div class="question-progress-fab-subtitle">
-              正确 {{ progress.correctSlots }} · 已答 {{ progress.attemptedSlots }} · 总计
-              {{ progress.totalSlots }}
+              正确 {{ progress.correctSlots }} · 半对 {{ progress.partialSlots }} · 已答
+              {{ progress.attemptedSlots }} · 总计 {{ progress.totalSlots }}
             </div>
           </div>
 
           <div class="progress question-progress-fab-bar">
             <div class="progress-bar bg-success" :style="{ width: `${correctPercent}%` }"></div>
+            <div class="progress-bar bg-warning" :style="{ width: `${partialPercent}%` }"></div>
             <div class="progress-bar bg-danger" :style="{ width: `${wrongPercent}%` }"></div>
             <div
               class="progress-bar bg-secondary bg-opacity-25"
@@ -208,6 +248,7 @@ onUnmounted(() => {
 
           <div class="question-progress-fab-legend">
             <span><i class="legend-dot legend-dot-success"></i>正确 {{ correctPercent.toFixed(1) }}%</span>
+            <span><i class="legend-dot legend-dot-warning"></i>半对 {{ partialPercent.toFixed(1) }}%</span>
             <span><i class="legend-dot legend-dot-danger"></i>错误 {{ wrongPercent.toFixed(1) }}%</span>
             <span><i class="legend-dot legend-dot-muted"></i>未答 {{ unansweredPercent.toFixed(1) }}%</span>
           </div>
@@ -233,12 +274,21 @@ onUnmounted(() => {
               type="button"
               class="btn btn-outline-danger"
               :disabled="!canExportWrong"
-              @click="exportWrongQuestions"
+              @click="exportWrongQuestions(false)"
             >
               <i class="fas fa-file-export me-1"></i>导出错题
               <span v-if="progress.wrongQuestionCount" class="ms-1"
                 >({{ progress.wrongQuestionCount }})</span
               >
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-warning"
+              :disabled="!canExportWrongWithPartial"
+              @click="exportWrongQuestions(true)"
+            >
+              <i class="fas fa-file-export me-1"></i>导出错题（含半对）
+              <span v-if="wrongWithPartialCount" class="ms-1">({{ wrongWithPartialCount }})</span>
             </button>
             <button
               type="button"
@@ -252,9 +302,17 @@ onUnmounted(() => {
               type="button"
               class="btn btn-danger"
               :disabled="!canRetryWrong"
-              @click="retryWrongQuestions"
+              @click="retryWrongQuestions(false)"
             >
               <i class="fas fa-redo me-1"></i>重做错题
+            </button>
+            <button
+              type="button"
+              class="btn btn-warning"
+              :disabled="!canRetryWrongWithPartial"
+              @click="retryWrongQuestions(true)"
+            >
+              <i class="fas fa-redo me-1"></i>重做错题（含半对）
             </button>
           </div>
       </div>
@@ -264,18 +322,20 @@ onUnmounted(() => {
 
 <style scoped>
 .question-progress-fab {
-  --fab-edge: 12px;
+  --fab-edge: var(--app-fab-edge, 12px);
+  --fab-bottom: var(--app-fab-bottom, 12px);
   --fab-safe-bottom: env(safe-area-inset-bottom, 0px);
   --fab-safe-right: env(safe-area-inset-right, 0px);
   --fab-safe-left: env(safe-area-inset-left, 0px);
   --fab-safe-top: env(safe-area-inset-top, 0px);
   --fab-max-width: calc(100vw - var(--fab-edge) * 2 - var(--fab-safe-left) - var(--fab-safe-right));
-  --fab-max-height: calc(
-    100dvh - var(--fab-edge) * 2 - var(--fab-safe-top) - var(--fab-safe-bottom)
+  --fab-max-height: var(
+    --app-fab-max-height,
+    calc(100dvh - var(--fab-bottom) - var(--fab-edge) - var(--fab-safe-top))
   );
 
   position: fixed;
-  bottom: calc(var(--fab-edge) + var(--fab-safe-bottom));
+  bottom: var(--fab-bottom);
   right: calc(var(--fab-edge) + var(--fab-safe-right));
   z-index: 1040;
   max-width: var(--fab-max-width);
@@ -294,7 +354,8 @@ onUnmounted(() => {
   transition:
     width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
     max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-    border-radius 0.25s ease;
+    border-radius 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .question-progress-fab.is-compact .question-progress-fab-panel {
@@ -307,7 +368,19 @@ onUnmounted(() => {
   .question-progress-fab:not(.is-compact):hover .question-progress-fab-panel,
   .question-progress-fab:not(.is-compact):focus-within .question-progress-fab-panel {
     width: min(360px, var(--fab-max-width));
+    max-height: min(85dvh, var(--fab-max-height));
     border-radius: 16px;
+    display: flex;
+    flex-direction: column-reverse;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  }
+
+  .question-progress-fab:not(.is-compact).is-hover-dismissed:hover .question-progress-fab-panel,
+  .question-progress-fab:not(.is-compact).is-hover-dismissed:focus-within .question-progress-fab-panel {
+    width: 42px;
+    max-height: none;
+    border-radius: 21px;
+    box-shadow: none;
   }
 }
 
@@ -316,6 +389,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex: 0 0 auto;
   height: 42px;
 }
 
@@ -333,10 +407,6 @@ onUnmounted(() => {
 }
 
 .question-progress-fab-close {
-  position: absolute;
-  top: 50%;
-  right: 6px;
-  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -348,6 +418,11 @@ onUnmounted(() => {
   background: transparent;
   color: var(--bs-secondary);
   font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.question-progress-fab-close-inline {
+  margin: -4px -4px 0 0;
 }
 
 .question-progress-fab-close:hover {
@@ -380,25 +455,39 @@ onUnmounted(() => {
 @media (hover: hover) and (pointer: fine) {
   .question-progress-fab:not(.is-compact):hover .question-progress-fab-body,
   .question-progress-fab:not(.is-compact):focus-within .question-progress-fab-body {
-    max-height: 520px;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: min(calc(85dvh - 42px), calc(var(--fab-max-height) - 42px));
     opacity: 1;
-    padding: 0 14px 14px;
+    padding: 14px 14px 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     pointer-events: auto;
+  }
+
+  .question-progress-fab:not(.is-compact).is-hover-dismissed:hover .question-progress-fab-body,
+  .question-progress-fab:not(.is-compact).is-hover-dismissed:focus-within .question-progress-fab-body {
+    max-height: 0;
+    opacity: 0;
+    padding: 0 14px;
+    overflow: hidden;
+    pointer-events: none;
   }
 }
 
 .question-progress-fab.is-compact.is-expanded .question-progress-fab-panel {
   width: var(--fab-max-width);
-  max-height: min(90dvh, var(--fab-max-height));
+  max-height: min(85dvh, var(--fab-max-height));
   border-radius: 16px;
   display: flex;
   flex-direction: column-reverse;
   padding-bottom: var(--fab-safe-bottom);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
 }
 
 .question-progress-fab.is-compact.is-expanded .question-progress-fab-header {
   flex: 0 0 auto;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .question-progress-fab.is-compact:not(.is-expanded) .question-progress-fab-body {
@@ -442,10 +531,18 @@ onUnmounted(() => {
   margin-bottom: 10px;
 }
 
+.question-progress-fab-headline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 4px;
+}
+
 .question-progress-fab-title {
   font-size: 1rem;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 
 .question-progress-fab-subtitle {
@@ -478,6 +575,10 @@ onUnmounted(() => {
 
 .legend-dot-success {
   background: var(--bs-success);
+}
+
+.legend-dot-warning {
+  background: var(--bs-warning);
 }
 
 .legend-dot-danger {
@@ -520,6 +621,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+  padding-bottom: 0.25rem;
 }
 
 .question-progress-fab-actions .btn {

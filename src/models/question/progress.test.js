@@ -182,4 +182,37 @@ describe("question progress", () => {
     syncQuestionProgress(0, question);
     expect(questionProgressState.correctSlots).toBe(0);
   });
+
+  it("tracks partial slots for multipleChoice without counting as wrong", () => {
+    const question = {
+      questionType: "multipleChoice",
+      stem: "题干",
+      options: [
+        { key: "A", text: "选项A" },
+        { key: "B", text: "选项B" },
+        { key: "C", text: "选项C" }
+      ],
+      answers: [["A", "C"]],
+      results: [undefined],
+      MD5: false,
+      image: ""
+    };
+
+    resetQuestionProgress([question]);
+    question.results[0] = "A";
+    notifySlotChanged(0, question, 0);
+
+    expect(questionProgressState.partialSlots).toBe(1);
+    expect(questionProgressState.wrongSlots).toBe(0);
+    expect(questionProgressState.wrongQuestionCount).toBe(0);
+    expect(questionProgressState.partialQuestionCount).toBe(1);
+
+    question.results[0] = "A,B";
+    notifySlotChanged(0, question, 0);
+
+    expect(questionProgressState.partialSlots).toBe(0);
+    expect(questionProgressState.wrongSlots).toBe(1);
+    expect(questionProgressState.wrongQuestionCount).toBe(1);
+    expect(questionProgressState.partialQuestionCount).toBe(0);
+  });
 });

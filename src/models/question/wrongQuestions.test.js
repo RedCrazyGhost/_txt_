@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildWrongQuestionsExportJson,
   buildWrongQuestionsSet,
-  getWrongQuestions
+  getStrictWrongQuestions,
+  getWrongQuestionsIncludingPartial
 } from "./wrongQuestions.ts";
 
 describe("wrongQuestions", () => {
@@ -38,8 +39,58 @@ describe("wrongQuestions", () => {
   ];
 
   it("filters questions with any wrong attempt", () => {
-    expect(getWrongQuestions(questions)).toHaveLength(1);
-    expect(getWrongQuestions(questions)[0].texts[0]).toBe("b");
+    expect(getStrictWrongQuestions(questions)).toHaveLength(1);
+    expect(getStrictWrongQuestions(questions)[0].texts[0]).toBe("b");
+  });
+
+  it("includes partial multipleChoice when includePartial is enabled", () => {
+    const withPartial = [
+      ...questions,
+      {
+        questionType: "multipleChoice",
+        stem: "题干",
+        options: [
+          { key: "A", text: "选项A" },
+          { key: "C", text: "选项C" }
+        ],
+        answers: [["A", "C"]],
+        results: ["A"],
+        MD5: false,
+        image: ""
+      }
+    ];
+    expect(getStrictWrongQuestions(withPartial)).toHaveLength(1);
+    expect(getWrongQuestionsIncludingPartial(withPartial)).toHaveLength(2);
+  });
+
+  it("builds wrong question set names for strict and partial modes", () => {
+    const strictSet = buildWrongQuestionsSet(
+      { name: "测试题集", type: "法规", author: "作者" },
+      questions
+    );
+    expect(strictSet.name).toBe("测试题集-错题");
+
+    const partialSet = buildWrongQuestionsSet(
+      { name: "测试题集", type: "法规", author: "作者" },
+      [
+        ...questions,
+        {
+          questionType: "multipleChoice",
+          stem: "题干",
+          options: [
+            { key: "A", text: "选项A" },
+            { key: "C", text: "选项C" }
+          ],
+          answers: [["A", "C"]],
+          results: ["A"],
+          MD5: false,
+          image: ""
+        }
+      ],
+      { includePartial: true }
+    );
+    expect(partialSet.name).toBe("测试题集-错题含半对");
+    expect(partialSet.questions).toHaveLength(2);
   });
 
   it("builds wrong question set with answers preserved", () => {
