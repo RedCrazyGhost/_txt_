@@ -55,7 +55,11 @@ export const appState = reactive({
     },
     appVersion: "2.0.4",
     appColor: "light",
-    appFontFamily: "HYCuYuanJ"
+    appFontFamily: "HYCuYuanJ",
+    githubRepo: {
+      owner: "RedCrazyGhost",
+      repo: "_txt_"
+    }
   },
   txts: [{ txt: "", MD5: false, image: "", noDelete: false }],
   questionsJSON: {

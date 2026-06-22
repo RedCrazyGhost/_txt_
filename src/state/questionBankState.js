@@ -44,6 +44,10 @@ export function initQuestionBankState() {
 }
 
 export function removeLocal(id) {
-  questionBankState.localBanks = deleteBankById("local", id);
+  const result = deleteBankById("local", id);
+  if (result.ok) {
+    questionBankState.localBanks = result.banks;
+  }
+  return result;
 }
 

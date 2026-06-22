@@ -1,6 +1,6 @@
 <script setup>
 import { saveAs } from "file-saver";
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import {
   buildPracticeRecordExportJson,
   buildPracticeRecordFilename
@@ -14,9 +14,17 @@ import { resetQuestionProgress } from "../../models/question/progress";
 import { questionProgressState } from "../../state/questionProgressState";
 import { numberToPercent } from "../../utils/questions";
 
+const COMPACT_MEDIA_QUERY = "(max-width: 576px), (hover: none)";
+
 const props = defineProps({
   bank: { type: Object, required: true }
 });
+
+const panelRef = ref(null);
+const expanded = ref(false);
+const isCompactUi = ref(false);
+
+let compactMediaQuery = null;
 
 const questions = computed(() =>
   Array.isArray(props.bank?.questions) ? props.bank.questions : []
@@ -73,6 +81,35 @@ const summaryItems = computed(() => [
   { label: "正确率", value: accuracyText.value, tone: "primary" }
 ]);
 
+function syncCompactUi() {
+  isCompactUi.value = compactMediaQuery?.matches ?? false;
+  if (!isCompactUi.value) {
+    expanded.value = false;
+  }
+}
+
+function blurPanelFocus() {
+  const panel = panelRef.value;
+  const active = document.activeElement;
+  if (panel && active instanceof HTMLElement && panel.contains(active)) {
+    active.blur();
+  }
+}
+
+function toggleExpanded() {
+  if (!isCompactUi.value) return;
+  expanded.value = !expanded.value;
+  if (!expanded.value) {
+    blurPanelFocus();
+  }
+}
+
+function closeExpanded() {
+  if (!expanded.value) return;
+  expanded.value = false;
+  blurPanelFocus();
+}
+
 function exportWrongQuestions() {
   if (!canExportWrong.value) return;
   const json = buildWrongQuestionsExportJson(props.bank, questions.value);
@@ -102,84 +139,124 @@ function retryWrongQuestions() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
+
+onMounted(() => {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+  compactMediaQuery = window.matchMedia(COMPACT_MEDIA_QUERY);
+  syncCompactUi();
+  compactMediaQuery.addEventListener("change", syncCompactUi);
+});
+
+onUnmounted(() => {
+  compactMediaQuery?.removeEventListener("change", syncCompactUi);
+});
 </script>
 
 <template>
-  <div class="question-progress-fab">
-    <div class="question-progress-fab-panel">
+  <div
+    class="question-progress-fab"
+    :class="{ 'is-expanded': expanded, 'is-compact': isCompactUi }"
+  >
+    <div
+      ref="panelRef"
+      class="question-progress-fab-panel"
+      :role="isCompactUi && expanded ? 'dialog' : undefined"
+      :aria-modal="isCompactUi && expanded ? 'true' : undefined"
+      aria-labelledby="question-progress-fab-title"
+    >
       <div class="question-progress-fab-header">
-        <span class="question-progress-fab-icon" aria-hidden="true">
-          <i class="fas fa-chart-pie"></i>
-        </span>
+        <button
+          v-if="!(isCompactUi && expanded)"
+          type="button"
+          class="question-progress-fab-toggle"
+          aria-label="答题进度"
+          :aria-expanded="isCompactUi ? expanded : undefined"
+          @click="toggleExpanded"
+        >
+          <span class="question-progress-fab-icon" aria-hidden="true">
+            <i class="fas fa-chart-pie"></i>
+          </span>
+        </button>
+        <button
+          v-if="isCompactUi && expanded"
+          type="button"
+          class="question-progress-fab-close"
+          aria-label="关闭"
+          @click="closeExpanded"
+        >
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
       </div>
 
       <div class="question-progress-fab-body">
-        <div class="question-progress-fab-headline">
-          <div class="question-progress-fab-title">答题进度</div>
-          <div class="question-progress-fab-subtitle">
-            正确 {{ progress.correctSlots }} · 已答 {{ progress.attemptedSlots }} · 总计
-            {{ progress.totalSlots }}
-          </div>
-        </div>
-
-        <div class="progress question-progress-fab-bar">
-          <div class="progress-bar bg-success" :style="{ width: `${correctPercent}%` }"></div>
-          <div class="progress-bar bg-danger" :style="{ width: `${wrongPercent}%` }"></div>
-          <div
-            class="progress-bar bg-secondary bg-opacity-25"
-            :style="{ width: `${unansweredPercent}%` }"
-          ></div>
-        </div>
-
-        <div class="question-progress-fab-legend">
-          <span><i class="legend-dot legend-dot-success"></i>正确 {{ correctPercent.toFixed(1) }}%</span>
-          <span><i class="legend-dot legend-dot-danger"></i>错误 {{ wrongPercent.toFixed(1) }}%</span>
-          <span><i class="legend-dot legend-dot-muted"></i>未答 {{ unansweredPercent.toFixed(1) }}%</span>
-        </div>
-
-        <div class="question-progress-fab-grid">
-          <div
-            v-for="item in summaryItems"
-            :key="item.label"
-            class="question-progress-fab-stat"
-          >
-            <div class="question-progress-fab-stat-label">{{ item.label }}</div>
-            <div
-              class="question-progress-fab-stat-value"
-              :class="item.tone ? `text-${item.tone}` : ''"
-            >
-              {{ item.value }}
+          <div class="question-progress-fab-headline">
+            <div id="question-progress-fab-title" class="question-progress-fab-title">答题进度</div>
+            <div class="question-progress-fab-subtitle">
+              正确 {{ progress.correctSlots }} · 已答 {{ progress.attemptedSlots }} · 总计
+              {{ progress.totalSlots }}
             </div>
           </div>
-        </div>
 
-        <div class="question-progress-fab-actions">
-          <button
-            type="button"
-            class="btn btn-outline-danger"
-            :disabled="!canExportWrong"
-            @click="exportWrongQuestions"
-          >
-            <i class="fas fa-file-export me-1"></i>导出错题
-            <span v-if="wrongQuestionCount" class="ms-1">({{ wrongQuestionCount }})</span>
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-primary"
-            :disabled="!canExportPractice"
-            @click="exportPracticeRecord"
-          >
-            <i class="fas fa-save me-1"></i>导出做题记录
-          </button>
-          <button
-            type="button"
-            class="btn btn-danger"
-            :disabled="!canRetryWrong"
-            @click="retryWrongQuestions"
-          >
-            <i class="fas fa-redo me-1"></i>重做错题
-          </button>
-        </div>
+          <div class="progress question-progress-fab-bar">
+            <div class="progress-bar bg-success" :style="{ width: `${correctPercent}%` }"></div>
+            <div class="progress-bar bg-danger" :style="{ width: `${wrongPercent}%` }"></div>
+            <div
+              class="progress-bar bg-secondary bg-opacity-25"
+              :style="{ width: `${unansweredPercent}%` }"
+            ></div>
+          </div>
+
+          <div class="question-progress-fab-legend">
+            <span><i class="legend-dot legend-dot-success"></i>正确 {{ correctPercent.toFixed(1) }}%</span>
+            <span><i class="legend-dot legend-dot-danger"></i>错误 {{ wrongPercent.toFixed(1) }}%</span>
+            <span><i class="legend-dot legend-dot-muted"></i>未答 {{ unansweredPercent.toFixed(1) }}%</span>
+          </div>
+
+          <div class="question-progress-fab-grid">
+            <div
+              v-for="item in summaryItems"
+              :key="item.label"
+              class="question-progress-fab-stat"
+            >
+              <div class="question-progress-fab-stat-label">{{ item.label }}</div>
+              <div
+                class="question-progress-fab-stat-value"
+                :class="item.tone ? `text-${item.tone}` : ''"
+              >
+                {{ item.value }}
+              </div>
+            </div>
+          </div>
+
+          <div class="question-progress-fab-actions">
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              :disabled="!canExportWrong"
+              @click="exportWrongQuestions"
+            >
+              <i class="fas fa-file-export me-1"></i>导出错题
+              <span v-if="progress.wrongQuestionCount" class="ms-1"
+                >({{ progress.wrongQuestionCount }})</span
+              >
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              :disabled="!canExportPractice"
+              @click="exportPracticeRecord"
+            >
+              <i class="fas fa-save me-1"></i>导出做题记录
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              :disabled="!canRetryWrong"
+              @click="retryWrongQuestions"
+            >
+              <i class="fas fa-redo me-1"></i>重做错题
+            </button>
+          </div>
       </div>
     </div>
   </div>
@@ -187,11 +264,21 @@ function retryWrongQuestions() {
 
 <style scoped>
 .question-progress-fab {
+  --fab-edge: 12px;
+  --fab-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --fab-safe-right: env(safe-area-inset-right, 0px);
+  --fab-safe-left: env(safe-area-inset-left, 0px);
+  --fab-safe-top: env(safe-area-inset-top, 0px);
+  --fab-max-width: calc(100vw - var(--fab-edge) * 2 - var(--fab-safe-left) - var(--fab-safe-right));
+  --fab-max-height: calc(
+    100dvh - var(--fab-edge) * 2 - var(--fab-safe-top) - var(--fab-safe-bottom)
+  );
+
   position: fixed;
-  bottom: 12px;
-  right: 12px;
+  bottom: calc(var(--fab-edge) + var(--fab-safe-bottom));
+  right: calc(var(--fab-edge) + var(--fab-safe-right));
   z-index: 1040;
-  max-width: calc(100vw - 24px);
+  max-width: var(--fab-max-width);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -202,18 +289,26 @@ function retryWrongQuestions() {
   border-radius: 21px;
   background: var(--bs-body-bg);
   border: 1px solid var(--bs-border-color);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  transform-origin: 100% 100%;
   transition:
     width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.25s ease,
+    max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
     border-radius 0.25s ease;
 }
 
-.question-progress-fab:hover .question-progress-fab-panel,
-.question-progress-fab:focus-within .question-progress-fab-panel {
-  width: min(360px, calc(100vw - 24px));
-  border-radius: 16px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+.question-progress-fab.is-compact .question-progress-fab-panel {
+  max-height: 42px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .question-progress-fab:not(.is-compact):hover .question-progress-fab-panel,
+  .question-progress-fab:not(.is-compact):focus-within .question-progress-fab-panel {
+    width: min(360px, var(--fab-max-width));
+    border-radius: 16px;
+  }
 }
 
 .question-progress-fab-header {
@@ -222,6 +317,42 @@ function retryWrongQuestions() {
   align-items: center;
   justify-content: flex-end;
   height: 42px;
+}
+
+.question-progress-fab-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  color: inherit;
+}
+
+.question-progress-fab-close {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--bs-secondary);
+  font-size: 1rem;
+}
+
+.question-progress-fab-close:hover {
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
 }
 
 .question-progress-fab-icon {
@@ -246,12 +377,65 @@ function retryWrongQuestions() {
     padding 0.25s ease;
 }
 
-.question-progress-fab:hover .question-progress-fab-body,
-.question-progress-fab:focus-within .question-progress-fab-body {
-  max-height: 520px;
+@media (hover: hover) and (pointer: fine) {
+  .question-progress-fab:not(.is-compact):hover .question-progress-fab-body,
+  .question-progress-fab:not(.is-compact):focus-within .question-progress-fab-body {
+    max-height: 520px;
+    opacity: 1;
+    padding: 0 14px 14px;
+    pointer-events: auto;
+  }
+}
+
+.question-progress-fab.is-compact.is-expanded .question-progress-fab-panel {
+  width: var(--fab-max-width);
+  max-height: min(90dvh, var(--fab-max-height));
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column-reverse;
+  padding-bottom: var(--fab-safe-bottom);
+}
+
+.question-progress-fab.is-compact.is-expanded .question-progress-fab-header {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.question-progress-fab.is-compact:not(.is-expanded) .question-progress-fab-body {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.question-progress-fab.is-compact .question-progress-fab-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px 14px 0;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.22s ease 0.08s,
+    padding 0.25s ease;
+}
+
+.question-progress-fab.is-compact.is-expanded .question-progress-fab-body {
+  max-height: none;
   opacity: 1;
-  padding: 0 14px 14px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   pointer-events: auto;
+}
+
+.question-progress-fab.is-compact.is-expanded .question-progress-fab-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 400px) {
+  .question-progress-fab.is-compact.is-expanded .question-progress-fab-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .question-progress-fab-headline {
@@ -265,7 +449,7 @@ function retryWrongQuestions() {
 }
 
 .question-progress-fab-subtitle {
-  font-size: 0.875rem;
+  font-size: clamp(0.8125rem, 2.8vw, 0.875rem);
   color: var(--bs-secondary);
 }
 
@@ -278,7 +462,7 @@ function retryWrongQuestions() {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 0.85rem;
-  font-size: 0.8rem;
+  font-size: clamp(0.75rem, 2.6vw, 0.8rem);
   color: var(--bs-secondary);
   margin-bottom: 12px;
 }
@@ -327,7 +511,7 @@ function retryWrongQuestions() {
 }
 
 .question-progress-fab-stat-value {
-  font-size: 1.05rem;
+  font-size: clamp(0.9375rem, 3.2vw, 1.05rem);
   font-weight: 700;
   line-height: 1.25;
 }
@@ -343,12 +527,10 @@ function retryWrongQuestions() {
   padding: 0.45rem 0.75rem;
 }
 
-:global([data-bs-theme="dark"]) .question-progress-fab-panel {
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
-}
-
-:global([data-bs-theme="dark"]) .question-progress-fab:hover .question-progress-fab-panel,
-:global([data-bs-theme="dark"]) .question-progress-fab:focus-within .question-progress-fab-panel {
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+@media (prefers-reduced-motion: reduce) {
+  .question-progress-fab-panel,
+  .question-progress-fab.is-compact .question-progress-fab-body {
+    transition: none !important;
+  }
 }
 </style>

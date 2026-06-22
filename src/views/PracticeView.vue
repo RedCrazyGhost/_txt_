@@ -51,7 +51,7 @@ function handleSaveProgress() {
 
 function handleSaveToLocalBank() {
   saveQuestionBankToLocal(appState.questionsJSON).then((result) => {
-    showStatus(result.message, result.ok ? "success" : "info");
+    showStatus(result.message, result.ok ? "success" : "warning");
   });
 }
 

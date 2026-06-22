@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   APP_STORAGE_KEYS,
+  countLocalStoredQuestions,
   formatStorageBytes,
   getAppStorageBreakdown,
   getBrowserStorageStats,
   getKeyByteSize,
-  getStorageUsageTone
+  getStorageUsageTone,
+  LOCAL_QUESTION_CAPACITY
 } from "./browserStorage.js";
 
 const storage = {};
@@ -44,6 +46,13 @@ describe("browserStorage", () => {
     expect(getStorageUsageTone(95)).toBe("danger");
   });
 
+  it("measures key size as UTF-16 code units including key name", () => {
+    const key = APP_STORAGE_KEYS.localBanks;
+    window.localStorage.setItem(key, "abc");
+    expect(getKeyByteSize(key)).toBe(key.length + 3);
+    expect(getKeyByteSize("missing_key")).toBe(0);
+  });
+
   it("sums app storage breakdown", () => {
     window.localStorage.setItem(APP_STORAGE_KEYS.localBanks, "abc");
     window.localStorage.setItem(APP_STORAGE_KEYS.remoteBanks, "de");
@@ -58,26 +67,45 @@ describe("browserStorage", () => {
     );
   });
 
-  it("uses fallback quota when estimate is unavailable", async () => {
+  it("uses localStorage quota and app total for stats", async () => {
     window.localStorage.setItem(APP_STORAGE_KEYS.localBanks, "x".repeat(1024));
     const stats = await getBrowserStorageStats();
-    expect(stats.estimateAvailable).toBe(false);
     expect(stats.quota).toBe(5 * 1024 * 1024);
     expect(stats.usage).toBe(stats.appTotal);
+    expect(stats.usage).toBe(getKeyByteSize(APP_STORAGE_KEYS.localBanks));
   });
 
-  it("uses navigator.storage.estimate when available", async () => {
+  it("ignores navigator.storage.estimate for localStorage stats", async () => {
     window.localStorage.setItem(APP_STORAGE_KEYS.localBanks, "hello");
     vi.stubGlobal("navigator", {
       storage: {
-        estimate: vi.fn(async () => ({ usage: 4096, quota: 8192 }))
+        estimate: vi.fn(async () => ({
+          usage: 4096,
+          quota: 2 * 1024 * 1024 * 1024
+        }))
       }
     });
 
     const stats = await getBrowserStorageStats();
-    expect(stats.estimateAvailable).toBe(true);
-    expect(stats.quota).toBe(8192);
-    expect(stats.usage).toBe(4096);
-    expect(stats.percent).toBe(50);
+    expect(stats.quota).toBe(5 * 1024 * 1024);
+    expect(stats.usage).toBe(stats.appTotal);
+    expect(stats.usage).toBe(getKeyByteSize(APP_STORAGE_KEYS.localBanks));
+  });
+
+  it("counts local stored questions against fixed capacity", async () => {
+    window.localStorage.setItem(
+      APP_STORAGE_KEYS.localBanks,
+      JSON.stringify([
+        { questions: [{ stem: "a" }, { stem: "b" }, { stem: "c" }] },
+        { questions: [{ stem: "d" }] }
+      ])
+    );
+
+    expect(countLocalStoredQuestions()).toBe(4);
+
+    const stats = await getBrowserStorageStats();
+    expect(stats.localQuestionCount).toBe(4);
+    expect(stats.localQuestionCapacity).toBe(LOCAL_QUESTION_CAPACITY);
+    expect(stats.questionPercent).toBe((4 / LOCAL_QUESTION_CAPACITY) * 100);
   });
 });

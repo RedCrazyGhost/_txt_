@@ -25,21 +25,20 @@ const sharedSearch = ref({
 });
 
 const remoteExpandedState = ref({});
-const storageRefreshToken = ref(0);
 const router = useRouter();
 let statusMessageTimer = null;
 
-function bumpStorageRefresh() {
-  storageRefreshToken.value += 1;
-}
+const statusMessageVariant = ref("secondary");
 
-function setStatusMessage(message) {
+function setStatusMessage(message, variant = "secondary") {
   questionBankState.statusMessage = message;
+  statusMessageVariant.value = variant;
   if (statusMessageTimer) {
     clearTimeout(statusMessageTimer);
   }
   statusMessageTimer = setTimeout(() => {
     questionBankState.statusMessage = "";
+    statusMessageVariant.value = "secondary";
     statusMessageTimer = null;
   }, 5000);
 }
@@ -75,20 +74,27 @@ function cancelEditLocalBank() {
 function saveEditLocalBank() {
   const target = questionBankState.localBanks.find((item) => item.id === localEditState.value.id);
   if (!target) return;
-  questionBankState.localBanks = updateBank("local", target.id, {
+  const result = updateBank("local", target.id, {
     title: localEditState.value.title,
     subject: localEditState.value.subject,
     author: localEditState.value.author,
     questionsText: (target.questions || []).map((q) => (Array.isArray(q) ? q.join(",") : String(q))).join("\n")
   });
+  if (!result.ok) {
+    questionBankState.localBanks = result.banks;
+    setStatusMessage(result.message, "danger");
+    return;
+  }
+  questionBankState.localBanks = result.banks;
   setStatusMessage(`已更新题集《${localEditState.value.title || "未命名题库"}》`);
   cancelEditLocalBank();
-  bumpStorageRefresh();
 }
 
 function handleRemoveLocal(id) {
-  removeLocal(id);
-  bumpStorageRefresh();
+  const result = removeLocal(id);
+  if (!result.ok) {
+    setStatusMessage(result.message, "danger");
+  }
 }
 
 function getFieldValue(item, field) {
@@ -185,9 +191,14 @@ function startPractice(id) {
 function downloadRemoteToLocal(id) {
   const target = questionBankState.remoteBanks.find((item) => item.id === id);
   if (!target) return;
-  questionBankState.localBanks = addBankFromExisting("local", target);
+  const result = addBankFromExisting("local", target);
+  if (!result.ok) {
+    questionBankState.localBanks = result.banks;
+    setStatusMessage(result.message, "danger");
+    return;
+  }
+  questionBankState.localBanks = result.banks;
   setStatusMessage(`已将网络题库《${target.title || "未命名"}》下载到本地`);
-  bumpStorageRefresh();
 }
 
 async function loadRemotePapers() {
@@ -201,7 +212,6 @@ function syncQuestionBankPageData() {
 function handleStorageChanged(event) {
   if (event?.detail?.kind === StorageChangeKind.localBanks) {
     syncQuestionBankPageData();
-    storageRefreshToken.value += 1;
   }
 }
 
@@ -229,11 +239,14 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="question-bank-page container py-4">
-    <div v-if="questionBankState.statusMessage" class="alert alert-secondary py-2">
+    <div
+      v-if="questionBankState.statusMessage"
+      :class="['alert', `alert-${statusMessageVariant}`, 'py-2']"
+    >
       {{ questionBankState.statusMessage }}
     </div>
 
-    <StorageUsagePanel class="mb-3" :refresh-token="storageRefreshToken" />
+    <StorageUsagePanel class="mb-3" />
 
     <section class="mb-3 question-bank-search">
       <div class="row g-2">

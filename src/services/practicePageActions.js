@@ -63,12 +63,17 @@ function findRemoteBank(bankId) {
 }
 
 function createLocalBankFromQuestionsJSON(questionsJSON, questions) {
-  questionBankState.localBanks = createBankFromQuestions("local", {
+  const result = createBankFromQuestions("local", {
     title: questionsJSON.name || "",
     subject: questionsJSON.type || "",
     author: questionsJSON.author || "",
     questions
   });
+  if (!result.ok) {
+    questionBankState.localBanks = result.banks;
+    return { ok: false, message: result.message };
+  }
+  questionBankState.localBanks = result.banks;
   return { ok: true, message: "已将题集保存到本地题库。" };
 }
 
@@ -97,7 +102,12 @@ export async function saveQuestionBankToLocal(questionsJSON) {
       target = questionBankState.remoteBanks.find((item) => item.id === bankId) ?? null;
     }
     if (target) {
-      questionBankState.localBanks = addBankFromExisting("local", target);
+      const result = addBankFromExisting("local", target);
+      if (!result.ok) {
+        questionBankState.localBanks = result.banks;
+        return { ok: false, message: result.message };
+      }
+      questionBankState.localBanks = result.banks;
       return { ok: true, message: "已将题集保存到本地题库。" };
     }
     return createLocalBankFromQuestionsJSON(questionsJSON, questions);

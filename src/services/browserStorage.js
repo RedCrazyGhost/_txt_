@@ -6,6 +6,9 @@ export const APP_STORAGE_KEYS = {
 
 const FALLBACK_QUOTA_BYTES = 5 * 1024 * 1024;
 
+/** 本地题库题目数量上限（用于进度展示） */
+export const LOCAL_QUESTION_CAPACITY = 12000;
+
 export function formatStorageBytes(bytes) {
   const value = Number(bytes) || 0;
   if (value < 1024) return `${value} B`;
@@ -19,11 +22,35 @@ export function getStorageUsageTone(percent) {
   return "success";
 }
 
+export function formatStoredQuestionCount(count) {
+  return (Number(count) || 0).toLocaleString("zh-CN");
+}
+
+function loadLocalBanksFromStorage() {
+  if (typeof window === "undefined") return [];
+  const raw = window.localStorage.getItem(APP_STORAGE_KEYS.localBanks);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function countLocalStoredQuestions() {
+  return loadLocalBanksFromStorage().reduce(
+    (sum, bank) => sum + (bank.questions?.length ?? 0),
+    0
+  );
+}
+
 export function getKeyByteSize(key) {
   if (typeof window === "undefined") return 0;
   const raw = window.localStorage.getItem(key);
-  if (!raw) return 0;
-  return new Blob([raw]).size;
+  if (raw === null) return 0;
+  // Browsers meter localStorage quota in UTF-16 code units (key + value length), not bytes.
+  return key.length + raw.length;
 }
 
 export function getAppStorageBreakdown() {
@@ -40,26 +67,13 @@ export function getAppStorageBreakdown() {
 
 export async function getBrowserStorageStats() {
   const breakdown = getAppStorageBreakdown();
-  let quota = FALLBACK_QUOTA_BYTES;
-  let usage = breakdown.appTotal;
-  let estimateAvailable = false;
-
-  if (typeof navigator !== "undefined" && navigator.storage?.estimate) {
-    try {
-      const estimate = await navigator.storage.estimate();
-      if (typeof estimate.quota === "number" && estimate.quota > 0) {
-        quota = estimate.quota;
-        estimateAvailable = true;
-      }
-      if (typeof estimate.usage === "number") {
-        usage = estimate.usage;
-      }
-    } catch {
-      estimateAvailable = false;
-    }
-  }
-
-  const percent = quota > 0 ? Math.min(100, (usage / quota) * 100) : 0;
+  const quota = FALLBACK_QUOTA_BYTES;
+  const usage = breakdown.appTotal;
+  const percent = quota > 0 ? (usage / quota) * 100 : 0;
+  const localQuestionCount = countLocalStoredQuestions();
+  const localQuestionCapacity = LOCAL_QUESTION_CAPACITY;
+  const questionPercent =
+    localQuestionCapacity > 0 ? (localQuestionCount / localQuestionCapacity) * 100 : 0;
 
   return {
     quota,
@@ -67,6 +81,8 @@ export async function getBrowserStorageStats() {
     appTotal: breakdown.appTotal,
     breakdown,
     percent,
-    estimateAvailable
+    localQuestionCount,
+    localQuestionCapacity,
+    questionPercent
   };
 }

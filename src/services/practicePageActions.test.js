@@ -10,11 +10,18 @@ import {
 } from "./practicePageActions.js";
 
 const storage = {};
+let shouldRejectWrite = false;
 
 function createLocalStorageMock() {
   return {
     getItem: (key) => (key in storage ? storage[key] : null),
     setItem: (key, value) => {
+      if (shouldRejectWrite) {
+        const error = new Error("QuotaExceededError");
+        error.name = "QuotaExceededError";
+        error.code = 22;
+        throw error;
+      }
       storage[key] = String(value);
     },
     removeItem: (key) => {
@@ -47,6 +54,7 @@ const sampleQuestions = [
 
 describe("practicePageActions", () => {
   beforeEach(() => {
+    shouldRejectWrite = false;
     Object.keys(storage).forEach((key) => delete storage[key]);
     vi.stubGlobal("CustomEvent", class CustomEvent {
       constructor(type) {
@@ -151,5 +159,22 @@ describe("practicePageActions", () => {
     const banks = JSON.parse(raw);
     expect(banks).toHaveLength(1);
     expect(banks[0].title).toBe("2021-08-25");
+  });
+
+  it("returns quota message when saving remote bank to local fails", async () => {
+    shouldRejectWrite = true;
+
+    const result = await saveQuestionBankToLocal({
+      bankId: "remote-1",
+      bankSource: "remote",
+      name: "远程题集",
+      type: "测试",
+      author: "作者",
+      questions: JSON.parse(JSON.stringify(sampleQuestions))
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain("存储空间不足");
+    expect(window.localStorage.getItem("_txt_local_banks")).toBeNull();
   });
 });

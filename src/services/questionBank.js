@@ -3,6 +3,9 @@ import { notifyStorageChanged, StorageChangeKind } from "./appStorageSync.js";
 const LOCAL_BANKS_KEY = "_txt_local_banks";
 const REMOTE_BANKS_KEY = "_txt_remote_cache";
 
+export const STORAGE_QUOTA_EXCEEDED_MESSAGE =
+  "浏览器存储空间不足，无法保存。请清理本地题库或远程缓存后重试。";
+
 function storageKey(source) {
   return source === "remote" ? REMOTE_BANKS_KEY : LOCAL_BANKS_KEY;
 }
@@ -17,12 +20,35 @@ function parseQuestions(questionsText) {
     .map((line) => [line]);
 }
 
+function isQuotaExceededError(error) {
+  if (!error || typeof error !== "object") return false;
+  return error.name === "QuotaExceededError" || error.code === 22;
+}
+
+function commitBanks(source, banks) {
+  const persisted = persistBanks(source, banks);
+  if (!persisted.ok) {
+    return { ok: false, message: persisted.message, banks: loadBanks(source) };
+  }
+  return { ok: true, banks };
+}
+
 export function persistBanks(source, banks) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(storageKey(source), JSON.stringify(banks));
-  notifyStorageChanged(
-    source === "remote" ? StorageChangeKind.remoteBanks : StorageChangeKind.localBanks
-  );
+  if (typeof window === "undefined") return { ok: true };
+  try {
+    window.localStorage.setItem(storageKey(source), JSON.stringify(banks));
+    notifyStorageChanged(
+      source === "remote" ? StorageChangeKind.remoteBanks : StorageChangeKind.localBanks
+    );
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      message: isQuotaExceededError(error)
+        ? STORAGE_QUOTA_EXCEEDED_MESSAGE
+        : "写入浏览器存储失败，请稍后重试。"
+    };
+  }
 }
 
 export function loadBanks(source) {
@@ -62,8 +88,7 @@ export function createBank(source, draft) {
     },
     ...banks
   ];
-  persistBanks(source, next);
-  return next;
+  return commitBanks(source, next);
 }
 
 export function updateBank(source, id, draft) {
@@ -79,14 +104,12 @@ export function updateBank(source, id, draft) {
       questions: parseQuestions(draft.questionsText)
     };
   });
-  persistBanks(source, next);
-  return next;
+  return commitBanks(source, next);
 }
 
 export function deleteBankById(source, id) {
   const next = loadBanks(source).filter((item) => item.id !== id);
-  persistBanks(source, next);
-  return next;
+  return commitBanks(source, next);
 }
 
 export function exportBankAsJson(bank) {
@@ -119,8 +142,7 @@ export function importBanksFromJson(source, payload) {
     questions: Array.isArray(item.questions) ? item.questions : []
   }));
   const next = [...normalized, ...loadBanks(source)];
-  persistBanks(source, next);
-  return next;
+  return commitBanks(source, next);
 }
 
 export function addBankFromExisting(source, bank) {
@@ -133,8 +155,7 @@ export function addBankFromExisting(source, bank) {
     },
     ...loadBanks(source)
   ];
-  persistBanks(source, next);
-  return next;
+  return commitBanks(source, next);
 }
 
 export function createBankFromQuestions(source, payload) {
@@ -151,7 +172,6 @@ export function createBankFromQuestions(source, payload) {
     },
     ...banks
   ];
-  persistBanks(source, next);
-  return next;
+  return commitBanks(source, next);
 }
 

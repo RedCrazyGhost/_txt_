@@ -28,6 +28,15 @@ const questions = computed(() =>
   Array.isArray(props.data?.questions) ? props.data.questions : []
 );
 
+const bankContext = computed(() => ({
+  name: props.data?.name || "",
+  type: props.data?.type || "",
+  author: props.data?.author || "",
+  bankId: props.data?.bankId || "",
+  bankSource: props.data?.bankSource || "",
+  version: props.data?.version || ""
+}));
+
 const unansweredIndexes = computed(() => questionProgressState.unansweredQuestionIndexes);
 
 watch(
@@ -201,6 +210,7 @@ function scrollToQuestion(index) {
           :appcolor="appcolor"
           :peeking="isPeeking(qindex)"
           :unanswered-highlight="isTrackedQuestionUnanswered(qindex)"
+          :bank-context="bankContext"
           @slot-change="(slot) => handleSlotChange(qindex, question, slot)"
           @peek-answer="answerShow(question, qindex)"
         />
@@ -228,6 +238,7 @@ function scrollToQuestion(index) {
           :appcolor="appcolor"
           :peeking="isPeeking(virtualRow.index)"
           :unanswered-highlight="isTrackedQuestionUnanswered(virtualRow.index)"
+          :bank-context="bankContext"
           virtualized
           @slot-change="(slot) => handleSlotChange(virtualRow.index, questions[virtualRow.index], slot)"
           @peek-answer="answerShow(questions[virtualRow.index], virtualRow.index)"

@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import FillBlankQuestionBody from "./FillBlankQuestionBody.vue";
 import MultipleChoiceQuestionBody from "./MultipleChoiceQuestionBody.vue";
 import QuestionExplanation from "./QuestionExplanation.vue";
+import QuestionReportModal from "./QuestionReportModal.vue";
 import SingleChoiceQuestionBody from "./SingleChoiceQuestionBody.vue";
 import { shouldShowExplanationPanel } from "../../models/question/feedback";
 import { getQuestionTypeBadgeClass, getQuestionTypeLabel } from "../../models/question/labels";
@@ -14,10 +15,13 @@ const props = defineProps({
   appcolor: { type: String, default: "light" },
   peeking: { type: Boolean, default: false },
   virtualized: { type: Boolean, default: false },
-  unansweredHighlight: { type: Boolean, default: false }
+  unansweredHighlight: { type: Boolean, default: false },
+  bankContext: { type: Object, default: () => ({}) }
 });
 
 const emit = defineEmits(["slotChange", "peekAnswer"]);
+
+const reportModalRef = ref(null);
 
 const attemptedSlotFeedback = computed(() => {
   const question = props.question;
@@ -73,6 +77,10 @@ function typeLabel(question) {
 function typeBadgeClass(question) {
   return getQuestionTypeBadgeClass(getQuestionType(question));
 }
+
+function openReportModal() {
+  reportModalRef.value?.open();
+}
 </script>
 
 <template>
@@ -86,6 +94,15 @@ function typeBadgeClass(question) {
     <div class="card-header d-flex justify-content-between align-items-center gap-2">
       <span>题目 {{ qindex + 1 }}</span>
       <div class="d-flex align-items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm question-report-btn"
+          title="上报题目问题"
+          aria-label="上报题目问题"
+          @click="openReportModal"
+        >
+          <i class="fas fa-flag me-1"></i>上报
+        </button>
         <span v-if="unansweredHighlight" class="badge text-bg-warning question-unanswered-badge">未做</span>
         <span class="badge question-type-badge" :class="typeBadgeClass(question)">{{ typeLabel(question) }}</span>
       </div>
@@ -144,6 +161,12 @@ function typeBadgeClass(question) {
         </span>
       </small>
     </div>
+    <QuestionReportModal
+      ref="reportModalRef"
+      :question="question"
+      :qindex="qindex"
+      :bank-context="bankContext"
+    />
   </div>
 </template>
 
@@ -169,5 +192,10 @@ function typeBadgeClass(question) {
 .question-type-badge {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.question-report-btn {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
 }
 </style>

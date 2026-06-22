@@ -29,7 +29,6 @@ const router = useRouter();
 
 const activeFilter = ref(ProgressFilter.ALL);
 const allRecords = ref([]);
-const storageRefreshToken = ref(0);
 
 const filterOptions = [
   { key: ProgressFilter.ALL, label: "全部" },
@@ -57,7 +56,6 @@ function handleStorageChanged(event) {
   if (kind === StorageChangeKind.localBanks) {
     reloadLocalBanks();
     refreshRecords();
-    storageRefreshToken.value += 1;
     return;
   }
   if (kind === StorageChangeKind.remoteBanks) {
@@ -184,7 +182,6 @@ function confirmDelete(record) {
   if (!ok) return;
   removeProgressRecord(record.bankId);
   refreshRecords();
-  storageRefreshToken.value += 1;
 }
 
 watch(
@@ -221,7 +218,7 @@ onBeforeUnmount(() => {
       </router-link>
     </div>
 
-    <StorageUsagePanel class="mb-4" :refresh-token="storageRefreshToken" />
+    <StorageUsagePanel class="mb-4" />
 
     <div class="btn-group flex-wrap mb-4" role="group" aria-label="进度筛选">
       <button

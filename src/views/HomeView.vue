@@ -240,10 +240,16 @@ function saveToLocalBank() {
     return;
   }
   normalizeMetaFromDraft();
-  questionBankState.localBanks = createBankFromQuestions("local", {
+  const result = createBankFromQuestions("local", {
     ...localBankDraft.value,
     questions: appState.questionsJSON.questions
   });
+  if (!result.ok) {
+    questionBankState.localBanks = result.banks;
+    localBankMessage.value = result.message;
+    return;
+  }
+  questionBankState.localBanks = result.banks;
   localBankMessage.value = "已保存到本地题库，可在题库页面查看和管理。";
 }
 
