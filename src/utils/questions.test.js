@@ -19,6 +19,17 @@ describe("questions utils", () => {
     expect(getQuestionType(built[0])).toBe("fillBlank");
   });
 
+  it("buildQuestionsFromTxt preserves explanation when present", () => {
+    const txts = [
+      { txt: "1+1=_2_", MD5: false, image: "", explanation: "1 加 1 等于 2。" },
+      { txt: "2+2=_4_", MD5: false, image: "" }
+    ];
+    const built = buildQuestionsFromTxt(txts, []);
+    expect(built).toHaveLength(2);
+    expect(built[0].explanation).toBe("1 加 1 等于 2。");
+    expect(built[1].explanation).toBeUndefined();
+  });
+
   it("buildQuestionsFromTxt merges when second arg non-empty, replaces when empty", () => {
     const first = buildQuestionsFromTxt([{ txt: "a=_1_", MD5: false, image: "" }], []);
     const merged = buildQuestionsFromTxt([{ txt: "b=_2_", MD5: false, image: "" }], first);

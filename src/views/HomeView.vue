@@ -3,14 +3,13 @@ import { ref, defineAsyncComponent, onMounted } from "vue";
 import { saveAs } from "file-saver";
 const AppQuestion = defineAsyncComponent(() => import("../components/AppQuestion.vue"));
 import AppName from "../components/AppName.vue";
+import Step1ModeSwitch from "../components/home/Step1ModeSwitch.vue";
+import Step1AiPanel from "../components/home/Step1AiPanel.vue";
 import { appState } from "../state/appState";
 import { createBankFromQuestions } from "../services/questionBank";
 import { initQuestionBankState, questionBankState } from "../state/questionBankState";
-import {
-  buildQuestionsFromTxt,
-  resolveQuestionBankVersion,
-  txtCharNumber
-} from "../utils/questions";
+import { generateQuestionsJsonFromTxts, syncHomeSessionProgress } from "../services/homeQuestionsJson";
+import { resolveQuestionBankVersion, txtCharNumber } from "../utils/questions";
 import { getTime } from "../utils/time";
 
 function boxMinHeight(txt) {
@@ -22,6 +21,7 @@ function getLineNumbers(txt) {
 }
 
 const activeTxtIndex = ref(-1);
+const step1Mode = ref("manual");
 const localBankDraft = ref({
   title: "",
   subject: "",
@@ -31,34 +31,6 @@ const localBankMessage = ref("");
 const exportFileName = ref("");
 const saveTargets = ref(["browser"]);
 const QUESTION_JSON_VERSION = "0.0.2";
-
-async function syncHomeSessionProgress(questions) {
-  const [{ resolveQuestionBankVersion: resolveVersion }, { resetQuestionProgress }] = await Promise.all([
-    import("../utils/questions"),
-    import("../models/question/progress")
-  ]);
-  const { buildSessionBankId, getProgressRecord, applyProgressToQuestions } = await import(
-    "../services/practiceProgress"
-  );
-
-  appState.questionsJSON.bankSource = "session";
-  appState.questionsJSON.version = resolveVersion(questions);
-  appState.questionsJSON.bankId = buildSessionBankId(
-    {
-      name: appState.questionsJSON.name,
-      type: appState.questionsJSON.type,
-      author: appState.questionsJSON.author,
-      version: appState.questionsJSON.version
-    },
-    questions
-  );
-
-  const saved = getProgressRecord(appState.questionsJSON.bankId);
-  if (saved) {
-    applyProgressToQuestions(questions, saved);
-  }
-  resetQuestionProgress(questions);
-}
 
 onMounted(async () => {
   initQuestionBankState();
@@ -123,11 +95,7 @@ function deleteImage(index) {
 }
 
 async function generateQuestionsJSON() {
-  const [{ normalizeQuestionWithDetection }] = await Promise.all([import("../utils/questions")]);
-  appState.questionsJSON.questions = buildQuestionsFromTxt(appState.txts, []).map((question) =>
-    normalizeQuestionWithDetection(question)
-  );
-  await syncHomeSessionProgress(appState.questionsJSON.questions);
+  await generateQuestionsJsonFromTxts();
 }
 
 async function deleteQuestionsJSON() {
@@ -288,13 +256,17 @@ function questionJSONShow() {
         <div class="col-10 offset-1">
           <div class="home-steps">
             <section class="home-step-section">
-              <h2 class="home-step-title fs-3 mb-3">
-                Step 1
-              </h2>
+              <div class="home-step-header d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h2 class="home-step-title fs-3 mb-0">
+                  Step 1
+                </h2>
+                <Step1ModeSwitch v-model="step1Mode" />
+              </div>
               <div class="home-step-body">
+                  <div v-show="step1Mode === 'manual'">
                   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
-                      <p>题目示例:<span class="text-secondary">1+1=_2_</span></p>
+                      <p class="mb-0">题目示例:<span class="text-secondary">1+1=_2_</span></p>
                     </div>
                     <div v-if="appState.txts.length === 0">
                       <button type="button" class="btn btn-primary" @click="addTxt">
@@ -389,6 +361,8 @@ function questionJSONShow() {
                       <i class="fas fa-file-signature fa-1x"></i> 生成JSON
                     </button>
                   </div>
+                  </div>
+                  <Step1AiPanel v-show="step1Mode === 'ai'" />
               </div>
             </section>
 
@@ -713,6 +687,10 @@ function questionJSONShow() {
   padding-bottom: 0.5rem;
 }
 
+.home-step-header {
+  width: 100%;
+}
+
 .home-step-title {
   font-weight: 600;
 }
@@ -722,7 +700,9 @@ function questionJSONShow() {
 }
 
 .home-json-textarea {
-  min-height: 50em;
+  min-height: 12rem;
+  max-height: min(28rem, 45vh);
+  overflow-y: auto;
   resize: none;
   background-color: var(--bs-tertiary-bg);
 }

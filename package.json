@@ -22,17 +22,18 @@
     "bootstrap": "^5.3.6",
     "file-saver": "^2.0.5",
     "js-md5": "^0.8.3",
+    "openai": "^6.45.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
+    "husky": "^9.1.7",
     "lighthouse": "^12.5.1",
     "typescript": "^5.9.3",
     "vite": "^5.4.19",
     "vite-plugin-static-copy": "^2.2.0",
     "vite-ssg": "^26.1.1",
-    "husky": "^9.1.7",
     "vitest": "^2.1.9"
   }
 }

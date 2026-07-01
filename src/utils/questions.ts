@@ -17,6 +17,8 @@ export interface TxtObject {
   image: string;
   /** 为 true 时不允许删除本题（Step 1） */
   noDelete?: boolean;
+  /** 题目解析（可选，AI 生成或手动维护） */
+  explanation?: string;
 }
 
 export function getQuestionType(question: Question): QuestionType {
@@ -186,13 +188,15 @@ export function buildQuestionsFromTxt(
       middleArray = md5Answer;
     }
 
+    const explanation = txtObject.explanation?.trim();
     next.push({
       texts: middleTexts,
       answers: middleArray,
       answerslength: answerLengths,
       results: new Array(middleArray.length),
       MD5: txtObject.MD5,
-      image: txtObject.image
+      image: txtObject.image,
+      ...(explanation ? { explanation } : {})
     });
   });
   return next;
