@@ -29,6 +29,33 @@ body {
   --bs-light: #f6f8fb;
   --bs-light-rgb: 246, 248, 251;
   --bs-card-bg: #ffffff;
+
+  --home-explanation-accent: #b45309;
+  --home-explanation-accent-strong: #92400e;
+  --home-explanation-dot: #d97706;
+  --home-explanation-panel-bg: rgba(var(--bs-warning-rgb), 0.07);
+  --home-explanation-panel-border: rgba(var(--bs-warning-rgb), 0.35);
+  --home-explanation-panel-border-top: rgba(var(--bs-warning-rgb), 0.28);
+  --home-explanation-label-bg: rgba(var(--bs-warning-rgb), 0.18);
+  --home-explanation-input-bg: var(--bs-body-bg);
+  --home-explanation-input-border: rgba(var(--bs-warning-rgb), 0.32);
+  --home-explanation-input-inset-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  --home-explanation-input-focus-border: rgba(var(--bs-warning-rgb), 0.55);
+  --home-explanation-focus-ring: 0 0 0 0.2rem rgba(var(--bs-warning-rgb), 0.14);
+  --home-explanation-btn-bg: rgba(var(--bs-warning-rgb), 0.16);
+  --home-explanation-btn-border: rgba(var(--bs-warning-rgb), 0.32);
+  --home-explanation-btn-color: #b45309;
+  --home-explanation-btn-hover-bg: rgba(var(--bs-warning-rgb), 0.26);
+  --home-explanation-btn-hover-border: rgba(var(--bs-warning-rgb), 0.45);
+  --home-explanation-btn-hover-color: #92400e;
+  --home-explanation-btn-open-bg: rgba(var(--bs-warning-rgb), 0.28);
+  --home-explanation-btn-open-border: rgba(var(--bs-warning-rgb), 0.48);
+  --home-explanation-btn-open-color: #92400e;
+  --home-explanation-btn-has-content-bg: rgba(var(--bs-warning-rgb), 0.24);
+  --home-explanation-btn-has-content-border: rgba(var(--bs-warning-rgb), 0.5);
+  --home-explanation-btn-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --home-explanation-btn-has-content-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 2px rgba(var(--bs-warning-rgb), 0.14);
+  --home-explanation-dot-border: var(--bs-body-bg);
 }
 
 [data-bs-theme="dark"] {
@@ -48,6 +75,33 @@ body {
   --bs-link-color: #93c5fd;
   --bs-link-hover-color: #bfdbfe;
   --bs-card-bg: #1e293b;
+
+  --home-explanation-accent: #fde68a;
+  --home-explanation-accent-strong: #fcd34d;
+  --home-explanation-dot: #fbbf24;
+  --home-explanation-panel-bg: #422006;
+  --home-explanation-panel-border: #854d0e;
+  --home-explanation-panel-border-top: rgba(133, 77, 14, 0.55);
+  --home-explanation-label-bg: rgba(251, 191, 36, 0.16);
+  --home-explanation-input-bg: var(--bs-tertiary-bg);
+  --home-explanation-input-border: rgba(251, 191, 36, 0.28);
+  --home-explanation-input-inset-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+  --home-explanation-input-focus-border: rgba(251, 191, 36, 0.45);
+  --home-explanation-focus-ring: 0 0 0 0.2rem rgba(251, 191, 36, 0.12);
+  --home-explanation-btn-bg: rgba(251, 191, 36, 0.14);
+  --home-explanation-btn-border: rgba(251, 191, 36, 0.28);
+  --home-explanation-btn-color: #fcd34d;
+  --home-explanation-btn-hover-bg: rgba(251, 191, 36, 0.22);
+  --home-explanation-btn-hover-border: rgba(251, 191, 36, 0.4);
+  --home-explanation-btn-hover-color: #fde68a;
+  --home-explanation-btn-open-bg: rgba(251, 191, 36, 0.24);
+  --home-explanation-btn-open-border: rgba(251, 191, 36, 0.42);
+  --home-explanation-btn-open-color: #fde68a;
+  --home-explanation-btn-has-content-bg: rgba(251, 191, 36, 0.2);
+  --home-explanation-btn-has-content-border: rgba(251, 191, 36, 0.45);
+  --home-explanation-btn-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --home-explanation-btn-has-content-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 0 0 2px rgba(251, 191, 36, 0.1);
+  --home-explanation-dot-border: var(--bs-body-bg);
 }
 
 .app-root {

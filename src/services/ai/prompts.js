@@ -111,3 +111,95 @@ export function buildUserPrompt(prompt, references = []) {
 
   return parts.join("\n");
 }
+
+const TUTOR_PRINCIPLES = `
+辅导原则：
+- 围绕当前题目作答，引导用户思考，避免一上来直接给出完整标准答案（除非用户已答对、或明确要求直接告知答案）。
+- 结合用户已填写的 results 指出对错与思路，帮助理解考点。
+- 回答简洁清晰，必要时用分步说明；使用中文回复。
+- 不要生成新题目，不要偏离当前题目讨论无关内容。
+`.trim();
+
+export function buildQuestionTutorSystemPrompt() {
+  return `你是 _txt_ 本题答疑助手。用户正在练习一道题，你需要基于下方题目数据协助理解与纠错。
+
+${TUTOR_PRINCIPLES}`;
+}
+
+function hasQuestionImage(image) {
+  return typeof image === "string" && image.trim() !== "";
+}
+
+export function serializeQuestionForTutor(question) {
+  if (!question || typeof question !== "object") {
+    return "{}";
+  }
+
+  const isMd5 = Boolean(question.MD5);
+  const payload = {};
+
+  if (question.questionType) {
+    payload.questionType = question.questionType;
+  }
+  if (typeof question.stem === "string" && question.stem.trim()) {
+    payload.stem = question.stem;
+  }
+  if (Array.isArray(question.texts)) {
+    payload.texts = question.texts;
+  }
+  if (Array.isArray(question.options)) {
+    payload.options = question.options.map((option) => ({
+      key: String(option?.key ?? ""),
+      text: String(option?.text ?? "")
+    }));
+  }
+  if (Array.isArray(question.results)) {
+    payload.results = question.results.map((value) =>
+      value === undefined || value === null ? null : String(value)
+    );
+  }
+  if (hasQuestionImage(question.image)) {
+    payload.hasImage = true;
+  }
+
+  payload.MD5 = isMd5;
+
+  if (!isMd5) {
+    if (Array.isArray(question.answers)) {
+      payload.answers = question.answers;
+    }
+    if (typeof question.explanation === "string" && question.explanation.trim()) {
+      payload.explanation = question.explanation;
+    }
+  }
+
+  return JSON.stringify(payload, null, 2);
+}
+
+export function buildQuestionTutorMessages({ question, history = [], userText }) {
+  const systemContent = `${buildQuestionTutorSystemPrompt()}
+
+【本题数据】
+${serializeQuestionForTutor(question)}`;
+
+  const messages = [{ role: "system", content: systemContent }];
+
+  const validHistory = (Array.isArray(history) ? history : []).filter(
+    (entry) =>
+      entry &&
+      (entry.role === "user" || entry.role === "assistant") &&
+      typeof entry.content === "string" &&
+      entry.content.trim()
+  );
+
+  for (const entry of validHistory) {
+    messages.push({ role: entry.role, content: entry.content });
+  }
+
+  const trimmedUserText = String(userText ?? "").trim();
+  if (trimmedUserText) {
+    messages.push({ role: "user", content: trimmedUserText });
+  }
+
+  return messages;
+}

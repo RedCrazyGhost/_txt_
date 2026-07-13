@@ -9,6 +9,16 @@ const routes = [
     }
   },
   {
+    name: "Intro",
+    path: "/intro",
+    component: () => import("../views/IntroView.vue"),
+    meta: {
+      immersive: true,
+      title: "介绍 - _txt_",
+      description: "题集编辑、题库管理、练习巩固，一图了解 _txt_ 怎么用。"
+    }
+  },
+  {
     name: "QuestionBank",
     path: "/question-bank",
     component: () => import("../views/QuestionBankView.vue"),

@@ -45,6 +45,7 @@ export const appState = reactive({
     appCoinPerson: [{ name: "莲", src: "", iclass: "kiss" }],
     appRouters: [
       { to: "/home", name: "Home", label: "首页" },
+      { to: "/intro", name: "Intro", label: "介绍" },
       { to: "/question-bank", name: "QuestionBank", label: "题库" },
       { to: "/practice-progress", name: "PracticeProgress", label: "题集进度" },
       { to: "/acknowledgements", name: "Acknowledgements", label: "鸣谢" }
@@ -53,7 +54,7 @@ export const appState = reactive({
       name: "RedCrazyGhost",
       src: `${BASE_URL}IMAG/Author.jpeg`
     },
-    appVersion: "2.0.9",
+    appVersion: "2.0.10",
     appColor: "light",
     appFontFamily: "HYCuYuanJ",
     githubRepo: {

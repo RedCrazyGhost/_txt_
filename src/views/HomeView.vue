@@ -5,22 +5,13 @@ const AppQuestion = defineAsyncComponent(() => import("../components/AppQuestion
 import AppName from "../components/AppName.vue";
 import Step1ModeSwitch from "../components/home/Step1ModeSwitch.vue";
 import Step1AiPanel from "../components/home/Step1AiPanel.vue";
+import Step1ManualPanel from "../components/home/Step1ManualPanel.vue";
 import { appState } from "../state/appState";
 import { createBankFromQuestions } from "../services/questionBank";
 import { initQuestionBankState, questionBankState } from "../state/questionBankState";
-import { generateQuestionsJsonFromTxts, syncHomeSessionProgress } from "../services/homeQuestionsJson";
-import { resolveQuestionBankVersion, txtCharNumber } from "../utils/questions";
+import { syncHomeSessionProgress } from "../services/homeQuestionsJson";
+import { resolveQuestionBankVersion } from "../utils/questions";
 import { getTime } from "../utils/time";
-
-function boxMinHeight(txt) {
-  return 2.5 + txtCharNumber(txt) * 1.5;
-}
-
-function getLineNumbers(txt) {
-  return Array.from({ length: txtCharNumber(txt) }, (_, index) => index + 1);
-}
-
-const activeTxtIndex = ref(-1);
 const step1Mode = ref("manual");
 const localBankDraft = ref({
   title: "",
@@ -47,55 +38,6 @@ function normalizeQuestionJSON(raw) {
     author: raw?.author || "",
     questions: Array.isArray(raw?.questions) ? raw.questions : []
   };
-}
-
-function md5ChangeColor(value) {
-  if (!value.MD5) return "";
-  return appState.webSiteConfig.appColor === "dark" ? "#475569" : "#cecece";
-}
-
-function addTxt() {
-  appState.txts.push({ MD5: false, txt: "", image: "", noDelete: false });
-}
-
-function deleteTxt(index) {
-  if (appState.txts[index]?.noDelete) return;
-  appState.txts.splice(index, 1);
-}
-
-function toggleNoDelete(index) {
-  appState.txts[index].noDelete = !appState.txts[index].noDelete;
-}
-
-function changeMD5(index) {
-  appState.txts[index].MD5 = !appState.txts[index].MD5;
-}
-
-function txtObjectMD5ShowIClass(index) {
-  return appState.txts[index].MD5 ? "fa fa-lock" : "fa fa-unlock";
-}
-
-function triggerInputFile(id) {
-  const input = document.getElementById(id);
-  if (input) input.click();
-}
-
-function getImageFile(event, index) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
-  reader.onload = function load() {
-    appState.txts[index].image = this.result;
-  };
-}
-
-function deleteImage(index) {
-  appState.txts[index].image = "";
-}
-
-async function generateQuestionsJSON() {
-  await generateQuestionsJsonFromTxts();
 }
 
 async function deleteQuestionsJSON() {
@@ -263,105 +205,7 @@ function questionJSONShow() {
                 <Step1ModeSwitch v-model="step1Mode" />
               </div>
               <div class="home-step-body">
-                  <div v-show="step1Mode === 'manual'">
-                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div>
-                      <p class="mb-0">题目示例:<span class="text-secondary">1+1=_2_</span></p>
-                    </div>
-                    <div v-if="appState.txts.length === 0">
-                      <button type="button" class="btn btn-primary" @click="addTxt">
-                        <i class="fas fa-plus"></i> 添加题目
-                      </button>
-                    </div>
-                  </div>
-                  <div class="row row-col-1">
-                    <div class="col-12" v-for="(value, index) in appState.txts" :key="`txts-${index}`" style="margin-bottom: 4rem">
-                      <div class="row" v-if="value.image !== ''">
-                        <img class="img-fluid" :src="value.image" :alt="`imag-${index}`" />
-                      </div>
-                      <div class="form-floating">
-                        <div v-if="value.txt !== '' || activeTxtIndex === index" class="line-number-gutter" aria-hidden="true">
-                          <span v-for="number in getLineNumbers(value.txt)" :key="`line-${index}-${number}`">
-                            {{ number }}
-                          </span>
-                        </div>
-                        <textarea
-                          class="form-control shadow-sm rounded"
-                          placeholder="_txt_"
-                          id="Step-1-textarea"
-                          :style="`padding-right:2rem;overflow-y:hidden;padding-left:3.2rem;resize:none;min-height:${boxMinHeight(value.txt)}rem;background-color:${md5ChangeColor(value)};line-height:1.5rem;font-size:1rem;`"
-                          v-model="value.txt"
-                          @focus="activeTxtIndex = index"
-                          @blur="activeTxtIndex = -1"
-                        />
-                        <label for="Step-1-textarea">
-                          题目 {{ index + 1 }}
-                        </label>
-                        <button
-                          class="btn btn-warning position-absolute top-0 start-100 translate-middle"
-                          @click="changeMD5(index)"
-                        >
-                          <i :class="txtObjectMD5ShowIClass(index)"></i>
-                        </button>
-                        <div
-                          style="z-index:1"
-                          class="btn-group position-absolute top-100 start-100 translate-middle"
-                          role="group"
-                          aria-label="Basic example"
-                        >
-                          <button type="button" class="btn btn-warning" @click="triggerInputFile(`imageFile-${index}`)">
-                            <i class="fa fa-camera"></i>
-                            <input
-                              style="display:none"
-                              @change="getImageFile($event, index)"
-                              :id="`imageFile-${index}`"
-                              accept="image/*"
-                              type="file"
-                            />
-                          </button>
-                          <button v-if="value.image !== ''" type="button" class="btn btn-danger" @click="deleteImage(index)">
-                            <i class="fa fa-trash-alt"></i>
-                          </button>
-                        </div>
-                        <div
-                          class="position-absolute d-flex justify-content-evenly align-items-center flex-wrap gap-2 w-100 px-1"
-                          :style="`top:${boxMinHeight(value.txt) - 1}rem;`"
-                        >
-                          <div>
-                            <button type="button" class="btn btn-primary" @click="addTxt"><i class="fas fa-plus"></i></button>
-                          </div>
-                          <div class="btn-group" role="group" aria-label="删除与锁定">
-                            <button
-                              type="button"
-                              class="btn btn-danger"
-                              :disabled="value.noDelete"
-                              :title="value.noDelete ? '已锁定，请先解锁' : '删除本题'"
-                              @click="deleteTxt(index)"
-                            >
-                              <i class="fas fa-minus"></i>
-                            </button>
-                            <button
-                              type="button"
-                              class="btn btn-danger"
-                              :title="value.noDelete ? '已锁定，点击解锁' : '点击上锁，禁止删除'"
-                              @click="toggleNoDelete(index)"
-                            >
-                              <i :class="value.noDelete ? 'fas fa-lock' : 'fas fa-unlock'"></i>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      v-if="appState.txts.length !== 0"
-                      type="button"
-                      class="btn btn-primary"
-                      @click="generateQuestionsJSON"
-                    >
-                      <i class="fas fa-file-signature fa-1x"></i> 生成JSON
-                    </button>
-                  </div>
-                  </div>
+                  <Step1ManualPanel v-show="step1Mode === 'manual'" />
                   <Step1AiPanel v-show="step1Mode === 'ai'" />
               </div>
             </section>
@@ -705,26 +549,6 @@ function questionJSONShow() {
   overflow-y: auto;
   resize: none;
   background-color: var(--bs-tertiary-bg);
-}
-
-.form-floating {
-  position: relative;
-}
-
-.line-number-gutter {
-  position: absolute;
-  left: 0.75rem;
-  top: 1.6rem;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  min-width: 1.5rem;
-  color: var(--bs-gray);
-  font-size: 1rem;
-  line-height: 1.5rem;
-  pointer-events: none;
-  user-select: none;
 }
 
 .json-doc-trigger {

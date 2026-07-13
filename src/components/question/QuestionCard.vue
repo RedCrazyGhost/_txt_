@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import FillBlankQuestionBody from "./FillBlankQuestionBody.vue";
 import MultipleChoiceQuestionBody from "./MultipleChoiceQuestionBody.vue";
+import QuestionAiChat from "./QuestionAiChat.vue";
 import QuestionExplanation from "./QuestionExplanation.vue";
 import QuestionReportModal from "./QuestionReportModal.vue";
 import SingleChoiceQuestionBody from "./SingleChoiceQuestionBody.vue";
@@ -22,6 +23,11 @@ const props = defineProps({
 const emit = defineEmits(["slotChange", "peekAnswer"]);
 
 const reportModalRef = ref(null);
+const aiChatOpen = ref(false);
+
+function toggleAiChat() {
+  aiChatOpen.value = !aiChatOpen.value;
+}
 
 const attemptedSlotFeedback = computed(() => {
   const question = props.question;
@@ -109,6 +115,21 @@ function openReportModal() {
       <div class="d-flex align-items-center gap-2">
         <button
           type="button"
+          class="btn btn-outline-primary btn-sm question-ai-btn"
+          title="AI 对话"
+          aria-label="AI 对话"
+          :aria-expanded="aiChatOpen"
+          @click="toggleAiChat"
+        >
+          <i class="fas fa-robot me-1"></i>AI
+          <i
+            class="fas fa-chevron-down ms-1 question-ai-btn-chevron"
+            :class="{ 'question-ai-btn-chevron--open': aiChatOpen }"
+            aria-hidden="true"
+          ></i>
+        </button>
+        <button
+          type="button"
           class="btn btn-outline-secondary btn-sm question-report-btn"
           title="上报题目问题"
           aria-label="上报题目问题"
@@ -162,6 +183,12 @@ function openReportModal() {
         :question="question"
         :peeking="peeking"
       />
+      <QuestionAiChat
+        v-model:open="aiChatOpen"
+        :question="question"
+        :qindex="qindex"
+        :bank-context="bankContext"
+      />
     </div>
     <div v-if="attemptedSlotFeedback.length" class="card-footer">
       <small class="text-muted">
@@ -210,5 +237,19 @@ function openReportModal() {
 .question-report-btn {
   font-size: 0.75rem;
   padding: 0.15rem 0.45rem;
+}
+
+.question-ai-btn {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+}
+
+.question-ai-btn-chevron {
+  font-size: 0.625rem;
+  transition: transform 0.2s ease;
+}
+
+.question-ai-btn-chevron--open {
+  transform: rotate(180deg);
 }
 </style>
