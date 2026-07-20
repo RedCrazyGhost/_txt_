@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   APP_PREFS_STORAGE_KEY,
   DEFAULT_APP_PREFS,
+  applyDocumentTheme,
   isOnboardingDone,
   listPendingSetupSteps,
   loadAppPrefs,
@@ -47,6 +48,19 @@ describe("appPrefsStorage", () => {
     expect(setTheme("dark").theme).toBe("dark");
     expect(loadAppPrefs().theme).toBe("dark");
     expect(setTheme("neon").theme).toBe("light");
+  });
+
+  it("applyDocumentTheme sets html data-bs-theme and color-scheme", () => {
+    const root = {
+      setAttribute: vi.fn(),
+      style: { colorScheme: "" }
+    };
+    vi.stubGlobal("document", { documentElement: root });
+    expect(applyDocumentTheme("dark")).toBe("dark");
+    expect(root.setAttribute).toHaveBeenCalledWith("data-bs-theme", "dark");
+    expect(root.style.colorScheme).toBe("dark");
+    expect(applyDocumentTheme("neon")).toBe("light");
+    expect(root.setAttribute).toHaveBeenCalledWith("data-bs-theme", "light");
   });
 
   it("marks individual setup steps as seen and completes when all are seen", () => {

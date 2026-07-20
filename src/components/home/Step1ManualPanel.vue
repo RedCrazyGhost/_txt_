@@ -28,7 +28,7 @@ function getLineNumbers(txt: string): number[] {
 
 function md5ChangeColor(value: TxtEntry): string {
   if (!value.MD5) return "";
-  return appState.webSiteConfig.appColor === "dark" ? "#475569" : "#cecece";
+  return "var(--txt-md5-locked-bg)";
 }
 
 function addTxt() {

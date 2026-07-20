@@ -139,7 +139,7 @@ function statusBadgeClass(status: string) {
     case ProgressStatus.INVALID:
       return "text-bg-secondary";
     default:
-      return "text-bg-light";
+      return "text-bg-secondary";
   }
 }
 

@@ -96,9 +96,21 @@ export function saveAppPrefs(prefs: unknown): AppPrefs {
   return normalized;
 }
 
+/** Sync Bootstrap theme onto <html> so body/Teleport inherit tokens. */
+export function applyDocumentTheme(theme: unknown): AppTheme {
+  const normalized = normalizeTheme(theme);
+  if (typeof document === "undefined") return normalized;
+  const root = document.documentElement;
+  root.setAttribute("data-bs-theme", normalized);
+  root.style.colorScheme = normalized;
+  return normalized;
+}
+
 export function setTheme(theme: unknown): AppPrefs {
   const prefs = loadAppPrefs();
-  return saveAppPrefs({ ...prefs, theme: normalizeTheme(theme) });
+  const next = saveAppPrefs({ ...prefs, theme: normalizeTheme(theme) });
+  applyDocumentTheme(next.theme);
+  return next;
 }
 
 export interface PracticeTimerPrefsPatch {

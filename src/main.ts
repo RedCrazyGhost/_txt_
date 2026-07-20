@@ -3,7 +3,7 @@ import { ViteSSG } from "vite-ssg";
 import App from "./App.vue";
 import routes from "./router";
 import { initAppStorageSync } from "./services/appStorageSync";
-import { loadAppPrefs } from "./services/appPrefsStorage";
+import { applyDocumentTheme, loadAppPrefs } from "./services/appPrefsStorage";
 import { appState } from "./state/appState";
 
 export const createApp = ViteSSG(
@@ -15,6 +15,7 @@ export const createApp = ViteSSG(
       initAppStorageSync();
       const prefs = loadAppPrefs();
       appState.webSiteConfig.appColor = prefs.theme;
+      applyDocumentTheme(prefs.theme);
     }
     if (isClient) {
       router.afterEach((to) => {

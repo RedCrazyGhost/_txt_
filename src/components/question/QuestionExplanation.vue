@@ -40,15 +40,15 @@ const showCorrectAnswer = computed(() => {
 }
 
 :global([data-bs-theme="dark"]) .question-explanation {
-  --bs-alert-bg: #422006;
-  --bs-alert-border-color: #854d0e;
-  --bs-alert-color: #fde68a;
+  --bs-alert-bg: rgba(var(--bs-warning-rgb), 0.12);
+  --bs-alert-border-color: rgba(var(--bs-warning-rgb), 0.38);
+  --bs-alert-color: var(--home-explanation-accent);
   background-color: var(--bs-alert-bg);
   border-color: var(--bs-alert-border-color);
   color: var(--bs-alert-color);
 }
 
 :global([data-bs-theme="dark"]) .question-explanation .text-muted {
-  color: #fcd34d !important;
+  color: var(--home-explanation-btn-color) !important;
 }
 </style>

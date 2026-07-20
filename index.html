@@ -25,6 +25,16 @@
     <noscript><link rel="stylesheet" href="/fonts.css" /></noscript>
     <title>_txt_ 是一个帮助人们进行知识巩固的网站</title>
     <script>
+      try {
+        var prefs = JSON.parse(localStorage.getItem("_txt_app_prefs") || "null");
+        var theme = prefs && prefs.theme === "dark" ? "dark" : "light";
+        document.documentElement.setAttribute("data-bs-theme", theme);
+        document.documentElement.style.colorScheme = theme;
+      } catch (e) {
+        document.documentElement.setAttribute("data-bs-theme", "light");
+      }
+    </script>
+    <script>
       if (location.hostname !== "127.0.0.1" && location.hostname !== "localhost") {
         const script = document.createElement("script");
         script.src = "https://zz.bdstatic.com/linksubmit/push.js";

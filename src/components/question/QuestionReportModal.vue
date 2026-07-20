@@ -350,7 +350,7 @@ body.question-report-modal-open {
 [data-bs-theme="dark"] .question-report-shell .modal-title,
 [data-bs-theme="dark"] .question-report-shell .question-report-bank-title,
 [data-bs-theme="dark"] .question-report-shell .question-report-preview {
-  color: #ffffff;
+  color: var(--bs-emphasis-color);
 }
 
 [data-bs-theme="dark"] .question-report-shell .form-control {
@@ -360,8 +360,8 @@ body.question-report-modal-open {
 }
 
 [data-bs-theme="dark"] .question-report-shell .alert-secondary {
-  --bs-alert-bg: #1e293b;
-  --bs-alert-border-color: #334155;
-  --bs-alert-color: #cbd5e1;
+  --bs-alert-bg: var(--bs-tertiary-bg);
+  --bs-alert-border-color: var(--bs-border-color);
+  --bs-alert-color: var(--bs-body-color);
 }
 </style>
