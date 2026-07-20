@@ -1,8 +1,7 @@
 import type { Question } from "../models/question/types";
+import { resolveQuestionBankVersion } from "../utils/questions";
 import { notifyStorageChanged, StorageChangeKind } from "./appStorageSync";
-
-const LOCAL_BANKS_KEY = "_txt_local_banks";
-const REMOTE_BANKS_KEY = "_txt_remote_cache";
+import { APP_STORAGE_KEYS } from "./browserStorage";
 
 export const STORAGE_QUOTA_EXCEEDED_MESSAGE =
   "浏览器存储空间不足，无法保存。请清理本地题库或远程缓存后重试。";
@@ -60,8 +59,6 @@ export type CommitBanksResult = CommitBanksOk | CommitBanksFail;
 function storageKey(source: BankSource): string {
   return source === "remote" ? APP_STORAGE_KEYS.remoteBanks : APP_STORAGE_KEYS.localBanks;
 }
-
-import { resolveQuestionBankVersion } from "../utils/questions";
 
 function parseQuestions(questionsText: string): string[][] {
   return questionsText
