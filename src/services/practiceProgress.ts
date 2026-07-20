@@ -228,6 +228,59 @@ export function saveProgressRecord(record: ProgressRecord): void {
   writeStore(store.records);
 }
 
+export interface PatchProgressRecordInput extends ProgressRecordMeta {
+  questionIndex: number;
+  question: Question;
+  questionCount: number;
+  stats: ProgressStats;
+}
+
+/**
+ * Incrementally update one question's results row + stats without rebuilding
+ * the entire record from all questions. Preserves existing questions snapshot.
+ * If no prior record exists, returns false so caller can fall back to full save.
+ */
+export function patchProgressRecord(input: PatchProgressRecordInput): boolean {
+  if (!input?.bankId || input.questionIndex < 0) return false;
+
+  const store = readStore();
+  const previous = store.records[input.bankId];
+  if (!previous) return false;
+
+  const results = Array.isArray(previous.results)
+    ? previous.results.map((row) => (Array.isArray(row) ? [...row] : []))
+    : [];
+
+  while (results.length < input.questionCount) {
+    results.push([]);
+  }
+
+  results[input.questionIndex] = Array.isArray(input.question.results)
+    ? [...input.question.results]
+    : [];
+
+  const next: ProgressRecord = {
+    bankId: input.bankId,
+    bankSource: input.bankSource ?? previous.bankSource ?? "session",
+    name: input.name ?? previous.name ?? "未命名题集",
+    type: input.type ?? previous.type ?? "",
+    author: input.author ?? previous.author ?? "",
+    version: input.version ?? previous.version ?? "0.0.2",
+    questionCount: input.questionCount,
+    updatedAt: new Date().toISOString(),
+    results,
+    stats: { ...input.stats }
+  };
+
+  if (Array.isArray(previous.questions) && previous.questions.length > 0) {
+    next.questions = previous.questions;
+  }
+
+  store.records[input.bankId] = next;
+  writeStore(store.records);
+  return true;
+}
+
 export function removeProgressRecord(bankId: string): void {
   if (!bankId) return;
   const store = readStore();

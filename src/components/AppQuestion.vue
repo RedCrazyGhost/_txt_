@@ -14,6 +14,7 @@ import {
 import {
   buildProgressRecord,
   getProgressRecord,
+  patchProgressRecord,
   saveProgressRecord,
   type BankSource
 } from "../services/practiceProgress";
@@ -113,6 +114,21 @@ const totalVirtualHeight = computed(() => rowVirtualizer.value.getTotalSize());
 
 const peekingIndexes = ref(new Set<number>());
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingPatchIndex: number | null = null;
+
+function currentStats() {
+  return {
+    totalQuestions: questionProgressState.totalQuestions,
+    attemptedQuestions: questionProgressState.attemptedQuestions,
+    fullyCorrectQuestions: questionProgressState.fullyCorrectQuestions,
+    totalSlots: questionProgressState.totalSlots,
+    attemptedSlots: questionProgressState.attemptedSlots,
+    correctSlots: questionProgressState.correctSlots,
+    partialSlots: questionProgressState.partialSlots,
+    wrongSlots: questionProgressState.wrongSlots,
+    unansweredSlots: questionProgressState.unansweredSlots
+  };
+}
 
 function persistProgress(forceQuestionsSnapshot = false) {
   if (typeof window === "undefined") return;
@@ -144,11 +160,47 @@ function persistProgress(forceQuestionsSnapshot = false) {
   saveProgressRecord(record);
 }
 
-function schedulePersistProgress() {
+function persistProgressPatch(questionIndex: number) {
+  if (typeof window === "undefined") return;
+  if (!props.data?.bankId || !questions.value.length) return;
+
+  const question = questions.value[questionIndex];
+  if (!question) {
+    persistProgress(false);
+    return;
+  }
+
+  const bankSource = (props.data.bankSource || "session") as BankSource;
+  const patched = patchProgressRecord({
+    bankId: props.data.bankId,
+    bankSource,
+    name: props.data.name,
+    type: props.data.type,
+    author: props.data.author,
+    version: props.data.version,
+    questionIndex,
+    question,
+    questionCount: questions.value.length,
+    stats: currentStats()
+  });
+
+  if (!patched) {
+    persistProgress(false);
+  }
+}
+
+function schedulePersistProgress(questionIndex: number) {
+  pendingPatchIndex = questionIndex;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
-    persistProgress(false);
+    const index = pendingPatchIndex;
+    pendingPatchIndex = null;
+    if (index == null) {
+      persistProgress(false);
+      return;
+    }
+    persistProgressPatch(index);
   }, 400);
 }
 
@@ -157,6 +209,7 @@ function flushPersistProgress() {
     clearTimeout(saveTimer);
     saveTimer = null;
   }
+  pendingPatchIndex = null;
   persistProgress(true);
 }
 
@@ -195,7 +248,7 @@ function answerShow(question: Question, qindex: number) {
 function handleSlotChange(qindex: number, question: Question, slotIndex: number) {
   if (props.practiceLocked) return;
   notifySlotChanged(qindex, question, slotIndex);
-  schedulePersistProgress();
+  schedulePersistProgress(qindex);
 }
 
 function isPeeking(qindex: number) {

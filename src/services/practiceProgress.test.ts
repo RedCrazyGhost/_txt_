@@ -15,7 +15,8 @@ import {
   listIncompleteRecords,
   listProgressRecords,
   removeProgressRecord,
-  saveProgressRecord
+  saveProgressRecord,
+  patchProgressRecord
 } from "./practiceProgress";
 
 const sampleQuestions = [
@@ -212,6 +213,75 @@ describe("practiceProgress", () => {
     const loaded = getProgressRecord("session-reuse");
     expect(loaded?.results[1]?.[0]).toBe("3");
     expect(loaded?.questions).toBe(firstQuestions);
+  });
+
+  it("patches a single question row without dropping other results or snapshot", () => {
+    const withSnapshot = buildProgressRecord(
+      { bankId: "session-patch", bankSource: "session", name: "首页" },
+      sampleQuestions,
+      { includeQuestionsSnapshot: true }
+    );
+    saveProgressRecord(withSnapshot);
+    const snapshot = getProgressRecord("session-patch")?.questions;
+
+    const patchedQuestion = {
+      ...sampleQuestions[1],
+      results: ["3"]
+    } as Question;
+
+    const ok = patchProgressRecord({
+      bankId: "session-patch",
+      bankSource: "session",
+      name: "首页",
+      questionIndex: 1,
+      question: patchedQuestion,
+      questionCount: 2,
+      stats: {
+        totalQuestions: 2,
+        attemptedQuestions: 2,
+        fullyCorrectQuestions: 2,
+        totalSlots: 2,
+        attemptedSlots: 2,
+        correctSlots: 2,
+        partialSlots: 0,
+        wrongSlots: 0,
+        unansweredSlots: 0
+      }
+    });
+
+    expect(ok).toBe(true);
+    const loaded = getProgressRecord("session-patch");
+    expect(loaded?.results[0]?.[0]).toBe("2");
+    expect(loaded?.results[1]?.[0]).toBe("3");
+    expect(loaded?.questions).toBe(snapshot);
+    expect(loaded?.stats.attemptedQuestions).toBe(2);
+
+    const restored = [...sampleQuestions];
+    restored[1] = { ...restored[1], results: [] };
+    expect(applyProgressToQuestions(restored, loaded!)).toBe(true);
+    expect(restored[1].results?.[0]).toBe("3");
+  });
+
+  it("returns false when patching a bank with no prior record", () => {
+    expect(
+      patchProgressRecord({
+        bankId: "missing",
+        questionIndex: 0,
+        question: sampleQuestions[0],
+        questionCount: 1,
+        stats: {
+          totalQuestions: 1,
+          attemptedQuestions: 0,
+          fullyCorrectQuestions: 0,
+          totalSlots: 1,
+          attemptedSlots: 0,
+          correctSlots: 0,
+          partialSlots: 0,
+          wrongSlots: 0,
+          unansweredSlots: 1
+        }
+      })
+    ).toBe(false);
   });
 
   it("caches parsed progress store between reads", () => {
