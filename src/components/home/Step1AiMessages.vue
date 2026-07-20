@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 import Step1AiMessageBubble from "./Step1AiMessageBubble.vue";
+import AppIcon from "../icons/AppIcon.vue";
 import type { AiPanelMessage, LoadingPhase } from "../../types/step1AiPanel";
 import type { WriteMode } from "../../types/step1AiPanel";
 import type { Verdict } from "../../services/ai/reviewGeneratedAnswers";
+
+export interface Step1AiMessagesExpose {
+  messagesEl: Ref<HTMLElement | null>;
+}
 
 defineProps<{
   messages: AiPanelMessage[];
@@ -26,13 +31,13 @@ const emit = defineEmits<{
 
 const messagesEl = ref<HTMLElement | null>(null);
 
-defineExpose({ messagesEl });
+defineExpose({ messagesEl } satisfies Step1AiMessagesExpose);
 </script>
 
 <template>
   <div v-if="showExamples" class="step1-ai-dialog-header">
     <p class="step1-ai-dialog-empty-title mb-0">
-      <i class="fas fa-comment-dots step1-ai-dialog-empty-icon" aria-hidden="true"></i>
+      <AppIcon name="comment-dots" class="step1-ai-dialog-empty-icon" />
       描述你想要的题集，或试试示例：
     </p>
     <button
@@ -42,11 +47,7 @@ defineExpose({ messagesEl });
       :title="isFullscreen ? '退出全屏' : '全屏'"
       @click="emit('toggleFullscreen')"
     >
-      <i
-        class="fas"
-        :class="isFullscreen ? 'fa-compress' : 'fa-expand'"
-        aria-hidden="true"
-      ></i>
+      <AppIcon :name="isFullscreen ? 'compress' : 'expand'" />
     </button>
   </div>
   <div
@@ -65,11 +66,7 @@ defineExpose({ messagesEl });
       :title="isFullscreen ? '退出全屏' : '全屏'"
       @click="emit('toggleFullscreen')"
     >
-      <i
-        class="fas"
-        :class="isFullscreen ? 'fa-compress' : 'fa-expand'"
-        aria-hidden="true"
-      ></i>
+      <AppIcon :name="isFullscreen ? 'compress' : 'expand'" />
     </button>
     <div v-if="showExamples" class="step1-ai-dialog-empty">
       <div class="step1-ai-examples">
@@ -80,7 +77,7 @@ defineExpose({ messagesEl });
           class="step1-ai-example-chip"
           @click="emit('applyExample', example)"
         >
-          <i class="fas fa-wand-magic-sparkles step1-ai-example-chip-icon" aria-hidden="true"></i>
+          <AppIcon name="wand-magic-sparkles" class="step1-ai-example-chip-icon" />
           <span>{{ example }}</span>
         </button>
       </div>

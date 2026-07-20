@@ -5,8 +5,8 @@ import { useStep1AiFullscreen } from "../../composables/useStep1AiFullscreen";
 import { useStep1AiGeneration } from "../../composables/useStep1AiGeneration";
 import { REFERENCE_FILE_ACCEPT, type ReferenceFile } from "../../services/ai/referenceFile";
 import { EXAMPLE_PROMPTS, type AiPanelMessage, type LoadingPhase, type WriteMode } from "../../types/step1AiPanel";
-import Step1AiComposer from "./Step1AiComposer.vue";
-import Step1AiMessages from "./Step1AiMessages.vue";
+import Step1AiComposer, { type Step1AiComposerExpose } from "./Step1AiComposer.vue";
+import Step1AiMessages, { type Step1AiMessagesExpose } from "./Step1AiMessages.vue";
 import Step1AiSettingsSection from "./Step1AiSettingsSection.vue";
 
 const userPrompt = ref("");
@@ -19,13 +19,32 @@ const referenceFiles = ref<ReferenceFile[]>([]);
 const settingsOpen = ref(false);
 const referenceInputEl = ref<HTMLInputElement | null>(null);
 
-const messagesComponent = ref<{ messagesEl: HTMLElement | null } | null>(null);
-const composerComponent = ref<{ promptEl: HTMLTextAreaElement | null } | null>(null);
+const messagesComponent = ref<Step1AiMessagesExpose | null>(null);
+const composerComponent = ref<Step1AiComposerExpose | null>(null);
 
-const messagesEl = computed(() => messagesComponent.value?.messagesEl ?? null);
-const promptEl = computed(() => composerComponent.value?.promptEl ?? null);
-
-const aiConfig = useAiConfig({
+const {
+  baseURL: baseUrl,
+  apiKey,
+  model,
+  thinkingEnabled,
+  reasoningEffort,
+  availableModels,
+  modelsLoading,
+  modelsError,
+  balanceText,
+  baseURLPlaceholder: baseUrlPlaceholder,
+  modelPlaceholder,
+  apiKeyConfigured,
+  isDeepSeek,
+  canFetchModels,
+  persist,
+  onCredentialInput,
+  onFieldPersist,
+  toggleThinking,
+  initFromStorage,
+  fetchModels,
+  refreshBalance
+} = useAiConfig({
   persistOnFieldChange: false,
   disabled: () => loading.value
 });
@@ -33,9 +52,9 @@ const aiConfig = useAiConfig({
 const { isFullscreen, toggleFullscreen } = useStep1AiFullscreen();
 
 const generation = useStep1AiGeneration({
-  persist: aiConfig.persist,
-  apiKey: aiConfig.apiKey,
-  refreshBalance: aiConfig.refreshBalance,
+  persist,
+  apiKey,
+  refreshBalance,
   messages,
   loading,
   loadingPhase,
@@ -44,8 +63,14 @@ const generation = useStep1AiGeneration({
   referenceFiles,
   composerError,
   defaultWriteMode,
-  messagesEl,
-  promptEl,
+  getMessagesEl: () => {
+    const exposed = messagesComponent.value as Step1AiMessagesExpose | null;
+    return exposed?.messagesEl.value ?? null;
+  },
+  getPromptEl: () => {
+    const exposed = composerComponent.value as Step1AiComposerExpose | null;
+    return exposed?.promptEl.value ?? null;
+  },
   referenceInputEl
 });
 
@@ -56,18 +81,24 @@ function toggleSettings() {
 }
 
 function handleCredentialInput() {
-  aiConfig.onCredentialInput();
+  onCredentialInput();
   generation.clearComposerError();
 }
 
 onMounted(() => {
-  const config = aiConfig.initFromStorage();
+  const config = initFromStorage();
   settingsOpen.value = !config.apiKey?.trim();
 });
 
-watch(promptEl, (el) => {
-  if (el) generation.autoResizePrompt();
-});
+watch(
+  () => {
+    const exposed = composerComponent.value as Step1AiComposerExpose | null;
+    return exposed?.promptEl.value ?? null;
+  },
+  (el) => {
+    if (el) generation.autoResizePrompt();
+  }
+);
 </script>
 
 <template>
@@ -95,14 +126,14 @@ watch(promptEl, (el) => {
         v-model:user-prompt="userPrompt"
         :loading="loading"
         :settings-open="settingsOpen"
-        :api-key-configured="aiConfig.apiKeyConfigured.value"
-        :thinking-enabled="aiConfig.thinkingEnabled.value"
+        :api-key-configured="apiKeyConfigured"
+        :thinking-enabled="thinkingEnabled"
         :reference-files="referenceFiles"
-        :is-deep-seek="aiConfig.isDeepSeek.value"
-        :balance-text="aiConfig.balanceText.value"
+        :is-deep-seek="isDeepSeek"
+        :balance-text="balanceText"
         :composer-error="composerError"
         @toggle-settings="toggleSettings"
-        @toggle-thinking="aiConfig.toggleThinking"
+        @toggle-thinking="toggleThinking"
         @trigger-reference-picker="generation.triggerReferencePicker"
         @reference-change="generation.handleReferenceChange"
         @remove-reference-file="generation.removeReferenceFile"
@@ -126,27 +157,22 @@ watch(promptEl, (el) => {
           <Step1AiSettingsSection
             v-show="settingsOpen"
             :disabled="loading"
-            :base-url="aiConfig.baseURL.value"
-            :api-key="aiConfig.apiKey.value"
-            :model="aiConfig.model.value"
-            :thinking-enabled="aiConfig.thinkingEnabled.value"
-            :reasoning-effort="aiConfig.reasoningEffort.value"
-            :available-models="aiConfig.availableModels.value"
-            :models-loading="aiConfig.modelsLoading.value"
-            :models-error="aiConfig.modelsError.value"
-            :balance-text="aiConfig.balanceText.value"
-            :base-url-placeholder="aiConfig.baseURLPlaceholder.value"
-            :model-placeholder="aiConfig.modelPlaceholder.value"
-            :is-deep-seek="aiConfig.isDeepSeek.value"
-            :can-fetch-models="aiConfig.canFetchModels.value"
-            @update:base-url="aiConfig.baseURL.value = $event"
-            @update:api-key="aiConfig.apiKey.value = $event"
-            @update:model="aiConfig.model.value = $event"
-            @update:thinking-enabled="aiConfig.thinkingEnabled.value = $event"
-            @update:reasoning-effort="aiConfig.reasoningEffort.value = $event"
+            v-model:base-url="baseUrl"
+            v-model:api-key="apiKey"
+            v-model:model="model"
+            v-model:thinking-enabled="thinkingEnabled"
+            v-model:reasoning-effort="reasoningEffort"
+            :available-models="availableModels"
+            :models-loading="modelsLoading"
+            :models-error="modelsError"
+            :balance-text="balanceText"
+            :base-url-placeholder="baseUrlPlaceholder"
+            :model-placeholder="modelPlaceholder"
+            :is-deep-seek="isDeepSeek"
+            :can-fetch-models="canFetchModels"
             @credential-input="handleCredentialInput"
-            @field-persist="aiConfig.onFieldPersist"
-            @fetch-models="aiConfig.fetchModels"
+            @field-persist="onFieldPersist"
+            @fetch-models="fetchModels"
           />
         </template>
       </Step1AiComposer>

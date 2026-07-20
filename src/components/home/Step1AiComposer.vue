@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 import type { ReferenceFile } from "../../services/ai/referenceFile";
+import AppIcon from "../icons/AppIcon.vue";
+
+export interface Step1AiComposerExpose {
+  promptEl: Ref<HTMLTextAreaElement | null>;
+}
 
 const promptEl = ref<HTMLTextAreaElement | null>(null);
 
-defineExpose({ promptEl });
+defineExpose({ promptEl } satisfies Step1AiComposerExpose);
 
 defineProps<{
   userPrompt: string;
@@ -44,7 +49,7 @@ const emit = defineEmits<{
           :key="file.name"
           class="step1-ai-reference-chip"
         >
-          <i class="fas fa-file-lines step1-ai-reference-chip-icon" aria-hidden="true"></i>
+          <AppIcon name="file-lines" class="step1-ai-reference-chip-icon" />
           <span class="step1-ai-reference-chip-name" :title="file.name">{{ file.name }}</span>
           <button
             type="button"
@@ -53,7 +58,7 @@ const emit = defineEmits<{
             :disabled="loading"
             @click="emit('removeReferenceFile', file.name)"
           >
-            <i class="fas fa-times" aria-hidden="true"></i>
+            <AppIcon name="times" />
           </button>
         </div>
       </div>
@@ -84,7 +89,7 @@ const emit = defineEmits<{
             :disabled="loading"
             @click="emit('toggleSettings')"
           >
-            <i class="fas fa-brain" aria-hidden="true"></i>
+            <AppIcon name="brain" />
             <span>模型</span>
             <span v-if="!apiKeyConfigured" class="step1-ai-settings-badge" aria-label="未配置 API Key"></span>
           </button>
@@ -96,7 +101,7 @@ const emit = defineEmits<{
             :disabled="loading"
             @click="emit('toggleThinking')"
           >
-            <i class="fas fa-atom" aria-hidden="true"></i>
+            <AppIcon name="atom" />
             <span>深度思考</span>
           </button>
           <button
@@ -107,7 +112,7 @@ const emit = defineEmits<{
             :disabled="loading"
             @click="emit('triggerReferencePicker')"
           >
-            <i class="fas fa-paperclip" aria-hidden="true"></i>
+            <AppIcon name="paperclip" />
             <span>参考文件</span>
           </button>
           <slot name="reference-input" />
@@ -125,7 +130,7 @@ const emit = defineEmits<{
             role="status"
             aria-hidden="true"
           ></span>
-          <i v-else class="fas fa-arrow-up" aria-hidden="true"></i>
+          <AppIcon v-else name="arrow-up" />
         </button>
       </div>
     </div>
@@ -133,7 +138,7 @@ const emit = defineEmits<{
     <slot name="settings" />
 
     <p v-if="isDeepSeek && balanceText && !settingsOpen" class="step1-ai-balance step1-ai-balance-outside small text-muted mb-0">
-      <i class="fas fa-wallet step1-ai-balance-icon" aria-hidden="true"></i>
+      <AppIcon name="wallet" class="step1-ai-balance-icon" />
       DeepSeek 余额：{{ balanceText }}
     </p>
 

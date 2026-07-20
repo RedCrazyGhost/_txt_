@@ -28,7 +28,7 @@ const emit = defineEmits<{
 const disabledRef = toRef(props, "disabled");
 
 const {
-  baseURL,
+  baseURL: baseUrl,
   apiKey,
   model,
   thinkingEnabled,
@@ -37,7 +37,7 @@ const {
   modelsLoading,
   modelsError,
   balanceText,
-  baseURLPlaceholder,
+  baseURLPlaceholder: baseUrlPlaceholder,
   modelPlaceholder,
   apiKeyConfigured,
   isDeepSeek,
@@ -81,7 +81,7 @@ defineExpose({
       :disabled="disabled"
       :show-thinking-toggle="showThinkingToggle"
       :show-settings-link="compact"
-      v-model:base-url="baseURL"
+      v-model:base-url="baseUrl"
       v-model:api-key="apiKey"
       v-model:model="model"
       v-model:thinking-enabled="thinkingEnabled"
@@ -90,7 +90,7 @@ defineExpose({
       :models-loading="modelsLoading"
       :models-error="modelsError"
       :balance-text="balanceText"
-      :base-url-placeholder="baseURLPlaceholder"
+      :base-url-placeholder="baseUrlPlaceholder"
       :model-placeholder="modelPlaceholder"
       :is-deep-seek="isDeepSeek"
       :can-fetch-models="canFetchModels"

@@ -1,4 +1,4 @@
-import { nextTick, type ComputedRef, type Ref } from "vue";
+import { nextTick, type Ref } from "vue";
 import { appState, type TxtEntry } from "../state/appState";
 import type { AiConfig } from "../services/ai/aiConfigStorage";
 import { formatQuestionText, generateQuestionsFromAi } from "../services/ai/generateQuestions";
@@ -36,8 +36,8 @@ export interface UseStep1AiGenerationDeps {
   referenceFiles: Ref<ReferenceFile[]>;
   composerError: Ref<string>;
   defaultWriteMode: Ref<WriteMode>;
-  messagesEl: Ref<HTMLElement | null> | ComputedRef<HTMLElement | null>;
-  promptEl: Ref<HTMLTextAreaElement | null> | ComputedRef<HTMLTextAreaElement | null>;
+  getMessagesEl: () => HTMLElement | null;
+  getPromptEl: () => HTMLTextAreaElement | null;
   referenceInputEl: Ref<HTMLInputElement | null>;
 }
 
@@ -76,7 +76,7 @@ export function useStep1AiGeneration(deps: UseStep1AiGenerationDeps) {
 
   async function scrollMessagesToBottom() {
     await nextTick();
-    const el = deps.messagesEl.value;
+    const el = deps.getMessagesEl();
     if (el) {
       el.scrollTop = el.scrollHeight;
     }
@@ -138,7 +138,7 @@ export function useStep1AiGeneration(deps: UseStep1AiGenerationDeps) {
 
   function focusComposer() {
     nextTick(() => {
-      deps.promptEl.value?.focus();
+      deps.getPromptEl()?.focus();
     });
   }
 
@@ -265,7 +265,7 @@ export function useStep1AiGeneration(deps: UseStep1AiGenerationDeps) {
   }
 
   function autoResizePrompt() {
-    const el = deps.promptEl.value;
+    const el = deps.getPromptEl();
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
