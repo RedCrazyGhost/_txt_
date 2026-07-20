@@ -187,10 +187,6 @@ body {
   color: #ffffff;
 }
 
-[data-bs-theme="dark"] .acknowledgements-page header h2 {
-  color: #ffffff;
-}
-
 .app-main {
   padding-bottom: 1rem;
 }
