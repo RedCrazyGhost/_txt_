@@ -1,10 +1,8 @@
-<script setup>
-import { ref, defineAsyncComponent, onMounted } from "vue";
+<script setup lang="ts">
+import { ref, computed, defineAsyncComponent, onMounted } from "vue";
 import { saveAs } from "file-saver";
-const AppQuestion = defineAsyncComponent(() => import("../components/AppQuestion.vue"));
 import AppName from "../components/AppName.vue";
 import Step1ModeSwitch from "../components/home/Step1ModeSwitch.vue";
-import Step1AiPanel from "../components/home/Step1AiPanel.vue";
 import Step1ManualPanel from "../components/home/Step1ManualPanel.vue";
 import { appState } from "../state/appState";
 import { createBankFromQuestions } from "../services/questionBank";
@@ -12,15 +10,38 @@ import { initQuestionBankState, questionBankState } from "../state/questionBankS
 import { syncHomeSessionProgress } from "../services/homeQuestionsJson";
 import { resolveQuestionBankVersion } from "../utils/questions";
 import { getTime } from "../utils/time";
-const step1Mode = ref("manual");
-const localBankDraft = ref({
+import type { Question } from "../models/question/types";
+import type { QuestionsJSON } from "../state/appState";
+
+const AppQuestion = defineAsyncComponent(() => import("../components/AppQuestion.vue"));
+const Step1AiPanel = defineAsyncComponent(() => import("../components/home/Step1AiPanel.vue"));
+
+type Step1Mode = "manual" | "ai";
+type SaveTarget = "browser" | "file";
+
+interface LocalBankDraft {
+  title: string;
+  subject: string;
+  author: string;
+}
+
+interface ImportedQuestionJson {
+  version: string;
+  name: string;
+  type: string;
+  author: string;
+  questions: Question[];
+}
+
+const step1Mode = ref<Step1Mode>("manual");
+const localBankDraft = ref<LocalBankDraft>({
   title: "",
   subject: "",
   author: ""
 });
 const localBankMessage = ref("");
 const exportFileName = ref("");
-const saveTargets = ref(["browser"]);
+const saveTargets = ref<SaveTarget[]>(["browser"]);
 const QUESTION_JSON_VERSION = "0.0.2";
 
 onMounted(async () => {
@@ -30,7 +51,7 @@ onMounted(async () => {
   }
 });
 
-function normalizeQuestionJSON(raw) {
+function normalizeQuestionJSON(raw: Partial<ImportedQuestionJson> | null | undefined): ImportedQuestionJson {
   return {
     version: QUESTION_JSON_VERSION,
     name: raw?.name || "",
@@ -51,14 +72,16 @@ async function deleteQuestionsJSON() {
   resetQuestionProgress([]);
 }
 
-function getFile(event) {
-  for (let index = 0; index < event.target.files.length; index += 1) {
+function getFile(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (!input.files) return;
+  for (let index = 0; index < input.files.length; index += 1) {
     const reader = new FileReader();
-    reader.readAsText(event.target.files[index]);
-    reader.onload = async function load() {
+    reader.readAsText(input.files[index]);
+    reader.onload = async function load(this: FileReader) {
       const [{ normalizeQuestionWithDetection, resolveQuestionBankVersion: resolveVersion }] =
         await Promise.all([import("../utils/questions")]);
-      const imported = normalizeQuestionJSON(JSON.parse(this.result));
+      const imported = normalizeQuestionJSON(JSON.parse(String(this.result ?? "")));
       if (!appState.questionsJSON.type && imported.type) {
         appState.questionsJSON.type = imported.type;
       }
@@ -103,7 +126,7 @@ function exportQuestionJSON() {
   const finalFilename = normalizedFilename.endsWith(".json")
     ? normalizedFilename
     : `${normalizedFilename}.json`;
-  appState.questionsJSON.CreateTime = getTime(time);
+  (appState.questionsJSON as QuestionsJSON & { CreateTime?: string }).CreateTime = getTime(time);
   appState.questionsJSON.version = resolveQuestionBankVersion(appState.questionsJSON.questions);
   const blob = new Blob([JSON.stringify(appState.questionsJSON)], {
     type: "text/json;charset=utf-8"
@@ -155,16 +178,16 @@ function saveToLocalBank() {
     questions: appState.questionsJSON.questions
   });
   if (!result.ok) {
-    questionBankState.localBanks = result.banks;
+    questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
     localBankMessage.value = result.message;
     return;
   }
-  questionBankState.localBanks = result.banks;
+  questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
   localBankMessage.value = "已保存到本地题库，可在题库页面查看和管理。";
 }
 
-function questionJSONShow() {
-  const arr = [];
+const questionJSONPreview = computed(() => {
+  const arr: Question[] = [];
   appState.questionsJSON.questions.forEach((q) => {
     if (q.image !== "") {
       arr.push({ ...q, image: "因数据过大，不予显示" });
@@ -179,7 +202,7 @@ function questionJSONShow() {
     author: appState.questionsJSON.author || "",
     questions: arr
   });
-}
+});
 
 </script>
 
@@ -206,7 +229,7 @@ function questionJSONShow() {
               </div>
               <div class="home-step-body">
                   <Step1ManualPanel v-show="step1Mode === 'manual'" />
-                  <Step1AiPanel v-show="step1Mode === 'ai'" />
+                  <Step1AiPanel v-if="step1Mode === 'ai'" />
               </div>
             </section>
 
@@ -266,13 +289,13 @@ function questionJSONShow() {
                           class="btn btn-danger position-absolute top-0 end-0"
                           @click="deleteQuestionsJSON"
                         >
-                          <i class="far fa-trash-alt"></i>
+                          <i class="fas fa-trash-alt"></i>
                         </button>
                         <textarea
                           class="form-control shadow-sm rounded home-json-textarea"
                           placeholder="_json_"
                           id="json"
-                          :value="questionJSONShow()"
+                          :value="questionJSONPreview"
                           readonly
                         />
                         <label for="json">JSON 数据</label>

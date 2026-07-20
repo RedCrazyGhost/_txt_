@@ -1,21 +1,29 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
+import type { Question } from "../../models/question/types";
 import {
   buildQuestionReportIssueUrl,
   formatQuestionPreview,
-  QUESTION_REPORT_TYPES
+  QUESTION_REPORT_TYPES,
+  type QuestionReportBankInfo,
+  type QuestionReportTypeId
 } from "../../services/questionReport";
 import { appState } from "../../state/appState";
 import { getQuestionType, getQuestionTypeBadgeClass, getQuestionTypeLabel } from "../../utils/questions";
 
-const props = defineProps({
-  question: { type: Object, required: true },
-  qindex: { type: Number, required: true },
-  bankContext: { type: Object, default: () => ({}) }
-});
+const props = withDefaults(
+  defineProps<{
+    question: Question;
+    qindex: number;
+    bankContext?: QuestionReportBankInfo;
+  }>(),
+  {
+    bankContext: () => ({})
+  }
+);
 
 const visible = ref(false);
-const selectedTypes = ref([]);
+const selectedTypes = ref<QuestionReportTypeId[]>([]);
 const userNote = ref("");
 
 const canSubmit = computed(() => selectedTypes.value.length > 0);
@@ -50,7 +58,7 @@ function close() {
   visible.value = false;
 }
 
-function toggleType(typeId) {
+function toggleType(typeId: QuestionReportTypeId) {
   if (selectedTypes.value.includes(typeId)) {
     selectedTypes.value = selectedTypes.value.filter((id) => id !== typeId);
     return;
@@ -79,7 +87,7 @@ function submit() {
   close();
 }
 
-function handleKeydown(event) {
+function handleKeydown(event: KeyboardEvent) {
   if (event.key === "Escape") close();
 }
 

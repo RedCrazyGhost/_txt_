@@ -1,5 +1,12 @@
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from "vue";
+import type {
+  FillBlankQuestion,
+  JudgmentQuestion,
+  MultipleChoiceQuestion,
+  Question,
+  SingleChoiceQuestion
+} from "../../models/question/types";
 import FillBlankQuestionBody from "./FillBlankQuestionBody.vue";
 import MultipleChoiceQuestionBody from "./MultipleChoiceQuestionBody.vue";
 import QuestionAiChat from "./QuestionAiChat.vue";
@@ -8,21 +15,37 @@ import QuestionReportModal from "./QuestionReportModal.vue";
 import SingleChoiceQuestionBody from "./SingleChoiceQuestionBody.vue";
 import { shouldShowExplanationPanel } from "../../models/question/feedback";
 import { getQuestionTypeBadgeClass, getQuestionTypeLabel } from "../../models/question/labels";
-import { getAnswerSlotCount, getQuestionType, judgeSlotOutcome } from "../../utils/questions";
+import type { AppTheme } from "../../services/appPrefsStorage";
+import type { QuestionReportBankInfo } from "../../services/questionReport";
+import { getAnswerSlotCount, getQuestionType, judgeSlotOutcome, type SlotOutcome } from "../../utils/questions";
 
-const props = defineProps({
-  question: { type: Object, required: true },
-  qindex: { type: Number, required: true },
-  appcolor: { type: String, default: "light" },
-  peeking: { type: Boolean, default: false },
-  virtualized: { type: Boolean, default: false },
-  unansweredHighlight: { type: Boolean, default: false },
-  bankContext: { type: Object, default: () => ({}) }
-});
+const props = withDefaults(
+  defineProps<{
+    question: Question;
+    qindex: number;
+    appcolor?: AppTheme;
+    peeking?: boolean;
+    virtualized?: boolean;
+    unansweredHighlight?: boolean;
+    bankContext?: QuestionReportBankInfo;
+    practiceLocked?: boolean;
+  }>(),
+  {
+    appcolor: "light",
+    peeking: false,
+    virtualized: false,
+    unansweredHighlight: false,
+    bankContext: () => ({}),
+    practiceLocked: false
+  }
+);
 
-const emit = defineEmits(["slotChange", "peekAnswer"]);
+const emit = defineEmits<{
+  slotChange: [slot: number];
+  peekAnswer: [];
+}>();
 
-const reportModalRef = ref(null);
+const reportModalRef = ref<{ open: () => void } | null>(null);
 const aiChatOpen = ref(false);
 
 function toggleAiChat() {
@@ -38,7 +61,6 @@ const attemptedSlotFeedback = computed(() => {
     const value = question.results?.[index];
     const attempted =
       value !== undefined && value !== null && String(value).trim() !== "";
-    if (!attempted) continue;
     if (!attempted) continue;
     entries.push({ index, outcome: judgeSlotOutcome(question, index) });
   }
@@ -65,35 +87,53 @@ const showExplanation = computed(() =>
   shouldShowExplanationPanel(props.question, props.peeking)
 );
 
-function judgeColorChangeFontColor(color) {
+function judgeColorChangeFontColor(color: AppTheme): AppTheme {
   return color === "light" ? "dark" : "light";
 }
 
-function outcomeLabel(outcome) {
+function outcomeLabel(outcome: SlotOutcome) {
   if (outcome === "correct") return "正确";
   if (outcome === "partial") return "半对";
   return "错误";
 }
 
-function resultColor(outcome) {
+function resultColor(outcome: SlotOutcome) {
   if (outcome === "correct") return "var(--bs-green)";
   if (outcome === "partial") return "var(--bs-warning)";
   return "var(--bs-red)";
 }
 
-function isSingleChoice(question) {
+function isSingleChoice(question: Question): question is SingleChoiceQuestion | JudgmentQuestion {
   return question.questionType === "singleChoice" || question.questionType === "judgment";
 }
 
-function isMultipleChoice(question) {
+function isMultipleChoice(question: Question): question is MultipleChoiceQuestion {
   return question.questionType === "multipleChoice";
 }
 
-function typeLabel(question) {
+type QuestionResults = Array<string | undefined>;
+
+function singleChoiceQuestion(
+  question: SingleChoiceQuestion | JudgmentQuestion
+): (SingleChoiceQuestion | JudgmentQuestion) & { results: QuestionResults } {
+  return question as (SingleChoiceQuestion | JudgmentQuestion) & { results: QuestionResults };
+}
+
+function multipleChoiceQuestion(
+  question: MultipleChoiceQuestion
+): MultipleChoiceQuestion & { results: QuestionResults } {
+  return question as MultipleChoiceQuestion & { results: QuestionResults };
+}
+
+function fillBlankQuestion(question: Question): FillBlankQuestion & { results: QuestionResults } {
+  return question as FillBlankQuestion & { results: QuestionResults };
+}
+
+function typeLabel(question: Question) {
   return getQuestionTypeLabel(getQuestionType(question));
 }
 
-function typeBadgeClass(question) {
+function typeBadgeClass(question: Question) {
   return getQuestionTypeBadgeClass(getQuestionType(question));
 }
 
@@ -137,7 +177,11 @@ function openReportModal() {
         >
           <i class="fas fa-flag me-1"></i>上报
         </button>
-        <span v-if="unansweredHighlight" class="badge text-bg-warning question-unanswered-badge">未做</span>
+        <span v-if="practiceLocked" class="badge text-bg-danger">已停止</span>
+        <span
+          v-else-if="unansweredHighlight"
+          class="badge text-bg-warning question-unanswered-badge"
+        >未做</span>
         <span class="badge question-type-badge" :class="typeBadgeClass(question)">{{ typeLabel(question) }}</span>
       </div>
     </div>
@@ -154,30 +198,32 @@ function openReportModal() {
     <div class="card-body">
       <span
         class="fa-stack fa-lg position-absolute top-100 start-100 translate-middle"
-        v-if="!question.MD5"
+        v-if="!question.MD5 && !practiceLocked"
         @click="emit('peekAnswer')"
       >
         <i :class="`fa fa-camera fa-stack-1x text-${judgeColorChangeFontColor(appcolor)}`"></i>
-        <i class="fa fa-ban fa-stack-2x text-danger"></i>
+        <i class="fas fa-ban fa-stack-2x text-danger"></i>
       </span>
-      <SingleChoiceQuestionBody
-        v-if="isSingleChoice(question)"
-        :question="question"
-        :qindex="qindex"
-        @slot-change="(slot) => emit('slotChange', slot)"
-      />
-      <MultipleChoiceQuestionBody
-        v-else-if="isMultipleChoice(question)"
-        :question="question"
-        :qindex="qindex"
-        @slot-change="(slot) => emit('slotChange', slot)"
-      />
-      <FillBlankQuestionBody
-        v-else
-        :question="question"
-        :qindex="qindex"
-        @slot-change="(slot) => emit('slotChange', slot)"
-      />
+      <fieldset class="question-card-fieldset" :disabled="practiceLocked">
+        <SingleChoiceQuestionBody
+          v-if="isSingleChoice(question)"
+          :question="singleChoiceQuestion(question)"
+          :qindex="qindex"
+          @slot-change="(slot) => emit('slotChange', slot)"
+        />
+        <MultipleChoiceQuestionBody
+          v-else-if="isMultipleChoice(question)"
+          :question="multipleChoiceQuestion(question)"
+          :qindex="qindex"
+          @slot-change="(slot) => emit('slotChange', slot)"
+        />
+        <FillBlankQuestionBody
+          v-else
+          :question="fillBlankQuestion(question)"
+          :qindex="qindex"
+          @slot-change="(slot) => emit('slotChange', slot)"
+        />
+      </fieldset>
       <QuestionExplanation
         v-if="showExplanation"
         :question="question"
@@ -219,6 +265,20 @@ function openReportModal() {
   margin-bottom: 0;
 }
 
+.question-card-virtualized {
+  margin-bottom: 0;
+}
+
+.question-card-unanswered {
+  border: 2px solid var(--bs-warning);
+  box-shadow: 0 0 0 0.15rem rgba(var(--bs-warning-rgb), 0.2);
+}
+
+.question-unanswered-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .question-card-unanswered {
   border: 2px solid var(--bs-warning);
   box-shadow: 0 0 0 0.15rem rgba(var(--bs-warning-rgb), 0.2);
@@ -237,6 +297,27 @@ function openReportModal() {
 .question-report-btn {
   font-size: 0.75rem;
   padding: 0.15rem 0.45rem;
+}
+
+.question-card-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+
+.question-ai-btn {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+}
+
+.question-ai-btn-chevron {
+  font-size: 0.625rem;
+  transition: transform 0.2s ease;
+}
+
+.question-ai-btn-chevron--open {
+  transform: rotate(180deg);
 }
 
 .question-ai-btn {

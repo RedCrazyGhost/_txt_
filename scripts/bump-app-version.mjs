@@ -6,7 +6,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const PKG_PATH = path.join(root, "package.json");
 const LOCK_PATH = path.join(root, "package-lock.json");
-const APP_STATE_PATH = path.join(root, "src/state/appState.js");
+const APP_STATE_PATH = path.join(root, "src/state/appState.ts");
 
 function bumpPatch(version) {
   const parts = version.split(".");
@@ -47,7 +47,7 @@ writeJson(LOCK_PATH, lock);
 const appState = fs.readFileSync(APP_STATE_PATH, "utf8");
 const updatedAppState = appState.replace(/(appVersion:\s*")([^"]+)(")/, `$1${newVersion}$3`);
 if (updatedAppState === appState) {
-  throw new Error("Could not update appVersion in src/state/appState.js");
+  throw new Error("Could not update appVersion in src/state/appState.ts");
 }
 fs.writeFileSync(APP_STATE_PATH, updatedAppState);
 

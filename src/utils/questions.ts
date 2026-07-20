@@ -1,4 +1,4 @@
-import { md5 } from "js-md5";
+import md5 from "js-md5";
 import type { Question, QuestionType } from "../models/question/types";
 import { isMultipleChoiceQuestion } from "../models/question/types";
 

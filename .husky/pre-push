@@ -1,2 +1,0 @@
-#!/usr/bin/env sh
-node scripts/pre-push-version-check.mjs "$1" "$2"

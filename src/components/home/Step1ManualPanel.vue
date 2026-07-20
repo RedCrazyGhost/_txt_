@@ -1,16 +1,16 @@
-<script setup>
-import { nextTick, ref, watch } from "vue";
-import { appState } from "../../state/appState";
+<script setup lang="ts">
+import { nextTick, ref, watch, type ComponentPublicInstance } from "vue";
+import { appState, type TxtEntry } from "../../state/appState";
 import { generateQuestionsJsonFromTxts } from "../../services/homeQuestionsJson";
 import { txtCharNumber } from "../../utils/questions";
 
 const activeTxtIndex = ref(-1);
-const manuallyCollapsedExplanation = ref(new Set());
-const manuallyExpandedExplanation = ref(new Set());
-const explanationInputRefs = ref({});
+const manuallyCollapsedExplanation = ref(new Set<number>());
+const manuallyExpandedExplanation = ref(new Set<number>());
+const explanationInputRefs = ref<Record<number, HTMLTextAreaElement>>({});
 
-function remapIndexSet(set, deletedIndex) {
-  const next = new Set();
+function remapIndexSet(set: Set<number>, deletedIndex: number): Set<number> {
+  const next = new Set<number>();
   for (const i of set) {
     if (i < deletedIndex) next.add(i);
     else if (i > deletedIndex) next.add(i - 1);
@@ -18,15 +18,15 @@ function remapIndexSet(set, deletedIndex) {
   return next;
 }
 
-function boxMinHeight(txt) {
+function boxMinHeight(txt: string): number {
   return 2.5 + txtCharNumber(txt) * 1.5;
 }
 
-function getLineNumbers(txt) {
+function getLineNumbers(txt: string): number[] {
   return Array.from({ length: txtCharNumber(txt) }, (_, index) => index + 1);
 }
 
-function md5ChangeColor(value) {
+function md5ChangeColor(value: TxtEntry): string {
   if (!value.MD5) return "";
   return appState.webSiteConfig.appColor === "dark" ? "#475569" : "#cecece";
 }
@@ -35,52 +35,53 @@ function addTxt() {
   appState.txts.push({ MD5: false, txt: "", image: "", noDelete: false, explanation: "" });
 }
 
-function deleteTxt(index) {
+function deleteTxt(index: number) {
   if (appState.txts[index]?.noDelete) return;
   appState.txts.splice(index, 1);
   manuallyCollapsedExplanation.value = remapIndexSet(manuallyCollapsedExplanation.value, index);
   manuallyExpandedExplanation.value = remapIndexSet(manuallyExpandedExplanation.value, index);
 }
 
-function toggleNoDelete(index) {
+function toggleNoDelete(index: number) {
   appState.txts[index].noDelete = !appState.txts[index].noDelete;
 }
 
-function changeMD5(index) {
+function changeMD5(index: number) {
   appState.txts[index].MD5 = !appState.txts[index].MD5;
 }
 
-function txtObjectMD5ShowIClass(index) {
-  return appState.txts[index].MD5 ? "fa fa-lock" : "fa fa-unlock";
+function txtObjectMD5ShowIClass(index: number): string {
+  return appState.txts[index].MD5 ? "fas fa-lock" : "fas fa-unlock";
 }
 
-function triggerInputFile(id) {
+function triggerInputFile(id: string) {
   const input = document.getElementById(id);
   if (input) input.click();
 }
 
-function getImageFile(event, index) {
-  const file = event.target.files?.[0];
+function getImageFile(event: Event, index: number) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
   if (!file) return;
   const reader = new FileReader();
   reader.readAsDataURL(file);
-  reader.onload = function load() {
-    appState.txts[index].image = this.result;
+  reader.onload = function load(this: FileReader) {
+    appState.txts[index].image = String(this.result ?? "");
   };
 }
 
-function deleteImage(index) {
+function deleteImage(index: number) {
   appState.txts[index].image = "";
 }
 
-function isExplanationExpanded(index) {
+function isExplanationExpanded(index: number): boolean {
   if (manuallyCollapsedExplanation.value.has(index)) return false;
   const txt = appState.txts[index];
   if (hasExplanationContent(txt)) return true;
   return manuallyExpandedExplanation.value.has(index);
 }
 
-function hasExplanationContent(value) {
+function hasExplanationContent(value: TxtEntry): boolean {
   return Boolean(value.explanation?.trim());
 }
 
@@ -100,12 +101,12 @@ watch(
   }
 );
 
-function explanationToggleTitle(index, value) {
+function explanationToggleTitle(index: number, value: TxtEntry): string {
   if (isExplanationExpanded(index)) return "收起解析";
   return hasExplanationContent(value) ? "展开解析（已有内容）" : "展开题目解析";
 }
 
-async function toggleExplanation(index) {
+async function toggleExplanation(index: number) {
   if (isExplanationExpanded(index)) {
     const collapsed = new Set(manuallyCollapsedExplanation.value);
     collapsed.add(index);
@@ -125,8 +126,8 @@ async function toggleExplanation(index) {
   explanationInputRefs.value[index]?.focus();
 }
 
-function setExplanationRef(index, el) {
-  if (el) {
+function setExplanationRef(index: number, el: Element | ComponentPublicInstance | null) {
+  if (el instanceof HTMLTextAreaElement) {
     explanationInputRefs.value[index] = el;
   } else {
     delete explanationInputRefs.value[index];
@@ -197,7 +198,7 @@ async function generateQuestionsJSON() {
             aria-label="题目配图"
           >
             <button type="button" class="btn btn-warning" @click="triggerInputFile(`imageFile-${index}`)">
-              <i class="fa fa-camera"></i>
+              <i class="fas fa-camera"></i>
               <input
                 style="display: none"
                 @change="getImageFile($event, index)"
@@ -212,7 +213,7 @@ async function generateQuestionsJSON() {
               class="btn btn-danger"
               @click="deleteImage(index)"
             >
-              <i class="fa fa-trash-alt"></i>
+              <i class="fas fa-trash-alt"></i>
             </button>
           </div>
           <button

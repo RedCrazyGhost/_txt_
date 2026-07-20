@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import AppName from "./AppName.vue";
-import { listIncompleteRecords } from "../services/practiceProgress";
+import { listIncompleteRecords, type BankLike } from "../services/practiceProgress";
 import {
   StorageChangeKind,
   subscribeStorageChanged,
@@ -10,10 +10,12 @@ import {
 } from "../services/appStorageSync";
 import { loadRemoteQuestionBanks } from "../services/remoteQuestionBanks";
 import { reloadLocalBanks, questionBankState } from "../state/questionBankState";
+import { setTheme } from "../services/appPrefsStorage";
+import type { AppState } from "../state/appState";
 
-const props = defineProps({
-  state: { type: Object, required: true }
-});
+const props = defineProps<{
+  state: AppState;
+}>();
 
 const route = useRoute();
 const incompleteCount = ref(0);
@@ -21,11 +23,11 @@ const incompleteCount = ref(0);
 function refreshIncompleteCount() {
   if (typeof window === "undefined") return;
   const banks = [...questionBankState.localBanks, ...questionBankState.remoteBanks];
-  incompleteCount.value = listIncompleteRecords(banks).length;
+  incompleteCount.value = listIncompleteRecords(banks as BankLike[]).length;
 }
 
-function handleStorageChanged(event) {
-  const kind = event?.detail?.kind;
+function handleStorageChanged(event: Event) {
+  const kind = (event as CustomEvent<{ kind?: string }>).detail?.kind;
   if (kind === StorageChangeKind.localBanks) {
     reloadLocalBanks();
     refreshIncompleteCount();
@@ -57,18 +59,20 @@ watch(
   }
 );
 
-function judgeColorChangeFontColor(color) {
+function judgeColorChangeFontColor(color: string) {
   return color === "light" ? "dark" : "light";
 }
 
 function changeAppColor() {
-  props.state.webSiteConfig.appColor =
+  const next =
     props.state.webSiteConfig.appColor === "light" ? "dark" : "light";
+  const prefs = setTheme(next);
+  props.state.webSiteConfig.appColor = prefs.theme;
 }
 
 function changeIClass() {
   return props.state.webSiteConfig.appColor === "light"
-    ? "far fa-sun fa-spin fa-lg"
+    ? "fas fa-sun fa-lg theme-toggle-sun"
     : "fas fa-moon fa-lg";
 }
 
@@ -135,6 +139,17 @@ function changeIStyle() {
 </template>
 
 <style scoped>
+.theme-toggle-sun {
+  display: inline-block;
+  animation: theme-sun-spin 16s linear infinite;
+}
+
+@keyframes theme-sun-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .nav-link-with-badge {
   position: relative;
   padding-right: 1.35rem;

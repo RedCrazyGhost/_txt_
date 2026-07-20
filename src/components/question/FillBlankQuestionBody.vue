@@ -1,22 +1,29 @@
-<script setup>
+<script setup lang="ts">
 import { onUnmounted } from "vue";
+import type { FillBlankQuestion } from "../../models/question/types";
 import { judgeAnswerTrue } from "../../utils/questions";
 
-defineProps({
-  question: { type: Object, required: true },
-  qindex: { type: Number, required: true }
-});
+type FillBlankQuestionWithResults = FillBlankQuestion & {
+  results: Array<string | undefined>;
+};
 
-const emit = defineEmits(["slotChange"]);
+defineProps<{
+  question: FillBlankQuestionWithResults;
+  qindex: number;
+}>();
+
+const emit = defineEmits<{
+  slotChange: [index: number];
+}>();
 
 const PROGRESS_DEBOUNCE_MS = 150;
-const progressTimers = new Map();
+const progressTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
-function blankIndex(tindex) {
+function blankIndex(tindex: number) {
   return (tindex - 1) / 2;
 }
 
-function inputWidth(question, index) {
+function inputWidth(question: FillBlankQuestionWithResults, index: number) {
   const custom = question.answerslength?.[index];
   if (typeof custom === "number" && custom > 0) {
     return `${Math.max(custom, 48)}px`;
@@ -24,18 +31,18 @@ function inputWidth(question, index) {
   return "4rem";
 }
 
-function inputClass(question, index) {
+function inputClass(question: FillBlankQuestionWithResults, index: number) {
   const result = question.results?.[index];
   const attempted = result !== undefined && result !== null && String(result).trim() !== "";
   if (!attempted) return "fill-blank-input";
   return judgeAnswerTrue(question, index) ? "fill-blank-input is-correct" : "fill-blank-input is-wrong";
 }
 
-function emitSlotChange(index) {
+function emitSlotChange(index: number) {
   emit("slotChange", index);
 }
 
-function scheduleProgressUpdate(index) {
+function scheduleProgressUpdate(index: number) {
   const existing = progressTimers.get(index);
   if (existing) clearTimeout(existing);
 
@@ -48,7 +55,7 @@ function scheduleProgressUpdate(index) {
   );
 }
 
-function flushProgressUpdate(index) {
+function flushProgressUpdate(index: number) {
   const existing = progressTimers.get(index);
   if (existing) clearTimeout(existing);
   progressTimers.delete(index);

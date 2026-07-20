@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useWindowVirtualizer } from "@tanstack/vue-virtual";
 import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect } from "vue";
 import QuestionCard from "./question/QuestionCard.vue";
@@ -11,20 +11,36 @@ import {
   resetQuestionProgress,
   syncQuestionProgress
 } from "../models/question/progress";
-import { buildProgressRecord, saveProgressRecord } from "../services/practiceProgress";
+import {
+  buildProgressRecord,
+  getProgressRecord,
+  saveProgressRecord,
+  type BankSource
+} from "../services/practiceProgress";
 import { questionProgressState } from "../state/questionProgressState";
+import type { QuestionsJSON } from "../state/appState";
+import type { Question } from "../models/question/types";
+import type { AppTheme } from "../services/appPrefsStorage";
 
 /** 超过此题数启用窗口虚拟滚动，保证大题集单页连续做题流畅 */
 const VIRTUAL_SCROLL_THRESHOLD = 20;
 const ESTIMATED_CARD_HEIGHT = 320;
 
-const props = defineProps({
-  data: { type: Object, required: true },
-  appcolor: { type: String, default: "light" },
-  showProgress: { type: Boolean, default: true }
-});
+const props = withDefaults(
+  defineProps<{
+    data: QuestionsJSON;
+    appcolor?: AppTheme;
+    showProgress?: boolean;
+    practiceLocked?: boolean;
+  }>(),
+  {
+    appcolor: "light",
+    showProgress: true,
+    practiceLocked: false
+  }
+);
 
-const questions = computed(() =>
+const questions = computed<Question[]>(() =>
   Array.isArray(props.data?.questions) ? props.data.questions : []
 );
 
@@ -51,7 +67,7 @@ const useVirtualScroll = computed(
   () => questions.value.length >= VIRTUAL_SCROLL_THRESHOLD
 );
 
-const listRootRef = ref(null);
+const listRootRef = ref<HTMLElement | null>(null);
 const scrollMargin = ref(0);
 
 watchEffect((onCleanup) => {
@@ -70,7 +86,7 @@ watchEffect((onCleanup) => {
 
   window.addEventListener("resize", updateScrollMargin);
 
-  let resizeObserver;
+  let resizeObserver: ResizeObserver | undefined;
   if (typeof ResizeObserver !== "undefined") {
     resizeObserver = new ResizeObserver(updateScrollMargin);
     resizeObserver.observe(root);
@@ -95,14 +111,24 @@ const rowVirtualizer = useWindowVirtualizer(
 const virtualItems = computed(() => rowVirtualizer.value.getVirtualItems());
 const totalVirtualHeight = computed(() => rowVirtualizer.value.getTotalSize());
 
-const peekingIndexes = ref(new Set());
-let saveTimer = null;
+const peekingIndexes = ref(new Set<number>());
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-function persistProgress() {
+function persistProgress(forceQuestionsSnapshot = false) {
   if (typeof window === "undefined") return;
   if (!props.data?.bankId || !questions.value.length) return;
 
-  const bankSource = props.data.bankSource || "session";
+  const bankSource = (props.data.bankSource || "session") as BankSource;
+  let includeQuestionsSnapshot = false;
+  if (bankSource === "session") {
+    if (forceQuestionsSnapshot) {
+      includeQuestionsSnapshot = true;
+    } else {
+      const existing = getProgressRecord(props.data.bankId);
+      includeQuestionsSnapshot = !Array.isArray(existing?.questions) || existing.questions.length === 0;
+    }
+  }
+
   const record = buildProgressRecord(
     {
       bankId: props.data.bankId,
@@ -113,7 +139,7 @@ function persistProgress() {
       version: props.data.version
     },
     questions.value,
-    { includeQuestionsSnapshot: bankSource === "session" }
+    { includeQuestionsSnapshot }
   );
   saveProgressRecord(record);
 }
@@ -122,7 +148,7 @@ function schedulePersistProgress() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
-    persistProgress();
+    persistProgress(false);
   }, 400);
 }
 
@@ -131,7 +157,7 @@ function flushPersistProgress() {
     clearTimeout(saveTimer);
     saveTimer = null;
   }
-  persistProgress();
+  persistProgress(true);
 }
 
 function handleVisibilityChange() {
@@ -153,7 +179,7 @@ onBeforeUnmount(() => {
   }
 });
 
-function answerShow(question, qindex) {
+function answerShow(question: Question, qindex: number) {
   const oldValue = [...(question.results || [])];
   question.results = buildPeekResults(question);
   peekingIndexes.value = new Set([...peekingIndexes.value, qindex]);
@@ -166,16 +192,21 @@ function answerShow(question, qindex) {
   }, 5000);
 }
 
-function handleSlotChange(qindex, question, slotIndex) {
+function handleSlotChange(qindex: number, question: Question, slotIndex: number) {
+  if (props.practiceLocked) return;
   notifySlotChanged(qindex, question, slotIndex);
   schedulePersistProgress();
 }
 
-function isPeeking(qindex) {
+function isPeeking(qindex: number) {
   return peekingIndexes.value.has(qindex);
 }
 
-function scrollToQuestion(index) {
+function measureVirtualRow(node: unknown) {
+  rowVirtualizer.value.measureElement(node as Element | null);
+}
+
+function scrollToQuestion(index: number) {
   if (index < 0 || index >= questions.value.length) return;
 
   if (useVirtualScroll.value) {
@@ -211,6 +242,7 @@ function scrollToQuestion(index) {
           :peeking="isPeeking(qindex)"
           :unanswered-highlight="isTrackedQuestionUnanswered(qindex)"
           :bank-context="bankContext"
+          :practice-locked="practiceLocked"
           @slot-change="(slot) => handleSlotChange(qindex, question, slot)"
           @peek-answer="answerShow(question, qindex)"
         />
@@ -224,9 +256,9 @@ function scrollToQuestion(index) {
     >
       <div
         v-for="virtualRow in virtualItems"
-        :key="virtualRow.key"
+        :key="String(virtualRow.key)"
         :data-index="virtualRow.index"
-        :ref="rowVirtualizer.measureElement"
+        :ref="measureVirtualRow"
         class="question-virtual-item"
         :style="{
           transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`
@@ -239,6 +271,7 @@ function scrollToQuestion(index) {
           :peeking="isPeeking(virtualRow.index)"
           :unanswered-highlight="isTrackedQuestionUnanswered(virtualRow.index)"
           :bank-context="bankContext"
+          :practice-locked="practiceLocked"
           virtualized
           @slot-change="(slot) => handleSlotChange(virtualRow.index, questions[virtualRow.index], slot)"
           @peek-answer="answerShow(questions[virtualRow.index], virtualRow.index)"

@@ -1,19 +1,23 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import {
   formatStoredQuestionCount,
   formatStorageBytes,
   getBrowserStorageStats,
   getStorageUsageTone,
-  LOCAL_QUESTION_CAPACITY
+  LOCAL_QUESTION_CAPACITY,
+  type BrowserStorageStats
 } from "../services/browserStorage";
 import { subscribeStorageChanged, unsubscribeStorageChanged } from "../services/appStorageSync";
 
-defineProps({
-  compact: { type: Boolean, default: false }
-});
+withDefaults(
+  defineProps<{
+    compact?: boolean;
+  }>(),
+  { compact: false }
+);
 
-const stats = ref(null);
+const stats = ref<BrowserStorageStats | null>(null);
 const loading = ref(false);
 
 const canRender = computed(() => typeof window !== "undefined");

@@ -1,20 +1,27 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
 
-const props = defineProps({
-  total: { type: Number, required: true },
-  unansweredIndexes: { type: Array, default: () => [] }
-});
+const props = withDefaults(
+  defineProps<{
+    total: number;
+    unansweredIndexes?: number[];
+  }>(),
+  {
+    unansweredIndexes: () => []
+  }
+);
 
-const emit = defineEmits(["jump"]);
+const emit = defineEmits<{
+  jump: [index: number];
+}>();
 
 const ERROR_HIDE_MS = 3000;
 
 const value = ref("");
-const inputRef = ref(null);
+const inputRef = ref<HTMLInputElement | null>(null);
 const nextUnansweredCursor = ref(0);
 const errorMessage = ref("");
-let errorHideTimer = null;
+let errorHideTimer: ReturnType<typeof setTimeout> | null = null;
 
 const hasUnanswered = computed(() => props.unansweredIndexes.length > 0);
 
@@ -25,7 +32,7 @@ function clearErrorHideTimer() {
   }
 }
 
-function showError(message) {
+function showError(message: string) {
   clearErrorHideTimer();
   errorMessage.value = message;
   errorHideTimer = setTimeout(() => {
@@ -104,7 +111,7 @@ function jumpNextUnanswered() {
           type="text"
           placeholder="题号"
           aria-label="跳转到题号"
-          aria-invalid="errorMessage ? 'true' : 'false'"
+          :aria-invalid="errorMessage ? 'true' : 'false'"
           :aria-describedby="errorMessage ? 'question-jump-fab-error-text' : undefined"
           inputmode="numeric"
           pattern="[0-9]*"

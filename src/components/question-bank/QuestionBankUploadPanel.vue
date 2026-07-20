@@ -1,12 +1,36 @@
-<script setup>
-defineProps({
-  token: { type: String, default: "" },
-  owner: { type: String, default: "" },
-  repo: { type: String, default: "" },
-  statusMessage: { type: String, default: "" }
-});
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    token?: string;
+    owner?: string;
+    repo?: string;
+    statusMessage?: string;
+  }>(),
+  {
+    token: "",
+    owner: "",
+    repo: "",
+    statusMessage: ""
+  }
+);
 
-const emit = defineEmits(["update:token", "update:owner", "update:repo"]);
+const emit = defineEmits<{
+  "update:token": [value: string];
+  "update:owner": [value: string];
+  "update:repo": [value: string];
+}>();
+
+function onTokenInput(event: Event) {
+  emit("update:token", (event.target as HTMLInputElement).value);
+}
+
+function onOwnerInput(event: Event) {
+  emit("update:owner", (event.target as HTMLInputElement).value);
+}
+
+function onRepoInput(event: Event) {
+  emit("update:repo", (event.target as HTMLInputElement).value);
+}
 </script>
 
 <template>
@@ -19,7 +43,7 @@ const emit = defineEmits(["update:token", "update:owner", "update:repo"]);
           <input
             class="form-control"
             :value="owner"
-            @input="emit('update:owner', $event.target.value)"
+            @input="onOwnerInput"
             placeholder="仓库所有者"
           />
         </div>
@@ -28,7 +52,7 @@ const emit = defineEmits(["update:token", "update:owner", "update:repo"]);
           <input
             class="form-control"
             :value="repo"
-            @input="emit('update:repo', $event.target.value)"
+            @input="onRepoInput"
             placeholder="仓库名"
           />
         </div>
@@ -38,7 +62,7 @@ const emit = defineEmits(["update:token", "update:owner", "update:repo"]);
             class="form-control"
             type="password"
             :value="token"
-            @input="emit('update:token', $event.target.value)"
+            @input="onTokenInput"
             placeholder="仅运行时使用，不持久化"
           />
         </div>

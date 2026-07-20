@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
 import { appState } from "../state/appState";
 
-const currentYear = computed(() => new Date().getFullYear());
+const currentYear = computed<number>(() => new Date().getFullYear());
 </script>
 
 <template>
@@ -47,14 +47,14 @@ const currentYear = computed(() => new Date().getFullYear());
           <a class="link-body-emphasis fw-semibold text-decoration-none" href="https://github.com/RedCrazyGhost/_txt_" target="_blank" rel="noreferrer">
             <i class="fab fa-github me-1"></i>GitHub
           </a>
-          给这个开源项目一个 <i class="far fa-star text-warning"></i>
+          给这个开源项目一个 <i class="fas fa-star text-warning"></i>
         </p>
         <p class="mb-2">赞助名单（按配置顺序展示）：</p>
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
           <div class="col" v-for="person in appState.webSiteConfig.appCoinPerson" :key="person.name">
             <div class="border rounded p-2 h-100 d-flex align-items-center gap-2">
               <img v-if="person.src" :src="person.src" alt="赞助者头像" class="rounded-circle acknowledgements-avatar" />
-              <i v-else :class="`far fa-2x fa-${person.iclass || 'smile'}`"></i>
+              <i v-else :class="`fas fa-2x fa-${person.iclass || 'smile'}`"></i>
               <span>{{ person.name }}</span>
             </div>
           </div>

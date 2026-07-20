@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { appState } from "./state/appState";
@@ -17,17 +17,13 @@ const isImmersive = computed(() => Boolean(route.meta?.immersive));
     :style="`font-family:${appState.webSiteConfig.appFontFamily};`"
   >
     <template v-if="isImmersive">
-      <router-view v-slot="{ Component }">
-        <keep-alive>
-          <component :is="Component" />
-        </keep-alive>
-      </router-view>
+      <router-view />
     </template>
     <template v-else>
       <AppTopNav :state="appState" />
       <main class="app-main">
         <router-view v-slot="{ Component }">
-          <keep-alive>
+          <keep-alive :max="5">
             <component :is="Component" />
           </keep-alive>
         </router-view>

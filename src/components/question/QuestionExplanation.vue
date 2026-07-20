@@ -1,12 +1,18 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
+import type { Question } from "../../models/question/types";
 import { formatCorrectAnswers } from "../../models/question/feedback";
 
-const props = defineProps({
-  question: { type: Object, required: true },
-  /** 偷看答案时为 true，强制展示解析区 */
-  peeking: { type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    question: Question;
+    /** 偷看答案时为 true，强制展示解析区 */
+    peeking?: boolean;
+  }>(),
+  {
+    peeking: false
+  }
+);
 
 const hasExplanation = computed(() => Boolean(props.question.explanation?.trim()));
 

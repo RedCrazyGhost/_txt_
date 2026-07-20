@@ -1,15 +1,20 @@
-<script setup>
-defineProps({
-  modelValue: {
-    type: String,
-    default: "manual",
-    validator: (value) => value === "manual" || value === "ai"
+<script setup lang="ts">
+type Step1Mode = "manual" | "ai";
+
+withDefaults(
+  defineProps<{
+    modelValue?: Step1Mode;
+  }>(),
+  {
+    modelValue: "manual"
   }
-});
+);
 
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits<{
+  "update:modelValue": [value: Step1Mode];
+}>();
 
-function select(mode) {
+function select(mode: Step1Mode) {
   emit("update:modelValue", mode);
 }
 </script>

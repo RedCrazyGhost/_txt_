@@ -1,11 +1,12 @@
-<script setup>
+<script setup lang="ts">
 import { getTimeYYYY } from "../utils/time";
+import type { AppState } from "../state/appState";
 
-defineProps({
-  state: { type: Object, required: true }
-});
+defineProps<{
+  state: AppState;
+}>();
 
-const gaIconUrl = `${import.meta.env.BASE_URL}IMAG/AppGA.png`;
+const gaIconUrl = `${import.meta.env.BASE_URL}images/AppGA.png`;
 </script>
 
 <template>

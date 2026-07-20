@@ -25,7 +25,7 @@
 
 ## 页面展示
 
-![Home 页面](IMAG/home.png)
+![Home 页面](public/images/home.png)
 
 ## License
 

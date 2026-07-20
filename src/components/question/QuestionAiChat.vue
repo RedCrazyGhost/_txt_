@@ -1,37 +1,50 @@
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
-import { loadAiConfig } from "../../services/ai/aiConfigStorage.js";
-import { llmChatStream } from "../../services/ai/llmClient.js";
-import { buildQuestionTutorMessages } from "../../services/ai/prompts.js";
+import type { Question } from "../../models/question/types";
+import { loadAiConfig, resolveAiConfig } from "../../services/ai/aiConfigStorage";
+import { llmChatStream } from "../../services/ai/llmClient";
+import type { ChatMessage } from "../../services/ai/prompts";
+import { buildQuestionTutorMessages } from "../../services/ai/prompts";
 import {
   clearSession,
   getSession,
   setSessionMessages,
   setSessionOpen
-} from "../../services/ai/questionTutorSession.js";
+} from "../../services/ai/questionTutorSession";
+import type { QuestionReportBankInfo } from "../../services/questionReport";
 
 const WELCOME_TEXT =
   "我是本题 AI 助手。可以问我解题思路、考点或你的作答哪里有问题。";
 
-const props = defineProps({
-  question: { type: Object, required: true },
-  qindex: { type: Number, required: true },
-  bankContext: { type: Object, default: () => ({}) },
-  open: { type: Boolean, default: false }
-});
+type DisplayMessage = ChatMessage & { welcome?: boolean };
 
-const emit = defineEmits(["update:open"]);
+const props = withDefaults(
+  defineProps<{
+    question: Question;
+    qindex: number;
+    bankContext?: QuestionReportBankInfo;
+    open?: boolean;
+  }>(),
+  {
+    bankContext: () => ({}),
+    open: false
+  }
+);
+
+const emit = defineEmits<{
+  "update:open": [value: boolean];
+}>();
 
 const bankId = computed(() => props.bankContext?.bankId || "");
 const userInput = ref("");
 const loading = ref(false);
 const errorText = ref("");
-const messagesEl = ref(null);
-const messages = ref([]);
+const messagesEl = ref<HTMLElement | null>(null);
+const messages = ref<ChatMessage[]>([]);
 
 const apiKeyConfigured = computed(() => Boolean(loadAiConfig().apiKey?.trim()));
 
-const displayMessages = computed(() => {
+const displayMessages = computed((): DisplayMessage[] => {
   if (messages.value.length) {
     return messages.value;
   }
@@ -50,7 +63,7 @@ function persistMessages() {
   setSessionMessages(bankId.value, props.qindex, messages.value);
 }
 
-function persistOpen(value) {
+function persistOpen(value: boolean) {
   setSessionOpen(bankId.value, props.qindex, value);
 }
 
@@ -110,7 +123,7 @@ async function handleSend() {
   if (!text || loading.value) return;
 
   if (!apiKeyConfigured.value) {
-    errorText.value = "请先在首页 Step 1「AI」模式的模型设置中填写 API Key。";
+    errorText.value = "请先在「设置」页填写 API Key。";
     return;
   }
 
@@ -127,7 +140,7 @@ async function handleSend() {
   messages.value.push({ role: "assistant", content: "" });
   loading.value = true;
 
-  const config = loadAiConfig();
+  const config = resolveAiConfig(loadAiConfig());
   const requestMessages = buildQuestionTutorMessages({
     question: props.question,
     history,
@@ -162,7 +175,7 @@ async function handleSend() {
   };
 }
 
-function handleKeydown(event) {
+function handleKeydown(event: KeyboardEvent) {
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
     handleSend();
@@ -222,7 +235,9 @@ defineExpose({ toggleOpen });
         </div>
 
         <p v-if="!apiKeyConfigured" class="question-ai-hint small text-warning mb-2">
-          未配置 API Key。请前往首页 Step 1「AI」模式填写 Base URL 与 API Key。
+          未配置 API Key。请前往
+          <router-link to="/settings">设置</router-link>
+          填写 OpenAI Base URL 与 API Key。
         </p>
 
         <p v-if="errorText" class="question-ai-error small text-danger mb-2" role="alert">

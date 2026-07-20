@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const VERSION_FILES = ["package.json", "package-lock.json", "src/state/appState.js"];
+const VERSION_FILES = ["package.json", "package-lock.json", "src/state/appState.ts"];
 
 function readPackageVersion() {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));

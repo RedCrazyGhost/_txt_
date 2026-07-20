@@ -1,10 +1,16 @@
-<script setup>
-defineProps({
-  icon: { type: String, required: true },
-  title: { type: String, required: true },
-  desc: { type: String, default: "" },
-  variant: { type: String, default: "light" }
-});
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    icon: string;
+    title: string;
+    desc?: string;
+    variant?: string;
+  }>(),
+  {
+    desc: "",
+    variant: "light"
+  }
+);
 </script>
 
 <template>

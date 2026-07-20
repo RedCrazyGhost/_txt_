@@ -1,14 +1,21 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
+import type { MultipleChoiceQuestion } from "../../models/question/types";
 import { isSlotAttempted } from "../../models/question/feedback";
 import { judgeSlotOutcome } from "../../utils/questions";
 
-const props = defineProps({
-  question: { type: Object, required: true },
-  qindex: { type: Number, required: true }
-});
+type MultipleChoiceQuestionWithResults = MultipleChoiceQuestion & {
+  results: Array<string | undefined>;
+};
 
-const emit = defineEmits(["slotChange"]);
+const props = defineProps<{
+  question: MultipleChoiceQuestionWithResults;
+  qindex: number;
+}>();
+
+const emit = defineEmits<{
+  slotChange: [index: number];
+}>();
 
 const selectedKeys = computed(() =>
   String(props.question.results?.[0] ?? "")
@@ -28,19 +35,19 @@ const correctKeys = computed(() =>
   )
 );
 
-function optionInputId(qindex, optionKey) {
+function optionInputId(qindex: number, optionKey: string) {
   return `question-${qindex}-option-${optionKey}`;
 }
 
-function isSelected(optionKey) {
+function isSelected(optionKey: string) {
   return selectedKeys.value.includes(optionKey);
 }
 
-function normalizedOptionKey(optionKey) {
+function normalizedOptionKey(optionKey: string) {
   return String(optionKey).trim().toUpperCase();
 }
 
-function optionClass(optionKey) {
+function optionClass(optionKey: string) {
   const classes = ["multiple-choice-option"];
   const key = normalizedOptionKey(optionKey);
   const selected = isSelected(optionKey);
@@ -65,7 +72,7 @@ function optionClass(optionKey) {
   return classes.join(" ");
 }
 
-function toggleOption(optionKey) {
+function toggleOption(optionKey: string) {
   const next = new Set(selectedKeys.value);
   if (next.has(optionKey)) {
     next.delete(optionKey);

@@ -1,20 +1,29 @@
-<script setup>
-defineProps({
-  title: { type: String, required: true },
-  banks: { type: Array, required: true },
-  embedded: { type: Boolean, default: false },
-  totalCount: { type: Number, default: undefined },
-  showEdit: { type: Boolean, default: true },
-  showPractice: { type: Boolean, default: false },
-  showRemove: { type: Boolean, default: true },
-  showExport: { type: Boolean, default: true },
-  showUpload: { type: Boolean, default: false },
-  showDownload: { type: Boolean, default: false }
-});
+<script setup lang="ts">
+import type { QuestionBankRecord } from "../../state/questionBankState";
 
-const emit = defineEmits(["edit", "remove", "export", "upload", "download", "practice"]);
+defineProps<{
+  title: string;
+  banks: QuestionBankRecord[];
+  embedded?: boolean;
+  totalCount?: number;
+  showEdit?: boolean;
+  showPractice?: boolean;
+  showRemove?: boolean;
+  showExport?: boolean;
+  showUpload?: boolean;
+  showDownload?: boolean;
+}>();
 
-function formatCreatedTime(item) {
+const emit = defineEmits<{
+  edit: [id: string];
+  remove: [id: string];
+  export: [id: string];
+  upload: [id: string];
+  download: [id: string];
+  practice: [id: string];
+}>();
+
+function formatCreatedTime(item: QuestionBankRecord & { CreateTime?: string; createTime?: string }) {
   const raw = item?.CreateTime || item?.createTime || item?.updatedAt;
   if (!raw) return "-";
   const parsed = new Date(raw);

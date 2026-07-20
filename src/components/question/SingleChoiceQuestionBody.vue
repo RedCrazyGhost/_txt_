@@ -1,18 +1,25 @@
-<script setup>
+<script setup lang="ts">
+import type { JudgmentQuestion, SingleChoiceQuestion } from "../../models/question/types";
 import { judgeAnswerTrue } from "../../utils/questions";
 
-defineProps({
-  question: { type: Object, required: true },
-  qindex: { type: Number, required: true }
-});
+type SingleChoiceQuestionWithResults = (SingleChoiceQuestion | JudgmentQuestion) & {
+  results: Array<string | undefined>;
+};
 
-const emit = defineEmits(["slotChange"]);
+defineProps<{
+  question: SingleChoiceQuestionWithResults;
+  qindex: number;
+}>();
 
-function optionInputId(qindex, optionKey) {
+const emit = defineEmits<{
+  slotChange: [index: number];
+}>();
+
+function optionInputId(qindex: number, optionKey: string) {
   return `question-${qindex}-option-${optionKey}`;
 }
 
-function optionClass(question, optionKey) {
+function optionClass(question: SingleChoiceQuestionWithResults, optionKey: string) {
   const selected = question.results?.[0] === optionKey;
   if (!selected) return "single-choice-option";
   return judgeAnswerTrue(question, 0)

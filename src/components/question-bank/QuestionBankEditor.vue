@@ -1,13 +1,19 @@
-<script setup>
-defineProps({
-  title: { type: String, required: true },
-  draft: { type: Object, required: true },
-  isEditing: { type: Boolean, default: false }
-});
+<script setup lang="ts">
+import type { BankDraft } from "../../services/questionBank";
 
-const emit = defineEmits(["save", "cancel", "import"]);
+defineProps<{
+  title: string;
+  draft: BankDraft;
+  isEditing?: boolean;
+}>();
 
-function onImport(event) {
+const emit = defineEmits<{
+  save: [];
+  cancel: [];
+  import: [event: Event];
+}>();
+
+function onImport(event: Event) {
   emit("import", event);
 }
 </script>

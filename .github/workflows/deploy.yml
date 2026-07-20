@@ -33,6 +33,9 @@ jobs:
       - name: Check app version consistency
         run: npm run check:version
 
+      - name: Run typecheck
+        run: npm run typecheck
+
       - name: Run tests
         run: npm test
 

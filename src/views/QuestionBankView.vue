@@ -1,36 +1,74 @@
-<script setup>
-import { computed, onActivated, onBeforeUnmount, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+<script setup lang="ts">
+import { computed, onActivated, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import FileSaver from "file-saver";
 import QuestionBankList from "../components/question-bank/QuestionBankList.vue";
-import { addBankFromExisting, exportBankAsJson, updateBank } from "../services/questionBank";
+import QuestionBankCreatePanel from "../components/question-bank/QuestionBankCreatePanel.vue";
+import {
+  addBankFromExisting,
+  exportBankAsJson,
+  updateBankMeta,
+  type Bank
+} from "../services/questionBank";
 import { loadRemoteQuestionBanks } from "../services/remoteQuestionBanks";
-import { StorageChangeKind, subscribeStorageChanged, unsubscribeStorageChanged } from "../services/appStorageSync";
-import { appState } from "../state/appState";
-import { reloadLocalBanks, questionBankState, removeLocal } from "../state/questionBankState";
-import { resetQuestionProgress } from "../models/question/progress";
-import { applyProgressToQuestions, getProgressRecord } from "../services/practiceProgress";
-import { normalizeQuestionWithDetection, resolveQuestionBankVersion } from "../utils/questions";
-import StorageUsagePanel from "../components/StorageUsagePanel.vue";
+import {
+  StorageChangeKind,
+  subscribeStorageChanged,
+  unsubscribeStorageChanged
+} from "../services/appStorageSync";
+import {
+  reloadLocalBanks,
+  questionBankState,
+  removeLocal,
+  type QuestionBankRecord
+} from "../state/questionBankState";
+import { startPracticeFromBank } from "../services/practiceSession";
 
-const localEditState = ref({
+type BankListItem = QuestionBankRecord & {
+  groupKey?: string;
+  groupLabel?: string;
+  CreateTime?: string;
+  createTime?: string;
+  name?: string;
+  type?: string;
+};
+
+interface LocalEditState {
+  id: string;
+  title: string;
+  subject: string;
+  author: string;
+}
+
+interface SharedSearchState {
+  quickKeyword: string;
+}
+
+type StatusVariant = "secondary" | "danger" | "success" | "warning";
+
+const route = useRoute();
+const router = useRouter();
+
+const showCreatePanel = ref(false);
+const editingContentBank = ref<QuestionBankRecord | null>(null);
+
+const localEditState = ref<LocalEditState>({
   id: "",
   title: "",
   subject: "",
   author: ""
 });
 
-const sharedSearch = ref({
+const sharedSearch = ref<SharedSearchState>({
   quickKeyword: ""
 });
 
-const remoteExpandedState = ref({});
-const router = useRouter();
-let statusMessageTimer = null;
+const remoteExpandedState = ref<Record<string, boolean>>({});
+let statusMessageTimer: ReturnType<typeof setTimeout> | null = null;
 
-const statusMessageVariant = ref("secondary");
+const statusMessageVariant = ref<StatusVariant>("secondary");
 
-function setStatusMessage(message, variant = "secondary") {
+function setStatusMessage(message: string, variant: StatusVariant = "secondary") {
   questionBankState.statusMessage = message;
   statusMessageVariant.value = variant;
   if (statusMessageTimer) {
@@ -43,15 +81,48 @@ function setStatusMessage(message, variant = "secondary") {
   }, 5000);
 }
 
-function exportBank(source, id) {
+function openCreatePanel() {
+  editingContentBank.value = null;
+  showCreatePanel.value = true;
+}
+
+function openEditContent(id: string) {
+  const target = questionBankState.localBanks.find((item) => item.id === id);
+  if (!target) return;
+  editingContentBank.value = target;
+  showCreatePanel.value = true;
+}
+
+function closeCreatePanel() {
+  showCreatePanel.value = false;
+  editingContentBank.value = null;
+  if (route.query.create) {
+    router.replace({ path: "/question-bank" });
+  }
+}
+
+function handleCreateSaved(bankId: string) {
+  reloadLocalBanks();
+  setStatusMessage(editingContentBank.value ? "题集内容已更新" : "已保存到本地题库", "success");
+  if (editingContentBank.value) {
+    const updated = questionBankState.localBanks.find((item) => item.id === bankId);
+    if (updated) editingContentBank.value = updated;
+  }
+}
+
+function handleCreatePractice(bankId: string) {
+  startPractice(bankId);
+}
+
+function exportBank(source: "local" | "remote", id: string) {
   const list = source === "local" ? questionBankState.localBanks : questionBankState.remoteBanks;
   const target = list.find((item) => item.id === id);
   if (!target) return;
-  const blob = new Blob([exportBankAsJson(target)], { type: "application/json;charset=utf-8" });
+  const blob = new Blob([exportBankAsJson(target as Bank)], { type: "application/json;charset=utf-8" });
   FileSaver.saveAs(blob, `${target.title || "question-bank"}.json`);
 }
 
-function startEditLocalBank(id) {
+function startEditLocalBank(id: string) {
   const target = questionBankState.localBanks.find((item) => item.id === id);
   if (!target) return;
   localEditState.value = {
@@ -74,50 +145,49 @@ function cancelEditLocalBank() {
 function saveEditLocalBank() {
   const target = questionBankState.localBanks.find((item) => item.id === localEditState.value.id);
   if (!target) return;
-  const result = updateBank("local", target.id, {
+  const result = updateBankMeta("local", target.id, {
     title: localEditState.value.title,
     subject: localEditState.value.subject,
-    author: localEditState.value.author,
-    questionsText: (target.questions || []).map((q) => (Array.isArray(q) ? q.join(",") : String(q))).join("\n")
+    author: localEditState.value.author
   });
   if (!result.ok) {
-    questionBankState.localBanks = result.banks;
+    questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
     setStatusMessage(result.message, "danger");
     return;
   }
-  questionBankState.localBanks = result.banks;
+  questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
   setStatusMessage(`已更新题集《${localEditState.value.title || "未命名题库"}》`);
   cancelEditLocalBank();
 }
 
-function handleRemoveLocal(id) {
+function handleRemoveLocal(id: string) {
   const result = removeLocal(id);
   if (!result.ok) {
     setStatusMessage(result.message, "danger");
   }
 }
 
-function getFieldValue(item, field) {
+function getFieldValue(item: BankListItem, field: "name" | "type" | "author") {
   if (field === "name") return item.title || "";
   if (field === "type") return item.subject || "";
   return item.author || "";
 }
 
-function itemMatches(item, searchState) {
+function itemMatches(item: BankListItem, searchState: SharedSearchState) {
   const quickKeyword = searchState.quickKeyword.trim().toLowerCase();
   if (!quickKeyword) return true;
-  return ["name", "type", "author"].some((field) =>
+  return (["name", "type", "author"] as const).some((field) =>
     getFieldValue(item, field).toLowerCase().includes(quickKeyword)
   );
 }
 
-function getBankTimeValue(item) {
+function getBankTimeValue(item: BankListItem) {
   const raw = item?.CreateTime || item?.createTime || item?.updatedAt || "";
   const parsed = new Date(raw).getTime();
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function sortBanksByCreatedAtDesc(list) {
+function sortBanksByCreatedAtDesc(list: BankListItem[]) {
   return [...list].sort((a, b) => getBankTimeValue(b) - getBankTimeValue(a));
 }
 
@@ -132,11 +202,11 @@ const filteredRemoteBanks = computed(() =>
   )
 );
 const filteredRemoteGroups = computed(() => {
-  const grouped = new Map();
+  const grouped = new Map<string, BankListItem[]>();
   filteredRemoteBanks.value.forEach((item) => {
     const group = item.groupKey || "other";
     if (!grouped.has(group)) grouped.set(group, []);
-    grouped.get(group).push(item);
+    grouped.get(group)!.push(item);
   });
   return Array.from(grouped.entries()).map(([groupKey, banks]) => ({
     groupKey,
@@ -157,47 +227,31 @@ function applySearch() {
   sharedSearch.value.quickKeyword = sharedSearch.value.quickKeyword.trimStart();
 }
 
-function isRemoteGroupOpen(groupKey) {
+function isRemoteGroupOpen(groupKey: string) {
   return Boolean(remoteExpandedState.value[groupKey]);
 }
 
-function toggleRemoteGroup(groupKey) {
+function toggleRemoteGroup(groupKey: string) {
   remoteExpandedState.value[groupKey] = !remoteExpandedState.value[groupKey];
 }
 
-function startPractice(id) {
+function startPractice(id: string) {
   const allBanks = [...questionBankState.localBanks, ...questionBankState.remoteBanks];
   const target = allBanks.find((item) => item.id === id);
   if (!target) return;
-  const rawQuestions = Array.isArray(target.questions) ? target.questions : [];
-  const questions = rawQuestions.map((question) => normalizeQuestionWithDetection(question));
-  appState.questionsJSON = {
-    bankId: target.id,
-    bankSource: target.source || "local",
-    version: resolveQuestionBankVersion(questions),
-    name: target.title || target.name || "未命名题集",
-    type: target.subject || target.type || "",
-    author: target.author || "",
-    questions
-  };
-  const saved = getProgressRecord(target.id);
-  if (saved) {
-    applyProgressToQuestions(questions, saved);
-  }
-  resetQuestionProgress(questions);
-  router.push("/practice");
+  startPracticeFromBank(target, router);
 }
 
-function downloadRemoteToLocal(id) {
+function downloadRemoteToLocal(id: string) {
   const target = questionBankState.remoteBanks.find((item) => item.id === id);
   if (!target) return;
-  const result = addBankFromExisting("local", target);
+  const result = addBankFromExisting("local", target as Bank);
   if (!result.ok) {
-    questionBankState.localBanks = result.banks;
+    questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
     setStatusMessage(result.message, "danger");
     return;
   }
-  questionBankState.localBanks = result.banks;
+  questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
   setStatusMessage(`已将网络题库《${target.title || "未命名"}》下载到本地`);
 }
 
@@ -209,15 +263,31 @@ function syncQuestionBankPageData() {
   reloadLocalBanks();
 }
 
-function handleStorageChanged(event) {
-  if (event?.detail?.kind === StorageChangeKind.localBanks) {
+function handleStorageChanged(event: Event) {
+  if ((event as CustomEvent<{ kind?: string }>).detail?.kind === StorageChangeKind.localBanks) {
     syncQuestionBankPageData();
   }
 }
 
+function syncCreateFromRoute() {
+  const create = route.query.create;
+  const value = Array.isArray(create) ? create[0] : create;
+  if (value === "1" || value === "true") {
+    openCreatePanel();
+  }
+}
+
+watch(
+  () => route.query.create,
+  () => {
+    syncCreateFromRoute();
+  }
+);
+
 onMounted(() => {
   syncQuestionBankPageData();
   loadRemotePapers();
+  syncCreateFromRoute();
   subscribeStorageChanged(handleStorageChanged);
 });
 
@@ -226,6 +296,7 @@ onActivated(() => {
   if (!questionBankState.remoteBanks.length) {
     loadRemotePapers();
   }
+  syncCreateFromRoute();
 });
 
 onBeforeUnmount(() => {
@@ -239,6 +310,23 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="question-bank-page container py-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+      <div>
+        <h2 class="mb-1">题库</h2>
+        <p class="text-muted small mb-0">
+          管理本地与网络题集。新建后请先保存到本地，再开始做题；网络题集可直接开练，编辑需先下载到本地。
+        </p>
+      </div>
+      <button
+        v-if="!showCreatePanel"
+        type="button"
+        class="btn btn-primary"
+        @click="openCreatePanel"
+      >
+        <i class="fas fa-plus me-1"></i>新建题集
+      </button>
+    </div>
+
     <div
       v-if="questionBankState.statusMessage"
       :class="['alert', `alert-${statusMessageVariant}`, 'py-2']"
@@ -246,7 +334,13 @@ onBeforeUnmount(() => {
       {{ questionBankState.statusMessage }}
     </div>
 
-    <StorageUsagePanel class="mb-3" />
+    <QuestionBankCreatePanel
+      v-if="showCreatePanel"
+      :editing-bank="editingContentBank"
+      @close="closeCreatePanel"
+      @saved="handleCreateSaved"
+      @practice="handleCreatePractice"
+    />
 
     <section class="mb-3 question-bank-search">
       <div class="row g-2">
@@ -269,19 +363,19 @@ onBeforeUnmount(() => {
     <section class="row g-3">
       <div class="col-12">
         <div v-if="localEditState.id" class="card shadow-sm mb-3">
-          <div class="card-header">本地题集编辑</div>
+          <div class="card-header">编辑题集信息</div>
           <div class="card-body">
             <div class="row g-2">
               <div class="col-12 col-md-4">
-                <label class="form-label">name</label>
+                <label class="form-label">名称</label>
                 <input v-model="localEditState.title" class="form-control" />
               </div>
               <div class="col-12 col-md-4">
-                <label class="form-label">type</label>
+                <label class="form-label">类型</label>
                 <input v-model="localEditState.subject" class="form-control" />
               </div>
               <div class="col-12 col-md-4">
-                <label class="form-label">author</label>
+                <label class="form-label">作者</label>
                 <input v-model="localEditState.author" class="form-control" />
               </div>
             </div>
@@ -297,9 +391,11 @@ onBeforeUnmount(() => {
           :banks="filteredLocalBanks"
           :total-count="questionBankState.localBanks.length"
           :show-edit="true"
+          :show-edit-content="true"
           :show-practice="true"
           :show-upload="false"
           @edit="startEditLocalBank"
+          @edit-content="openEditContent"
           @remove="handleRemoveLocal"
           @export="exportBank('local', $event)"
           @practice="startPractice"
@@ -310,6 +406,7 @@ onBeforeUnmount(() => {
         <div class="card shadow-sm">
           <div class="card-header">网络题库</div>
           <div class="card-body d-flex flex-column gap-3">
+            <p class="small text-muted mb-0">未下载也可直接「开始做题」；若要编辑内容，请先下载到本地。</p>
             <div
               v-for="group in filteredRemoteGroups"
               :key="group.groupKey"

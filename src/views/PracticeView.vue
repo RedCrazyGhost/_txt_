@@ -1,8 +1,10 @@
-<script setup>
-import { computed, ref } from "vue";
+<script setup lang="ts">
+import { computed, onBeforeUnmount, ref } from "vue";
 import { appState } from "../state/appState";
 import AppQuestion from "../components/AppQuestion.vue";
+import PracticeTimerBar from "../components/practice/PracticeTimerBar.vue";
 import { questionProgressState } from "../state/questionProgressState";
+import { usePracticeTimer, type ApplySessionConfigParams } from "../composables/usePracticeTimer";
 import {
   applyRedoAllQuestions,
   applyRetryWrongQuestions,
@@ -10,9 +12,11 @@ import {
   saveQuestionBankToLocal
 } from "../services/practicePageActions";
 
+type StatusTone = "success" | "warning" | "info";
+
 const statusMessage = ref("");
-const statusTone = ref("success");
-let statusTimer = null;
+const statusTone = ref<StatusTone>("success");
+let statusTimer: ReturnType<typeof setTimeout> | null = null;
 
 const hasQuestions = computed(
   () => Array.isArray(appState.questionsJSON.questions) && appState.questionsJSON.questions.length > 0
@@ -33,7 +37,7 @@ const canRetryWrongWithPartial = computed(
     questionProgressState.wrongQuestionCount + questionProgressState.partialQuestionCount > 0
 );
 
-function showStatus(message, tone = "success") {
+function showStatus(message: string, tone: StatusTone = "success") {
   statusMessage.value = message;
   statusTone.value = tone;
   if (statusTimer) clearTimeout(statusTimer);
@@ -42,6 +46,21 @@ function showStatus(message, tone = "success") {
     statusTimer = null;
   }, 5000);
 }
+
+const {
+  mode,
+  durationSec,
+  onEnd,
+  running,
+  locked,
+  ended,
+  displayText,
+  isUrgent,
+  pause,
+  resume,
+  reset,
+  applySessionConfig
+} = usePracticeTimer();
 
 function scrollToTop() {
   if (typeof window !== "undefined") {
@@ -67,7 +86,10 @@ function handleRedoAll() {
   if (!ok) return;
   const result = applyRedoAllQuestions(appState.questionsJSON);
   showStatus(result.message, result.ok ? "success" : "warning");
-  if (result.ok) scrollToTop();
+  if (result.ok) {
+    reset();
+    scrollToTop();
+  }
 }
 
 function handleRetryWrong(includePartial = false) {
@@ -79,19 +101,46 @@ function handleRetryWrong(includePartial = false) {
   if (!ok) return;
   const result = applyRetryWrongQuestions(appState.questionsJSON, { includePartial });
   showStatus(result.message, result.ok ? "success" : "warning");
-  if (result.ok) scrollToTop();
+  if (result.ok) {
+    reset();
+    scrollToTop();
+  }
 }
+
+function handleTimerReset() {
+  reset();
+}
+
+function handleDismissLock() {
+  applySessionConfig({ nextMode: "off" });
+}
+
+function handleApplySession(payload: ApplySessionConfigParams) {
+  applySessionConfig(payload);
+}
+
+onBeforeUnmount(() => {
+  if (statusTimer) {
+    clearTimeout(statusTimer);
+    statusTimer = null;
+  }
+});
 </script>
 
 <template>
   <div class="container py-4 practice-page">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
       <div>
-        <h2 class="mb-0 practice-bank-title">{{ appState.questionsJSON.name || "未命名题集" }}</h2>
-        <div class="text-muted small">
+        <h2 class="mb-0 practice-bank-title">
+          {{ hasQuestions ? appState.questionsJSON.name || "未命名题集" : "做题" }}
+        </h2>
+        <div v-if="hasQuestions" class="text-muted small">
           <span class="me-3">类型：{{ appState.questionsJSON.type || "-" }}</span>
           <span>作者：{{ appState.questionsJSON.author || "-" }}</span>
         </div>
+        <p v-else class="text-muted small mb-0">
+          从题库选题开始练习；未完成进度可在「全部记录」中继续。
+        </p>
       </div>
       <div class="d-flex flex-wrap gap-2 justify-content-end">
         <template v-if="hasQuestions">
@@ -136,8 +185,11 @@ function handleRetryWrong(includePartial = false) {
             <i class="fas fa-redo me-1"></i>重做错题（含半对）
           </button>
         </template>
+        <router-link class="btn btn-outline-secondary btn-sm" to="/practice-progress">
+          <i class="fas fa-history me-1"></i>全部记录
+        </router-link>
         <router-link class="btn btn-outline-secondary btn-sm" to="/question-bank">
-          <i class="fas fa-arrow-left me-1"></i>返回题库
+          <i class="fas fa-book me-1"></i>{{ hasQuestions ? "返回题库" : "前往题库" }}
         </router-link>
       </div>
     </div>
@@ -145,15 +197,38 @@ function handleRetryWrong(includePartial = false) {
     <div
       v-if="statusMessage"
       class="alert py-2 mb-3"
-      :class="statusTone === 'success' ? 'alert-success' : statusTone === 'warning' ? 'alert-warning' : 'alert-info'"
+      :class="
+        statusTone === 'success'
+          ? 'alert-success'
+          : statusTone === 'warning'
+            ? 'alert-warning'
+            : 'alert-info'
+      "
       role="alert"
     >
       {{ statusMessage }}
     </div>
 
+    <PracticeTimerBar
+      v-if="hasQuestions"
+      :mode="mode"
+      :display-text="displayText"
+      :running="running"
+      :ended="ended"
+      :locked="locked"
+      :is-urgent="isUrgent"
+      :duration-sec="durationSec"
+      :on-end="onEnd"
+      @pause="pause"
+      @resume="resume"
+      @reset="handleTimerReset"
+      @apply-session="handleApplySession"
+      @dismiss-lock="handleDismissLock"
+    />
+
     <div v-if="!hasQuestions" class="card shadow-sm">
       <div class="card-body">
-        <p class="mb-3">当前没有可做题目，请先在题库页选择题集并点击“开始做题”。</p>
+        <p class="mb-3">请先在题库选择题集并点击「开始做题」。</p>
         <router-link class="btn btn-primary btn-sm" to="/question-bank">
           <i class="fas fa-book me-1"></i>前往题库
         </router-link>
@@ -161,7 +236,11 @@ function handleRetryWrong(includePartial = false) {
     </div>
 
     <div v-else>
-      <AppQuestion :data="appState.questionsJSON" :appcolor="appState.webSiteConfig.appColor" />
+      <AppQuestion
+        :data="appState.questionsJSON"
+        :appcolor="appState.webSiteConfig.appColor"
+        :practice-locked="locked"
+      />
     </div>
   </div>
 </template>

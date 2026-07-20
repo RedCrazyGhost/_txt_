@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { saveAs } from "file-saver";
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import {
@@ -12,20 +12,29 @@ import {
 } from "../../models/question/wrongQuestions";
 import { resetQuestionProgress } from "../../models/question/progress";
 import { questionProgressState } from "../../state/questionProgressState";
+import type { QuestionsJSON } from "../../state/appState";
 import { numberToPercent } from "../../utils/questions";
 
 const COMPACT_MEDIA_QUERY = "(max-width: 576px), (hover: none)";
 
-const props = defineProps({
-  bank: { type: Object, required: true }
-});
+type SummaryTone = "success" | "warning" | "danger" | "secondary" | "primary";
 
-const panelRef = ref(null);
+interface SummaryItem {
+  label: string;
+  value: string | number;
+  tone?: SummaryTone;
+}
+
+const props = defineProps<{
+  bank: QuestionsJSON;
+}>();
+
+const panelRef = ref<HTMLElement | null>(null);
 const expanded = ref(false);
 const isCompactUi = ref(false);
 const hoverDismissed = ref(false);
 
-let compactMediaQuery = null;
+let compactMediaQuery: MediaQueryList | null = null;
 
 const questions = computed(() =>
   Array.isArray(props.bank?.questions) ? props.bank.questions : []
@@ -81,7 +90,7 @@ const accuracyText = computed(() => {
   return `${numberToPercent(progress.value.correctSlots, progress.value.attemptedSlots).toFixed(1)}%`;
 });
 
-const summaryItems = computed(() => [
+const summaryItems = computed((): SummaryItem[] => [
   { label: "题目总数", value: progress.value.totalQuestions },
   { label: "已做题目", value: progress.value.attemptedQuestions },
   { label: "全对题目", value: progress.value.fullyCorrectQuestions },

@@ -1,48 +1,84 @@
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
-import { appState } from "../../state/appState";
+import { appState, type TxtEntry } from "../../state/appState";
 import {
   getOpenAIDefaults,
   loadAiConfig,
-  saveAiConfig
-} from "../../services/ai/aiConfigStorage.js";
-import { formatQuestionText, generateQuestionsFromAi } from "../../services/ai/generateQuestions.js";
+  saveAiConfig,
+  type AiConfig,
+  type ReasoningEffort
+} from "../../services/ai/aiConfigStorage";
+import { formatQuestionText, generateQuestionsFromAi } from "../../services/ai/generateQuestions";
 import {
   fetchModelsList,
   fetchUserBalance,
   formatBalanceInfo,
   isDeepSeekBaseURL
-} from "../../services/ai/llmClient.js";
+} from "../../services/ai/llmClient";
 import {
   REFERENCE_FILE_ACCEPT,
   addReferenceFiles,
-  formatUserMessageWithReferences
-} from "../../services/ai/referenceFile.js";
-import { generateQuestionsJsonFromTxts } from "../../services/homeQuestionsJson.js";
+  formatUserMessageWithReferences,
+  type ReferenceFile
+} from "../../services/ai/referenceFile";
+import {
+  formatReviewStatusMessage,
+  reviewGeneratedAnswers,
+  summarizeReviewVerdicts,
+  type ReviewedQuestion,
+  type Verdict
+} from "../../services/ai/reviewGeneratedAnswers";
+import { generateQuestionsJsonFromTxts } from "../../services/homeQuestionsJson";
 
 const EXAMPLE_PROMPTS = [
   "生成 5 道高中数学一元二次方程填空题，难度中等",
   "出 10 道 C 语言基础单选题，含指针与数组",
   "混合 8 题：JavaScript 闭包与原型链，简单易懂"
-];
+] as const;
+
+type WriteMode = "replace" | "append";
+type MessageRole = "user" | "assistant";
+type MessageVariant = "default" | "error" | "success";
+type LoadingPhase = "generate" | "review" | "";
+
+interface GenerationMeta {
+  name?: string;
+  type?: string;
+  author?: string;
+}
+
+interface AiPanelMessage {
+  role: MessageRole;
+  content: string;
+  variant?: MessageVariant;
+  questions?: ReviewedQuestion[];
+  meta?: GenerationMeta;
+  selected: boolean[];
+  showAnswers?: boolean;
+  showExplanation?: boolean;
+  writeMode?: WriteMode | null;
+}
+
+type AiPanelMessageExtra = Partial<Omit<AiPanelMessage, "role" | "content">>;
 
 const userPrompt = ref("");
-const messages = ref([]);
-const defaultWriteMode = ref("replace");
+const messages = ref<AiPanelMessage[]>([]);
+const defaultWriteMode = ref<WriteMode>("replace");
 const baseURL = ref("");
 const apiKey = ref("");
 const model = ref("");
 const thinkingEnabled = ref(true);
-const reasoningEffort = ref("high");
+const reasoningEffort = ref<ReasoningEffort>("high");
 const loading = ref(false);
+const loadingPhase = ref<LoadingPhase>("");
 const composerError = ref("");
-const messagesEl = ref(null);
-const promptEl = ref(null);
-const referenceInputEl = ref(null);
-const referenceFiles = ref([]);
+const messagesEl = ref<HTMLElement | null>(null);
+const promptEl = ref<HTMLTextAreaElement | null>(null);
+const referenceInputEl = ref<HTMLInputElement | null>(null);
+const referenceFiles = ref<ReferenceFile[]>([]);
 const settingsOpen = ref(false);
 const isFullscreen = ref(false);
-const availableModels = ref([]);
+const availableModels = ref<string[]>([]);
 const modelsLoading = ref(false);
 const modelsError = ref("");
 const balanceText = ref("");
@@ -84,7 +120,7 @@ onUnmounted(() => {
   document.removeEventListener("keydown", handleDocumentKeydown);
 });
 
-function handleDocumentKeydown(event) {
+function handleDocumentKeydown(event: KeyboardEvent) {
   if (event.key === "Escape" && isFullscreen.value) {
     isFullscreen.value = false;
   }
@@ -94,7 +130,7 @@ function toggleFullscreen() {
   isFullscreen.value = !isFullscreen.value;
 }
 
-function createTxtEntry(item) {
+function createTxtEntry(item: ReviewedQuestion): TxtEntry {
   const explanation = typeof item?.explanation === "string" ? item.explanation.trim() : "";
   return {
     MD5: false,
@@ -105,7 +141,7 @@ function createTxtEntry(item) {
   };
 }
 
-function applyGeneratedTxts(generatedQuestions, mode = "replace") {
+function applyGeneratedTxts(generatedQuestions: ReviewedQuestion[], mode: WriteMode = "replace") {
   const entries = generatedQuestions.map((item) => createTxtEntry(item));
   if (mode === "append") {
     const hasOnlyEmptyPlaceholder =
@@ -120,7 +156,7 @@ function applyGeneratedTxts(generatedQuestions, mode = "replace") {
   }
 }
 
-function applyGeneratedMeta(data) {
+function applyGeneratedMeta(data: GenerationMeta) {
   if (data.name) appState.questionsJSON.name = data.name;
   if (data.type) appState.questionsJSON.type = data.type;
   if (data.author) appState.questionsJSON.author = data.author;
@@ -134,7 +170,7 @@ async function scrollMessagesToBottom() {
   }
 }
 
-function persistAiConfig() {
+function persistAiConfig(): AiConfig {
   return saveAiConfig({
     baseURL: baseURL.value,
     apiKey: apiKey.value,
@@ -202,31 +238,42 @@ async function refreshDeepSeekBalance() {
   }
 }
 
-function pushMessage(role, content, variant = "default", extra = {}) {
-  messages.value.push({ role, content, variant, ...extra });
+function pushMessage(
+  role: MessageRole,
+  content: string,
+  variant: MessageVariant = "default",
+  extra: AiPanelMessageExtra = {}
+) {
+  messages.value.push({ role, content, variant, ...extra, selected: extra.selected ?? [] });
   scrollMessagesToBottom();
 }
 
-function formatQuestionTextForMessage(msg, txt) {
+function formatQuestionTextForMessage(msg: AiPanelMessage, txt: string) {
   return formatQuestionText(txt, Boolean(msg.showAnswers));
 }
 
-function getSelectedQuestions(msg) {
+function verdictLabel(verdict: Verdict) {
+  if (verdict === "pass") return "通过";
+  if (verdict === "fail") return "不通过";
+  return "存疑";
+}
+
+function getSelectedQuestions(msg: AiPanelMessage) {
   if (!msg.questions?.length) return [];
-  return msg.questions.filter((_, index) => msg.selected?.[index] !== false);
+  return msg.questions.filter((_, index) => msg.selected[index] !== false);
 }
 
-function isAllQuestionsSelected(msg) {
-  return Boolean(msg.questions?.length && msg.questions.every((_, index) => msg.selected?.[index] !== false));
+function isAllQuestionsSelected(msg: AiPanelMessage) {
+  return Boolean(msg.questions?.length && msg.questions.every((_, index) => msg.selected[index] !== false));
 }
 
-function toggleAllQuestions(msg) {
+function toggleAllQuestions(msg: AiPanelMessage) {
   if (!msg.questions?.length) return;
   const nextValue = !isAllQuestionsSelected(msg);
   msg.selected = msg.questions.map(() => nextValue);
 }
 
-async function applyMessageToTxts(msg, mode) {
+async function applyMessageToTxts(msg: AiPanelMessage, mode: WriteMode) {
   const selectedQuestions = getSelectedQuestions(msg);
   if (!selectedQuestions.length) {
     composerError.value = "请至少选择一道题目。";
@@ -251,7 +298,7 @@ function focusComposer() {
   });
 }
 
-function applyExample(text) {
+function applyExample(text: string) {
   userPrompt.value = text;
   composerError.value = "";
   focusComposer();
@@ -268,8 +315,8 @@ function triggerReferencePicker() {
   referenceInputEl.value?.click();
 }
 
-async function handleReferenceChange(event) {
-  const input = event.target;
+async function handleReferenceChange(event: Event) {
+  const input = event.target as HTMLInputElement;
   const result = await addReferenceFiles(referenceFiles.value, input.files);
   input.value = "";
 
@@ -282,7 +329,7 @@ async function handleReferenceChange(event) {
   clearComposerError();
 }
 
-function removeReferenceFile(name) {
+function removeReferenceFile(name: string) {
   referenceFiles.value = referenceFiles.value.filter((file) => file.name !== name);
 }
 
@@ -314,6 +361,7 @@ async function handleGenerate() {
   userPrompt.value = "";
   clearReferenceFiles();
   loading.value = true;
+  loadingPhase.value = "generate";
 
   const config = persistAiConfig();
 
@@ -329,33 +377,43 @@ async function handleGenerate() {
       return;
     }
 
-    const messagePayload = {
+    loadingPhase.value = "review";
+    const reviewResult = await reviewGeneratedAnswers({
       questions: result.data.questions,
+      config
+    });
+
+    const reviewedQuestions = reviewResult.questions;
+    const summary = summarizeReviewVerdicts(reviewedQuestions);
+    const statusMessage = formatReviewStatusMessage(summary, {
+      generationMessage: result.message,
+      reviewFailed: Boolean(reviewResult.reviewFailed),
+      reviewFailMessage: reviewResult.reviewFailed ? reviewResult.message : ""
+    });
+
+    const messagePayload: AiPanelMessageExtra = {
+      questions: reviewedQuestions,
       meta: {
         name: result.data.name,
         type: result.data.type,
         author: result.data.author
       },
-      selected: result.data.questions.map(() => true),
+      selected: reviewedQuestions.map((question) => question.verdict === "pass"),
       showAnswers: false,
       showExplanation: false,
       writeMode: null
     };
 
-    pushMessage(
-      "assistant",
-      `${result.message} 请勾选题目后，点击「替换 JSON」或「追加 JSON」写入。`,
-      "success",
-      messagePayload
-    );
+    pushMessage("assistant", statusMessage, "success", messagePayload);
   } finally {
     loading.value = false;
+    loadingPhase.value = "";
     await refreshDeepSeekBalance();
     focusComposer();
   }
 }
 
-function handlePromptKeydown(event) {
+function handlePromptKeydown(event: KeyboardEvent) {
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
     handleGenerate();
@@ -464,12 +522,23 @@ function autoResizePrompt() {
                 :disabled="loading"
               />
               <div class="step1-ai-question-body">
-                <span class="step1-ai-question-text">{{ formatQuestionTextForMessage(msg, question.txt) }}</span>
+                <div class="step1-ai-question-head">
+                  <span
+                    v-if="question.verdict"
+                    class="step1-ai-review-badge"
+                    :class="`is-${question.verdict}`"
+                    :title="question.reviewReason || ''"
+                  >{{ verdictLabel(question.verdict) }}</span>
+                  <span class="step1-ai-question-text">{{ formatQuestionTextForMessage(msg, question.txt) }}</span>
+                </div>
                 <p v-if="msg.showAnswers && question.answer" class="step1-ai-question-meta mb-0">
                   <span class="step1-ai-question-meta-label">答案</span>{{ question.answer }}
                 </p>
                 <p v-if="msg.showExplanation && question.explanation" class="step1-ai-question-meta mb-0">
                   <span class="step1-ai-question-meta-label">解析</span>{{ question.explanation }}
+                </p>
+                <p v-if="question.reviewReason" class="step1-ai-question-meta step1-ai-review-reason mb-0">
+                  <span class="step1-ai-question-meta-label">复核</span>{{ question.reviewReason }}
                 </p>
               </div>
             </label>
@@ -528,7 +597,7 @@ function autoResizePrompt() {
           <span class="step1-ai-dialog-role">AI</span>
           <p class="step1-ai-dialog-text mb-0">
             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-            正在生成题目…
+            {{ loadingPhase === "review" ? "正在复核答案…" : "正在生成题目…" }}
           </p>
         </div>
       </div>
@@ -1052,6 +1121,42 @@ function autoResizePrompt() {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+}
+
+.step1-ai-question-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.step1-ai-review-badge {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.step1-ai-review-badge.is-pass {
+  color: var(--bs-success);
+  background-color: rgba(var(--bs-success-rgb), 0.12);
+}
+
+.step1-ai-review-badge.is-fail {
+  color: var(--bs-danger);
+  background-color: rgba(var(--bs-danger-rgb), 0.12);
+}
+
+.step1-ai-review-badge.is-uncertain {
+  color: var(--bs-warning-text-emphasis, #997404);
+  background-color: rgba(var(--bs-warning-rgb), 0.16);
+}
+
+.step1-ai-review-reason {
+  color: var(--bs-secondary-color);
 }
 
 .step1-ai-question-meta {

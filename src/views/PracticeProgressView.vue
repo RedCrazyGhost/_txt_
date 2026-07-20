@@ -1,8 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onActivated, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { resetQuestionProgress } from "../models/question/progress";
-import StorageUsagePanel from "../components/StorageUsagePanel.vue";
 import {
   StorageChangeKind,
   subscribeStorageChanged,
@@ -16,21 +15,25 @@ import {
   getBankSourceLabel,
   getInvalidReasonLabel,
   listProgressRecords,
-  removeProgressRecord
+  removeProgressRecord,
+  type BankLike,
+  type EnrichedProgressRecord,
+  type ProgressFilter as ProgressFilterType
 } from "../services/practiceProgress";
 import { appState } from "../state/appState";
 import { loadRemoteQuestionBanks, reloadRemoteBanksFromCache } from "../services/remoteQuestionBanks";
 import { reloadLocalBanks, questionBankState } from "../state/questionBankState";
 import { normalizeQuestionWithDetection, numberToPercent, resolveQuestionBankVersion } from "../utils/questions";
 import { getTime } from "../utils/time";
+import type { Question } from "../models/question/types";
 
 const route = useRoute();
 const router = useRouter();
 
-const activeFilter = ref(ProgressFilter.ALL);
-const allRecords = ref([]);
+const activeFilter = ref<ProgressFilterType>(ProgressFilter.ALL);
+const allRecords = ref<EnrichedProgressRecord[]>([]);
 
-const filterOptions = [
+const filterOptions: Array<{ key: ProgressFilterType; label: string }> = [
   { key: ProgressFilter.ALL, label: "全部" },
   { key: ProgressFilter.IN_PROGRESS, label: "未完成" },
   { key: ProgressFilter.COMPLETED, label: "已完成" },
@@ -42,7 +45,10 @@ function getAllBanks() {
 }
 
 function refreshRecords() {
-  allRecords.value = listProgressRecords({ filter: ProgressFilter.ALL }, getAllBanks());
+  allRecords.value = listProgressRecords(
+    { filter: ProgressFilter.ALL },
+    getAllBanks() as BankLike[]
+  );
 }
 
 async function syncProgressPageData() {
@@ -51,8 +57,8 @@ async function syncProgressPageData() {
   refreshRecords();
 }
 
-function handleStorageChanged(event) {
-  const kind = event?.detail?.kind;
+function handleStorageChanged(event: Event) {
+  const kind = (event as CustomEvent<{ kind?: string }>).detail?.kind;
   if (kind === StorageChangeKind.localBanks) {
     reloadLocalBanks();
     refreshRecords();
@@ -70,8 +76,9 @@ function handleStorageChanged(event) {
 
 function syncFilterFromRoute() {
   const queryFilter = route.query.filter;
-  if (filterOptions.some((item) => item.key === queryFilter)) {
-    activeFilter.value = queryFilter;
+  const normalized = Array.isArray(queryFilter) ? queryFilter[0] : queryFilter;
+  if (filterOptions.some((item) => item.key === normalized)) {
+    activeFilter.value = normalized as ProgressFilterType;
     return;
   }
   activeFilter.value = ProgressFilter.ALL;
@@ -87,7 +94,7 @@ const filteredRecords = computed(() => {
 const isEmptyAll = computed(() => allRecords.value.length === 0);
 const isEmptyFiltered = computed(() => !isEmptyAll.value && filteredRecords.value.length === 0);
 
-function setFilter(filter) {
+function setFilter(filter: ProgressFilterType) {
   activeFilter.value = filter;
   router.replace({
     path: "/practice-progress",
@@ -95,20 +102,20 @@ function setFilter(filter) {
   });
 }
 
-function formatUpdatedAt(value) {
+function formatUpdatedAt(value: string | undefined) {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return getTime(date);
 }
 
-function formatAccuracy(record) {
+function formatAccuracy(record: EnrichedProgressRecord) {
   const { attemptedSlots = 0, correctSlots = 0 } = record.stats ?? {};
   if (!attemptedSlots) return "-";
   return `${numberToPercent(correctSlots, attemptedSlots).toFixed(1)}%`;
 }
 
-function statusLabel(status) {
+function statusLabel(status: string) {
   switch (status) {
     case ProgressStatus.IN_PROGRESS:
       return "未完成";
@@ -123,7 +130,7 @@ function statusLabel(status) {
   }
 }
 
-function statusBadgeClass(status) {
+function statusBadgeClass(status: string) {
   switch (status) {
     case ProgressStatus.IN_PROGRESS:
       return "text-bg-warning";
@@ -136,15 +143,15 @@ function statusBadgeClass(status) {
   }
 }
 
-function resumeLabel(status) {
+function resumeLabel(status: string) {
   return status === ProgressStatus.COMPLETED ? "查看/再做" : "继续做题";
 }
 
-function canResume(record) {
+function canResume(record: EnrichedProgressRecord) {
   return record.status !== ProgressStatus.INVALID;
 }
 
-function resolveQuestions(record) {
+function resolveQuestions(record: EnrichedProgressRecord): Question[] | null {
   if (record.bankSource === "session") {
     return (record.questions ?? []).map((question) => normalizeQuestionWithDetection(question));
   }
@@ -155,7 +162,7 @@ function resolveQuestions(record) {
   return rawQuestions.map((question) => normalizeQuestionWithDetection(question));
 }
 
-function resume(record) {
+function resume(record: EnrichedProgressRecord) {
   if (!canResume(record)) return;
 
   const questions = resolveQuestions(record);
@@ -165,18 +172,18 @@ function resume(record) {
 
   appState.questionsJSON = {
     bankId: record.bankId,
-    bankSource: record.bankSource,
+    bankSource: record.bankSource ?? "",
     version: resolveQuestionBankVersion(questions),
-    name: record.name,
-    type: record.type,
-    author: record.author,
+    name: record.name ?? "",
+    type: record.type ?? "",
+    author: record.author ?? "",
     questions
   };
   resetQuestionProgress(questions);
   router.push("/practice");
 }
 
-function confirmDelete(record) {
+function confirmDelete(record: EnrichedProgressRecord) {
   const name = record.name || "未命名题集";
   const ok = window.confirm(`确定删除《${name}》的题集进度？此操作不可恢复。`);
   if (!ok) return;
@@ -217,8 +224,6 @@ onBeforeUnmount(() => {
         <i class="fas fa-arrow-left me-1"></i>返回题库
       </router-link>
     </div>
-
-    <StorageUsagePanel class="mb-4" />
 
     <div class="btn-group flex-wrap mb-4" role="group" aria-label="进度筛选">
       <button
