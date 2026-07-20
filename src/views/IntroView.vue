@@ -253,7 +253,7 @@ onUnmounted(() => {
               <h2 class="intro-section-title">集中管理，随时续练</h2>
               <p class="intro-section-desc">本地题库与内置远程题库统一管理，未完成练习自动记录进度。</p>
               <div class="intro-feature-grid">
-                <IntroFeatureCard icon="fas fa-folder-open" title="本地题库" desc="新增、编辑、搜索、删除本地题集" variant="dark" />
+                <IntroFeatureCard icon="fas fa-folder-open" title="本地题库" desc="编辑、搜索、删除本地题集；新题集在首页录入后入库" variant="dark" />
                 <IntroFeatureCard icon="fas fa-cloud-download-alt" title="远程题库" desc="从内置网络题库下载到本地继续练" variant="dark" />
                 <IntroFeatureCard icon="fas fa-history" title="题集进度" desc="查看未完成记录，一键回到上次位置" variant="dark" />
                 <IntroFeatureCard icon="fas fa-search" title="快速检索" desc="按名称、科目、作者筛选题集" variant="dark" />

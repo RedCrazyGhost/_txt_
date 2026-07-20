@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onActivated, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { computed, onActivated, onBeforeUnmount, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import FileSaver from "file-saver";
 import QuestionBankList from "../components/question-bank/QuestionBankList.vue";
 import QuestionBankCreatePanel from "../components/question-bank/QuestionBankCreatePanel.vue";
@@ -46,10 +46,9 @@ interface SharedSearchState {
 
 type StatusVariant = "secondary" | "danger" | "success" | "warning";
 
-const route = useRoute();
 const router = useRouter();
 
-const showCreatePanel = ref(false);
+const showEditContentPanel = ref(false);
 const editingContentBank = ref<QuestionBankRecord | null>(null);
 
 const localEditState = ref<LocalEditState>({
@@ -81,36 +80,26 @@ function setStatusMessage(message: string, variant: StatusVariant = "secondary")
   }, 5000);
 }
 
-function openCreatePanel() {
-  editingContentBank.value = null;
-  showCreatePanel.value = true;
-}
-
 function openEditContent(id: string) {
   const target = questionBankState.localBanks.find((item) => item.id === id);
   if (!target) return;
   editingContentBank.value = target;
-  showCreatePanel.value = true;
+  showEditContentPanel.value = true;
 }
 
-function closeCreatePanel() {
-  showCreatePanel.value = false;
+function closeEditContentPanel() {
+  showEditContentPanel.value = false;
   editingContentBank.value = null;
-  if (route.query.create) {
-    router.replace({ path: "/question-bank" });
-  }
 }
 
-function handleCreateSaved(bankId: string) {
+function handleEditContentSaved(bankId: string) {
   reloadLocalBanks();
-  setStatusMessage(editingContentBank.value ? "题集内容已更新" : "已保存到本地题库", "success");
-  if (editingContentBank.value) {
-    const updated = questionBankState.localBanks.find((item) => item.id === bankId);
-    if (updated) editingContentBank.value = updated;
-  }
+  setStatusMessage("题集内容已更新", "success");
+  const updated = questionBankState.localBanks.find((item) => item.id === bankId);
+  if (updated) editingContentBank.value = updated;
 }
 
-function handleCreatePractice(bankId: string) {
+function handleEditContentPractice(bankId: string) {
   startPractice(bankId);
 }
 
@@ -269,25 +258,9 @@ function handleStorageChanged(event: Event) {
   }
 }
 
-function syncCreateFromRoute() {
-  const create = route.query.create;
-  const value = Array.isArray(create) ? create[0] : create;
-  if (value === "1" || value === "true") {
-    openCreatePanel();
-  }
-}
-
-watch(
-  () => route.query.create,
-  () => {
-    syncCreateFromRoute();
-  }
-);
-
 onMounted(() => {
   syncQuestionBankPageData();
   loadRemotePapers();
-  syncCreateFromRoute();
   subscribeStorageChanged(handleStorageChanged);
 });
 
@@ -296,7 +269,6 @@ onActivated(() => {
   if (!questionBankState.remoteBanks.length) {
     loadRemotePapers();
   }
-  syncCreateFromRoute();
 });
 
 onBeforeUnmount(() => {
@@ -310,21 +282,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="question-bank-page container py-4">
-    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-      <div>
-        <h2 class="mb-1">题库</h2>
-        <p class="text-muted small mb-0">
-          管理本地与网络题集。新建后请先保存到本地，再开始做题；网络题集可直接开练，编辑需先下载到本地。
-        </p>
-      </div>
-      <button
-        v-if="!showCreatePanel"
-        type="button"
-        class="btn btn-primary"
-        @click="openCreatePanel"
-      >
-        <i class="fas fa-plus me-1"></i>新建题集
-      </button>
+    <div class="mb-3">
+      <h2 class="mb-1">题库</h2>
+      <p class="text-muted small mb-0">
+        管理本地与网络题集。新题集请在首页录入后保存到本地；网络题集可直接开练，编辑内容需先下载到本地。
+      </p>
     </div>
 
     <div
@@ -335,11 +297,11 @@ onBeforeUnmount(() => {
     </div>
 
     <QuestionBankCreatePanel
-      v-if="showCreatePanel"
+      v-if="showEditContentPanel && editingContentBank"
       :editing-bank="editingContentBank"
-      @close="closeCreatePanel"
-      @saved="handleCreateSaved"
-      @practice="handleCreatePractice"
+      @close="closeEditContentPanel"
+      @saved="handleEditContentSaved"
+      @practice="handleEditContentPractice"
     />
 
     <section class="mb-3 question-bank-search">

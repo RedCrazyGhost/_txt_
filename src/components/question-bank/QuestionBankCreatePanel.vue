@@ -4,10 +4,7 @@ import { saveAs } from "file-saver";
 import Step1ModeSwitch from "../home/Step1ModeSwitch.vue";
 import Step1ManualPanel from "../home/Step1ManualPanel.vue";
 import { appState } from "../../state/appState";
-import {
-  createBankFromQuestions,
-  updateBankFromQuestions
-} from "../../services/questionBank";
+import { updateBankFromQuestions } from "../../services/questionBank";
 import { questionBankState } from "../../state/questionBankState";
 import { syncHomeSessionProgress } from "../../services/homeQuestionsJson";
 import { questionsToTxtEntries } from "../../services/questionsToTxtEntries";
@@ -36,7 +33,8 @@ interface ImportedQuestionJson {
 }
 
 const props = defineProps<{
-  editingBank?: QuestionBankRecord | null;
+  /** 题库页仅支持编辑已有本地题集内容（新建请走首页） */
+  editingBank: QuestionBankRecord;
 }>();
 
 const emit = defineEmits<{
@@ -54,26 +52,7 @@ const saveTargets = ref<SaveTarget[]>(["browser"]);
 const lastSavedBankId = ref("");
 const QUESTION_JSON_VERSION = "0.0.2";
 
-const isEditing = computed(() => Boolean(props.editingBank?.id));
 const questionCount = computed(() => appState.questionsJSON.questions.length);
-
-function resetCreateWorkspace() {
-  appState.txts = [{ txt: "", MD5: false, image: "", noDelete: false, explanation: "" }];
-  appState.questionsJSON = {
-    bankId: "",
-    bankSource: "",
-    version: QUESTION_JSON_VERSION,
-    name: "",
-    type: "",
-    author: "",
-    questions: []
-  };
-  localBankDraft.value = { title: "", subject: "", author: "" };
-  localBankMessage.value = "";
-  lastSavedBankId.value = "";
-  jsonAdvancedOpen.value = false;
-  step1Mode.value = "manual";
-}
 
 function loadEditingBank(bank: QuestionBankRecord) {
   const questions = (Array.isArray(bank.questions) ? bank.questions : []).map((question) =>
@@ -101,13 +80,9 @@ function loadEditingBank(bank: QuestionBankRecord) {
 }
 
 watch(
-  () => props.editingBank?.id,
+  () => props.editingBank.id,
   () => {
-    if (props.editingBank?.id) {
-      loadEditingBank(props.editingBank);
-    } else {
-      resetCreateWorkspace();
-    }
+    loadEditingBank(props.editingBank);
   },
   { immediate: true }
 );
@@ -126,13 +101,9 @@ function normalizeQuestionJSON(
 
 async function clearQuestions() {
   appState.questionsJSON.questions = [];
-  appState.questionsJSON.name = isEditing.value ? localBankDraft.value.title : "";
-  appState.questionsJSON.type = isEditing.value ? localBankDraft.value.subject : "";
-  appState.questionsJSON.author = isEditing.value ? localBankDraft.value.author : "";
-  if (!isEditing.value) {
-    appState.questionsJSON.bankId = "";
-    appState.questionsJSON.bankSource = "";
-  }
+  appState.questionsJSON.name = localBankDraft.value.title;
+  appState.questionsJSON.type = localBankDraft.value.subject;
+  appState.questionsJSON.author = localBankDraft.value.author;
   const { resetQuestionProgress } = await import("../../models/question/progress");
   resetQuestionProgress([]);
 }
@@ -249,24 +220,8 @@ function saveToLocalBank() {
   }
   normalizeMetaFromDraft();
 
-  if (isEditing.value && props.editingBank?.id) {
-    const result = updateBankFromQuestions("local", props.editingBank.id, {
-      ...localBankDraft.value,
-      questions: appState.questionsJSON.questions
-    });
-    if (!result.ok) {
-      questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
-      localBankMessage.value = result.message;
-      return;
-    }
-    questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
-    lastSavedBankId.value = props.editingBank.id;
-    localBankMessage.value = "已更新本地题集。";
-    emit("saved", props.editingBank.id);
-    return;
-  }
-
-  const result = createBankFromQuestions("local", {
+  const bankId = props.editingBank.id;
+  const result = updateBankFromQuestions("local", bankId, {
     ...localBankDraft.value,
     questions: appState.questionsJSON.questions
   });
@@ -276,10 +231,9 @@ function saveToLocalBank() {
     return;
   }
   questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
-  const createdId = result.banks[0]?.id || "";
-  lastSavedBankId.value = createdId;
-  localBankMessage.value = "已保存到本地题库。";
-  if (createdId) emit("saved", createdId);
+  lastSavedBankId.value = bankId;
+  localBankMessage.value = "已更新本地题集。";
+  emit("saved", bankId);
 }
 
 function handlePracticeAfterSave() {
@@ -320,7 +274,7 @@ function handleClose() {
 <template>
   <div class="qb-create-panel card shadow-sm mb-3">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <span class="fw-semibold">{{ isEditing ? "编辑题集内容" : "新建题集" }}</span>
+      <span class="fw-semibold">编辑题集内容</span>
       <button type="button" class="btn btn-sm btn-outline-secondary" @click="handleClose">
         关闭
       </button>
@@ -406,9 +360,7 @@ function handleClose() {
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="qbCreateSaveModalLabel">
-            {{ isEditing ? "更新本地题集" : "保存到本地题库" }}
-          </h5>
+          <h5 class="modal-title" id="qbCreateSaveModalLabel">更新本地题集</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
