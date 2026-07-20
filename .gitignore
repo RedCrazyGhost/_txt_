@@ -12,6 +12,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-.DS_Store
-.cursor
-.husky
+
+# Cursor：忽略本地 IDE 状态，但纳入可共享的 agent 规则
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+
+# Husky：忽略内部运行时目录，保留可共享的 hook 脚本
+.husky/_

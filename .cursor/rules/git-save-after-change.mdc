@@ -1,0 +1,42 @@
+---
+description: 每次完成代码变更后立即做本地 git commit 保存
+alwaysApply: true
+---
+
+# 变更后本地 Git 保存
+
+完成一轮会改动工作区的任务后，**必须**立刻做本地 `git commit`，不要等用户再说「帮我 commit」。
+
+## 何时保存
+
+- 功能实现、bug 修复、重构、配置/规则修改等，只要文件已改完且可工作，就 commit
+- 同一任务分多步时：每完成一个可独立回滚的阶段就 commit 一次，避免堆成巨大未提交 diff
+- **仅**探索/只读（未改文件）时不 commit
+
+## 如何保存
+
+1. 并行检查：`git status`、`git diff`（含 staged）、`git log`（对齐近期 message 风格）
+2. 暂存相关文件（勿纳入 `.env`、凭证等机密）
+3. 用 HEREDOC 写 concise commit message（侧重 why）
+4. `git status` 确认提交成功
+
+```bash
+# ✅ GOOD：改完即本地保存
+git add <相关文件>
+git commit -m "$(cat <<'EOF'
+简述本次变更目的。
+
+EOF
+)"
+```
+
+```bash
+# ❌ BAD：改完留下大量未提交变更，等用户催促才 commit
+```
+
+## 边界
+
+- **只本地 commit**；未经用户明确要求，禁止 `git push`
+- 禁止 `--no-verify`、force push、改 git config（除非用户明确要求）
+- 无实际变更时不建空 commit
+- 与「Push 前版本递增」规则不冲突：push 前仍须按该规则 bump 版本再推送
