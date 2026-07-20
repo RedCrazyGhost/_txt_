@@ -58,7 +58,7 @@ export interface CommitBanksFail {
 export type CommitBanksResult = CommitBanksOk | CommitBanksFail;
 
 function storageKey(source: BankSource): string {
-  return source === "remote" ? REMOTE_BANKS_KEY : LOCAL_BANKS_KEY;
+  return source === "remote" ? APP_STORAGE_KEYS.remoteBanks : APP_STORAGE_KEYS.localBanks;
 }
 
 import { resolveQuestionBankVersion } from "../utils/questions";

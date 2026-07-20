@@ -9,6 +9,7 @@ import {
   saveProgressToBrowser,
   saveQuestionBankToLocal
 } from "./practicePageActions";
+import { APP_STORAGE_KEYS } from "./browserStorage";
 
 const storage: Record<string, string> = {};
 let shouldRejectWrite = false;
@@ -108,7 +109,7 @@ describe("practicePageActions", () => {
 
   it("returns message when local bank already exists", async () => {
     window.localStorage.setItem(
-      "_txt_local_banks",
+      APP_STORAGE_KEYS.localBanks,
       JSON.stringify([
         {
           id: "local-existing",
@@ -143,7 +144,7 @@ describe("practicePageActions", () => {
     });
 
     expect(result.ok).toBe(true);
-    const raw = window.localStorage.getItem("_txt_local_banks");
+    const raw = window.localStorage.getItem(APP_STORAGE_KEYS.localBanks);
     const banks = JSON.parse(raw!) as Array<{ title: string }>;
     expect(banks).toHaveLength(1);
     expect(banks[0]!.title).toBe("首页题集");
@@ -160,7 +161,7 @@ describe("practicePageActions", () => {
     });
 
     expect(result.ok).toBe(true);
-    const raw = window.localStorage.getItem("_txt_local_banks");
+    const raw = window.localStorage.getItem(APP_STORAGE_KEYS.localBanks);
     const banks = JSON.parse(raw!) as Array<{ title: string }>;
     expect(banks).toHaveLength(1);
     expect(banks[0]!.title).toBe("2021-08-25");
@@ -180,6 +181,6 @@ describe("practicePageActions", () => {
 
     expect(result.ok).toBe(false);
     expect(result.message).toContain("存储空间不足");
-    expect(window.localStorage.getItem("_txt_local_banks")).toBeNull();
+    expect(window.localStorage.getItem(APP_STORAGE_KEYS.localBanks)).toBeNull();
   });
 });

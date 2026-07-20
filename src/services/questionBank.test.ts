@@ -7,6 +7,7 @@ import {
   STORAGE_QUOTA_EXCEEDED_MESSAGE,
   type Bank
 } from "./questionBank";
+import { APP_STORAGE_KEYS } from "./browserStorage";
 
 const storage: Record<string, string> = {};
 let shouldRejectWrite = false;
@@ -74,7 +75,7 @@ describe("questionBank persistence", () => {
 
   it("does not update local banks when addBankFromExisting fails", () => {
     window.localStorage.setItem(
-      "_txt_local_banks",
+      APP_STORAGE_KEYS.localBanks,
       JSON.stringify([{ id: "local-existing", source: "local", title: "已有", questions: [] }])
     );
     shouldRejectWrite = true;

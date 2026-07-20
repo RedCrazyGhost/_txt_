@@ -7,8 +7,8 @@ import {
   registerStorageCacheInvalidator,
   StorageChangeKind
 } from "./appStorageSync";
+import { APP_STORAGE_KEYS } from "./browserStorage";
 
-const PROGRESS_KEY = "_txt_practice_progress";
 const SCHEMA_VERSION = 1;
 
 export const ProgressFilter = {
@@ -118,7 +118,7 @@ function readStore(): ProgressStore {
     return { schemaVersion: SCHEMA_VERSION, records: {} };
   }
   if (cachedStore) return cachedStore;
-  const store = parseStoreFromRaw(window.localStorage.getItem(PROGRESS_KEY));
+  const store = parseStoreFromRaw(window.localStorage.getItem(APP_STORAGE_KEYS.practiceProgress));
   cachedStore = store;
   return store;
 }
@@ -126,7 +126,7 @@ function readStore(): ProgressStore {
 function writeStore(records: Record<string, ProgressRecord>): void {
   if (typeof window === "undefined") return;
   const nextStore: ProgressStore = { schemaVersion: SCHEMA_VERSION, records };
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(nextStore));
+  window.localStorage.setItem(APP_STORAGE_KEYS.practiceProgress, JSON.stringify(nextStore));
   cachedStore = nextStore;
   notifyStorageChanged(StorageChangeKind.practiceProgress);
 }
@@ -361,7 +361,7 @@ export function getBankSourceLabel(source: BankSource | string | undefined): str
 export function __clearAllProgressForTests(): void {
   invalidateProgressStoreCache();
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(PROGRESS_KEY);
+  window.localStorage.removeItem(APP_STORAGE_KEYS.practiceProgress);
 }
 
 registerStorageCacheInvalidator(StorageChangeKind.practiceProgress, invalidateProgressStoreCache);
