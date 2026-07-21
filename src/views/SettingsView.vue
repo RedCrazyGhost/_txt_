@@ -61,7 +61,7 @@ watch(
       <h2 class="mb-1">设置</h2>
       <p class="text-muted mb-2">统一管理外观、AI 模型与本地数据相关配置。配置仅保存在本机。</p>
       <button type="button" class="btn btn-outline-secondary btn-sm" @click="openFullSetupGuide">
-        <i class="fas fa-redo-alt me-1" aria-hidden="true"></i>重新配置
+        <i class="fas fa-redo-alt me-1" aria-hidden="true"></i>引导配置
       </button>
       <p v-if="pendingSetupCount > 0" class="small text-warning mb-0 mt-2">
         有 {{ pendingSetupCount }} 项新配置尚未引导，也可从根路径进入只配新增项。
@@ -116,14 +116,6 @@ watch(
           </div>
           <div class="card-body">
             <StorageUsagePanel compact />
-            <div class="d-flex flex-wrap gap-2 mt-3">
-              <router-link class="btn btn-outline-secondary btn-sm" to="/question-bank">
-                <i class="fas fa-book me-1" aria-hidden="true"></i>题库
-              </router-link>
-              <router-link class="btn btn-outline-secondary btn-sm" to="/practice-progress">
-                <i class="fas fa-history me-1" aria-hidden="true"></i>题集进度
-              </router-link>
-            </div>
           </div>
         </section>
 
@@ -143,20 +135,6 @@ watch(
             <p class="text-muted small mb-3">
               感谢每一位使用者、贡献者与赞助者，以及所有反馈建议，让项目持续改进。
             </p>
-            <div class="d-flex flex-wrap gap-2 mb-4">
-              <router-link class="btn btn-outline-secondary btn-sm" to="/intro?flow=product">介绍</router-link>
-              <button type="button" class="btn btn-outline-secondary btn-sm" @click="openFullSetupGuide">
-                <i class="fas fa-redo-alt me-1" aria-hidden="true"></i>重新配置
-              </button>
-              <a
-                class="btn btn-outline-secondary btn-sm"
-                :href="githubUrl"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <i class="fab fa-github me-1" aria-hidden="true"></i>GitHub
-              </a>
-            </div>
 
             <h3 class="settings-about__subtitle h6">开源依赖</h3>
             <ul class="settings-about__list small mb-4">
@@ -174,7 +152,14 @@ watch(
               <li>分享给有学习巩固需求的朋友</li>
               <li>
                 喜欢的话欢迎在
-                <a :href="githubUrl" target="_blank" rel="noreferrer">GitHub</a>
+                <a
+                  class="settings-about__github"
+                  :href="githubUrl"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <i class="fab fa-github me-1" aria-hidden="true"></i>GitHub
+                </a>
                 给项目一个
                 <i class="fas fa-star text-warning" aria-hidden="true"></i>
               </li>
@@ -278,6 +263,21 @@ watch(
 
 .settings-about__list li + li {
   margin-top: 0.25rem;
+}
+
+.settings-about__github {
+  color: var(--bs-link-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.settings-about__github:hover {
+  color: var(--bs-link-hover-color);
+  text-decoration: underline;
+}
+
+.settings-about__github i {
+  color: inherit;
 }
 
 .settings-about__avatar {

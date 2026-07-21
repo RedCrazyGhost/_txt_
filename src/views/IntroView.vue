@@ -317,7 +317,7 @@ onUnmounted(() => {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <i class="fab fa-github me-1"></i>GitHub Star
+                  <i class="fab fa-github me-1"></i>GitHub
                 </a>
               </div>
               <p v-if="!isSetupOnlyFlow" class="intro-footer-note">

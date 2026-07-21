@@ -6,7 +6,6 @@ const props = withDefaults(
     idPrefix?: string;
     disabled?: boolean;
     showThinkingToggle?: boolean;
-    showSettingsLink?: boolean;
     showBalance?: boolean;
     baseUrl: string;
     apiKey: string;
@@ -26,7 +25,6 @@ const props = withDefaults(
     idPrefix: "ai-config",
     disabled: false,
     showThinkingToggle: true,
-    showSettingsLink: false,
     showBalance: true
   }
 );
@@ -56,7 +54,7 @@ function updateApiKey(event: Event) {
 <template>
   <div class="row g-2">
     <div class="col-12">
-      <label class="form-label form-label-sm" :for="`${idPrefix}-base-url`">Base URL</label>
+      <label class="form-label form-label-sm" :for="`${idPrefix}-base-url`">OpenAI Base URL</label>
       <input
         :id="`${idPrefix}-base-url`"
         :value="baseUrl"
@@ -168,10 +166,6 @@ function updateApiKey(event: Event) {
       </select>
     </div>
   </div>
-  <p class="ai-config-fields__hint small text-muted mb-0 mt-2">
-    使用 OpenAI SDK（<code>/chat/completions</code>）。填写 Base URL 与 Key 后可获取模型列表；Key 仅存本地。
-    <router-link v-if="showSettingsLink" class="ms-1" to="/settings">前往设置</router-link>
-  </p>
   <p v-if="showBalance && isDeepSeek && balanceText" class="ai-config-fields__balance small text-muted mb-0 mt-1">
     <i class="fas fa-wallet me-1" aria-hidden="true"></i>
     DeepSeek 余额：{{ balanceText }}
@@ -182,10 +176,6 @@ function updateApiKey(event: Event) {
 .form-label-sm {
   margin-bottom: 0.2rem;
   font-size: 0.8125rem;
-}
-
-.ai-config-fields__hint code {
-  font-size: 0.75rem;
 }
 
 .ai-config-fields__model-row {

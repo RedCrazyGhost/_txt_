@@ -110,7 +110,7 @@ export const appState = reactive<AppState>({
       { to: "/intro?flow=product", name: "Intro", label: "介绍" },
       { to: "/question-bank", name: "QuestionBank", label: "题库" },
       { to: "/practice-progress", name: "PracticeProgress", label: "题集进度" },
-      { to: "/settings", name: "Settings", label: "设置" }
+      { to: "/settings", name: "Settings", label: "配置" }
     ],
     appAuthor: {
       name: "RedCrazyGhost",

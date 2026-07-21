@@ -80,7 +80,6 @@ defineExpose({
       :id-prefix="idPrefix"
       :disabled="disabled"
       :show-thinking-toggle="showThinkingToggle"
-      :show-settings-link="compact"
       v-model:base-url="baseUrl"
       v-model:api-key="apiKey"
       v-model:model="model"

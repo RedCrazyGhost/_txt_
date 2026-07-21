@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import AppName from "./AppName.vue";
 import { listIncompleteRecords, type BankLike } from "../services/practiceProgress";
@@ -12,6 +12,7 @@ import { loadRemoteQuestionBanks } from "../services/remoteQuestionBanks";
 import { reloadLocalBanks, questionBankState } from "../state/questionBankState";
 import { setTheme } from "../services/appPrefsStorage";
 import type { AppState } from "../state/appState";
+import gearComplexUrl from "../assets/icons/gear-complex.svg";
 
 const props = defineProps<{
   state: AppState;
@@ -19,6 +20,7 @@ const props = defineProps<{
 
 const route = useRoute();
 const incompleteCount = ref(0);
+const isLightTheme = computed(() => props.state.webSiteConfig.appColor === "light");
 
 function refreshIncompleteCount() {
   if (typeof window === "undefined") return;
@@ -69,18 +71,6 @@ function changeAppColor() {
   const prefs = setTheme(next);
   props.state.webSiteConfig.appColor = prefs.theme;
 }
-
-function changeIClass() {
-  return props.state.webSiteConfig.appColor === "light"
-    ? "fas fa-sun fa-lg theme-toggle-sun"
-    : "fas fa-moon fa-lg";
-}
-
-function changeIStyle() {
-  return props.state.webSiteConfig.appColor === "light"
-    ? "color:var(--bs-warning)"
-    : "color:var(--bs-primary)";
-}
 </script>
 
 <template>
@@ -91,7 +81,22 @@ function changeIStyle() {
       <router-link class="navbar-brand" to="/home">
         <AppName />
       </router-link>
-      <i :class="changeIClass()" :style="changeIStyle()" @click="changeAppColor"></i>
+      <button
+        type="button"
+        class="theme-toggle"
+        :class="{ 'theme-toggle--sun': isLightTheme }"
+        :style="isLightTheme ? 'color:var(--bs-warning)' : 'color:var(--bs-primary)'"
+        :aria-label="isLightTheme ? '切换到深色主题' : '切换到浅色主题'"
+        :title="isLightTheme ? '切换到深色主题' : '切换到浅色主题'"
+        @click="changeAppColor"
+      >
+        <i
+          v-if="isLightTheme"
+          class="fa-regular fa-sun fa-lg"
+          aria-hidden="true"
+        ></i>
+        <i v-else class="fas fa-moon fa-lg" aria-hidden="true"></i>
+      </button>
       <button
         class="navbar-toggler"
         type="button"
@@ -108,16 +113,35 @@ function changeIStyle() {
           <li class="nav-item" v-for="router in state.webSiteConfig.appRouters" :key="router.to">
             <router-link
               :to="router.to"
-              :class="`nav-link nav-link-with-badge ${$route.name === router.name ? 'active' : ''}`"
+              :class="[
+                'nav-link',
+                { 'nav-link-with-badge': router.name === 'PracticeProgress' },
+                { active: $route.name === router.name }
+              ]"
             >
-              {{ router.label || router.name }}
-              <span
-                v-if="router.name === 'PracticeProgress' && incompleteCount > 0"
-                class="nav-progress-badge"
-                :aria-label="`${incompleteCount} 份未完成题集进度`"
-              >
-                {{ incompleteCount > 99 ? "99+" : incompleteCount }}
-              </span>
+              <template v-if="router.name === 'Settings'">
+                <span class="nav-settings-link">
+                  <span
+                    class="nav-settings-icon"
+                    :style="{
+                      maskImage: `url(${gearComplexUrl})`,
+                      WebkitMaskImage: `url(${gearComplexUrl})`
+                    }"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="nav-settings-label">配置</span>
+                </span>
+              </template>
+              <template v-else>
+                {{ router.label || router.name }}
+                <span
+                  v-if="router.name === 'PracticeProgress' && incompleteCount > 0"
+                  class="nav-progress-badge"
+                  :aria-label="`${incompleteCount} 份未完成题集进度`"
+                >
+                  {{ incompleteCount > 99 ? "99+" : incompleteCount }}
+                </span>
+              </template>
             </router-link>
           </li>
           <li class="nav-item">
@@ -139,8 +163,19 @@ function changeIStyle() {
 </template>
 
 <style scoped>
-.theme-toggle-sun {
-  display: inline-block;
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.theme-toggle--sun {
   animation: theme-sun-spin 16s linear infinite;
 }
 
@@ -169,5 +204,33 @@ function changeIStyle() {
   font-weight: 700;
   line-height: 1.1rem;
   text-align: center;
+}
+
+.nav-settings-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.nav-settings-icon {
+  flex: 0 0 auto;
+  display: block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  /* 光学校正：mask 图标视觉重心略偏下 */
+  transform: translateY(-0.06em);
+}
+
+.nav-settings-label {
+  line-height: 1;
 }
 </style>
