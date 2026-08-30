@@ -25,6 +25,9 @@ function makeNotebook(
     updatedAt: overrides.updatedAt ?? "2026-08-24T12:00:00.000Z",
     checkpoint: overrides.checkpoint ?? {
       stats: {
+        totalQuestions: 10,
+        attemptedQuestions: 1,
+        fullyCorrectQuestions: 0,
         totalSlots: 100,
         attemptedSlots: 5,
         correctSlots: 4,

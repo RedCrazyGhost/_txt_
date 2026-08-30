@@ -545,7 +545,6 @@ describe("practiceProgress", () => {
       { ...withWrong[0], results: ["9"] },
       { ...withWrong[1], results: ["8"] }
     ] as Question[];
-    patchProgressRecord(firstWrong!.id, withWrongAgain);
     const secondWrong = createWrongNotebook(getNotebook(firstWrong!.id)!, {
       sourceQuestions: withWrongAgain
     });
@@ -616,7 +615,6 @@ describe("practiceProgress", () => {
       { ...withWrong[0], results: ["9"] },
       { ...withWrong[1], results: ["8"] }
     ] as Question[];
-    patchProgressRecord(firstWrong!.id, withWrongAgain);
     const secondWrong = createWrongNotebook(getNotebook(firstWrong!.id)!, {
       sourceQuestions: withWrongAgain
     });
@@ -653,11 +651,9 @@ describe("practiceProgress", () => {
       { ...withWrong[0], results: ["9"] },
       { ...withWrong[1], results: ["8"] }
     ] as Question[];
-    patchProgressRecord(firstWrong!.id, withWrongAgain);
     const secondWrong = createWrongNotebook(getNotebook(firstWrong!.id)!, {
       sourceQuestions: withWrongAgain
     });
-    patchProgressRecord(secondWrong!.id, withWrongAgain);
 
     const banks = [{ id: "chain-filter", questions: sampleQuestions }];
     const allNotebooks = listNotebooks({ filter: NotebookFilter.ALL }, banks);

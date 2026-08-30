@@ -23,14 +23,14 @@ describe("questionJsonIo", () => {
         name: "A",
         type: "B",
         author: "C",
-        questions: [{ texts: ["x"], answers: ["y"] } as Question]
+        questions: [{ texts: ["x"], answers: [["y"]] } as Question]
       })
     ).toMatchObject({
       version: QUESTION_JSON_VERSION,
       name: "A",
       type: "B",
       author: "C",
-      questions: [{ texts: ["x"], answers: ["y"] }]
+      questions: [{ texts: ["x"], answers: [["y"]] }]
     });
   });
 
@@ -62,8 +62,8 @@ describe("questionJsonIo", () => {
       type: "t",
       author: "a",
       questions: [
-        { texts: ["1"], answers: ["a"], image: "data:big" } as Question,
-        { texts: ["2"], answers: ["b"], image: "" } as Question
+        { texts: ["1"], answers: [["a"]], image: "data:big" } as Question,
+        { texts: ["2"], answers: [["b"]], image: "" } as Question
       ]
     });
     expect(payload.questions[0].image).toBe("因数据过大，不予显示");

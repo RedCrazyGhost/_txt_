@@ -250,7 +250,7 @@ describe("questionBank persistence", () => {
       title: "已有题集",
       subject: "类型",
       author: "作者",
-      questions: [{ stem: "原题" } as Question]
+      questions: [{ texts: ["原题"], answers: [["a"]], results: [], image: "", explanation: "" }]
     });
     const bankId = created.banks[0].id;
 
@@ -258,7 +258,7 @@ describe("questionBank persistence", () => {
       title: "试图覆盖",
       subject: "新类型",
       author: "新作者",
-      questions: [{ stem: "新题" } as Question]
+      questions: [{ texts: ["新题"], answers: [["b"]], results: [], image: "", explanation: "" }]
     });
     expect(again.ok).toBe(false);
     if (!again.ok) {
@@ -267,7 +267,9 @@ describe("questionBank persistence", () => {
     const bank = loadBanks("local").find((item) => item.id === bankId);
     expect(bank?.title).toBe("已有题集");
     expect(bank?.questions).toHaveLength(1);
-    expect((bank?.questions[0] as Question).stem).toBe("原题");
+    expect(bank?.questions[0] && "texts" in bank.questions[0] ? bank.questions[0].texts[0] : "").toBe(
+      "原题"
+    );
   });
 
   it("detects empty editor draft", () => {

@@ -6,7 +6,6 @@ import {
   type BankSource,
   type EnrichedNotebook,
   type InvalidReason,
-  type NotebookKind,
   type PracticeNotebook
 } from "./types";
 import { normalizeNotebook, readStore, writeStore } from "./store";
