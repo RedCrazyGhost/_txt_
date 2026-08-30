@@ -12,6 +12,7 @@ import { loadRemoteQuestionBanks } from "../services/remoteQuestionBanks";
 import { reloadLocalBanks, questionBankState } from "../state/questionBankState";
 import { setTheme } from "../services/appPrefsStorage";
 import type { AppState } from "../state/appState";
+import gearComplexSvg from "../assets/icons/gear-complex.svg?raw";
 
 const props = defineProps<{
   state: AppState;
@@ -120,7 +121,11 @@ function changeAppColor() {
             >
               <template v-if="router.name === 'Settings'">
                 <span class="nav-settings-link">
-                  <i class="fas fa-gear nav-settings-icon" aria-hidden="true"></i>
+                  <span
+                    class="nav-settings-icon"
+                    aria-hidden="true"
+                    v-html="gearComplexSvg"
+                  ></span>
                   <span class="nav-settings-label">配置</span>
                 </span>
               </template>
@@ -208,12 +213,24 @@ function changeAppColor() {
 
 .nav-settings-icon {
   flex: 0 0 auto;
-  display: inline-block;
+  display: inline-flex;
   width: 1em;
+  height: 1em;
   line-height: 1;
-  text-align: center;
+  color: inherit;
   /* 光学校正：图标视觉重心略偏下 */
   transform: translateY(-0.06em);
+}
+
+.nav-settings-icon :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.nav-settings-icon :deep(path) {
+  fill: currentColor;
 }
 
 .nav-settings-label {
