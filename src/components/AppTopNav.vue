@@ -12,7 +12,6 @@ import { loadRemoteQuestionBanks } from "../services/remoteQuestionBanks";
 import { reloadLocalBanks, questionBankState } from "../state/questionBankState";
 import { setTheme } from "../services/appPrefsStorage";
 import type { AppState } from "../state/appState";
-import gearComplexUrl from "../assets/icons/gear-complex.svg";
 
 const props = defineProps<{
   state: AppState;
@@ -121,14 +120,7 @@ function changeAppColor() {
             >
               <template v-if="router.name === 'Settings'">
                 <span class="nav-settings-link">
-                  <span
-                    class="nav-settings-icon"
-                    :style="{
-                      maskImage: `url(${gearComplexUrl})`,
-                      WebkitMaskImage: `url(${gearComplexUrl})`
-                    }"
-                    aria-hidden="true"
-                  ></span>
+                  <i class="fas fa-gear nav-settings-icon" aria-hidden="true"></i>
                   <span class="nav-settings-label">配置</span>
                 </span>
               </template>
@@ -216,17 +208,11 @@ function changeAppColor() {
 
 .nav-settings-icon {
   flex: 0 0 auto;
-  display: block;
+  display: inline-block;
   width: 1em;
-  height: 1em;
-  background-color: currentColor;
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  /* 光学校正：mask 图标视觉重心略偏下 */
+  line-height: 1;
+  text-align: center;
+  /* 光学校正：图标视觉重心略偏下 */
   transform: translateY(-0.06em);
 }
 
