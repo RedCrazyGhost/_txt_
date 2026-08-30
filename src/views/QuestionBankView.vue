@@ -1,292 +1,82 @@
 <script setup lang="ts">
-import { computed, onActivated, onBeforeUnmount, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
-import FileSaver from "file-saver";
+import { RouterLink } from "vue-router";
+import { computed, ref } from "vue";
 import QuestionBankList from "../components/question-bank/QuestionBankList.vue";
-import QuestionBankCreatePanel from "../components/question-bank/QuestionBankCreatePanel.vue";
-import {
-  addBankFromExisting,
-  exportBankAsJson,
-  updateBankMeta,
-  type Bank
-} from "../services/questionBank";
-import { loadRemoteQuestionBanks } from "../services/remoteQuestionBanks";
-import {
-  StorageChangeKind,
-  subscribeStorageChanged,
-  unsubscribeStorageChanged
-} from "../services/appStorageSync";
-import {
-  reloadLocalBanks,
-  questionBankState,
-  removeLocal,
-  type QuestionBankRecord
-} from "../state/questionBankState";
-import { startPracticeFromBank } from "../services/practiceSession";
+import StartPracticeChoiceModal from "../components/practice/StartPracticeChoiceModal.vue";
+import { isDraftBank } from "../services/questionBank";
+import { questionBankState } from "../state/questionBankState";
+import { useQuestionBankPage } from "../composables/useQuestionBankPage";
 
-type BankListItem = QuestionBankRecord & {
-  groupKey?: string;
-  groupLabel?: string;
-  CreateTime?: string;
-  createTime?: string;
-  name?: string;
-  type?: string;
-};
+const {
+  sharedSearch,
+  statusMessageVariant,
+  filteredLocalBanks,
+  filteredLocalDraftBanks,
+  filteredRemoteGroups,
+  remoteGroupTotalMap,
+  openEditInEditor,
+  exportBank,
+  handleRemoveLocal,
+  importLocalBanksFromFile,
+  applySearch,
+  isRemoteGroupOpen,
+  toggleRemoteGroup,
+  startPractice,
+  downloadRemoteToLocal,
+  startPracticeModalVisible,
+  startPracticeBank,
+  startPracticeLatest,
+  startPracticeIncompleteCount,
+  confirmResumePractice,
+  confirmCreatePractice,
+  cancelStartPractice
+} = useQuestionBankPage();
 
-interface LocalEditState {
-  id: string;
-  title: string;
-  subject: string;
-  author: string;
-}
+const importFileInput = ref<HTMLInputElement | null>(null);
 
-interface SharedSearchState {
-  quickKeyword: string;
-}
-
-type StatusVariant = "secondary" | "danger" | "success" | "warning";
-
-const router = useRouter();
-
-const showEditContentPanel = ref(false);
-const editingContentBank = ref<QuestionBankRecord | null>(null);
-
-const localEditState = ref<LocalEditState>({
-  id: "",
-  title: "",
-  subject: "",
-  author: ""
-});
-
-const sharedSearch = ref<SharedSearchState>({
-  quickKeyword: ""
-});
-
-const remoteExpandedState = ref<Record<string, boolean>>({});
-let statusMessageTimer: ReturnType<typeof setTimeout> | null = null;
-
-const statusMessageVariant = ref<StatusVariant>("secondary");
-
-function setStatusMessage(message: string, variant: StatusVariant = "secondary") {
-  questionBankState.statusMessage = message;
-  statusMessageVariant.value = variant;
-  if (statusMessageTimer) {
-    clearTimeout(statusMessageTimer);
-  }
-  statusMessageTimer = setTimeout(() => {
-    questionBankState.statusMessage = "";
-    statusMessageVariant.value = "secondary";
-    statusMessageTimer = null;
-  }, 5000);
-}
-
-function openEditContent(id: string) {
-  const target = questionBankState.localBanks.find((item) => item.id === id);
-  if (!target) return;
-  editingContentBank.value = target;
-  showEditContentPanel.value = true;
-}
-
-function closeEditContentPanel() {
-  showEditContentPanel.value = false;
-  editingContentBank.value = null;
-}
-
-function handleEditContentSaved(bankId: string) {
-  reloadLocalBanks();
-  setStatusMessage("题集内容已更新", "success");
-  const updated = questionBankState.localBanks.find((item) => item.id === bankId);
-  if (updated) editingContentBank.value = updated;
-}
-
-function handleEditContentPractice(bankId: string) {
-  startPractice(bankId);
-}
-
-function exportBank(source: "local" | "remote", id: string) {
-  const list = source === "local" ? questionBankState.localBanks : questionBankState.remoteBanks;
-  const target = list.find((item) => item.id === id);
-  if (!target) return;
-  const blob = new Blob([exportBankAsJson(target as Bank)], { type: "application/json;charset=utf-8" });
-  FileSaver.saveAs(blob, `${target.title || "question-bank"}.json`);
-}
-
-function startEditLocalBank(id: string) {
-  const target = questionBankState.localBanks.find((item) => item.id === id);
-  if (!target) return;
-  localEditState.value = {
-    id: target.id,
-    title: target.title || "",
-    subject: target.subject || "",
-    author: target.author || ""
-  };
-}
-
-function cancelEditLocalBank() {
-  localEditState.value = {
-    id: "",
-    title: "",
-    subject: "",
-    author: ""
-  };
-}
-
-function saveEditLocalBank() {
-  const target = questionBankState.localBanks.find((item) => item.id === localEditState.value.id);
-  if (!target) return;
-  const result = updateBankMeta("local", target.id, {
-    title: localEditState.value.title,
-    subject: localEditState.value.subject,
-    author: localEditState.value.author
-  });
-  if (!result.ok) {
-    questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
-    setStatusMessage(result.message, "danger");
-    return;
-  }
-  questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
-  setStatusMessage(`已更新题集《${localEditState.value.title || "未命名题库"}》`);
-  cancelEditLocalBank();
-}
-
-function handleRemoveLocal(id: string) {
-  const result = removeLocal(id);
-  if (!result.ok) {
-    setStatusMessage(result.message, "danger");
-  }
-}
-
-function getFieldValue(item: BankListItem, field: "name" | "type" | "author") {
-  if (field === "name") return item.title || "";
-  if (field === "type") return item.subject || "";
-  return item.author || "";
-}
-
-function itemMatches(item: BankListItem, searchState: SharedSearchState) {
-  const quickKeyword = searchState.quickKeyword.trim().toLowerCase();
-  if (!quickKeyword) return true;
-  return (["name", "type", "author"] as const).some((field) =>
-    getFieldValue(item, field).toLowerCase().includes(quickKeyword)
-  );
-}
-
-function getBankTimeValue(item: BankListItem) {
-  const raw = item?.CreateTime || item?.createTime || item?.updatedAt || "";
-  const parsed = new Date(raw).getTime();
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
-function sortBanksByCreatedAtDesc(list: BankListItem[]) {
-  return [...list].sort((a, b) => getBankTimeValue(b) - getBankTimeValue(a));
-}
-
-const filteredLocalBanks = computed(() =>
-  sortBanksByCreatedAtDesc(
-    questionBankState.localBanks.filter((item) => itemMatches(item, sharedSearch.value))
-  )
+const localDraftTotal = computed(
+  () => questionBankState.localBanks.filter((item) => isDraftBank(item)).length
 );
-const filteredRemoteBanks = computed(() =>
-  sortBanksByCreatedAtDesc(
-    questionBankState.remoteBanks.filter((item) => itemMatches(item, sharedSearch.value))
-  )
+const localPublishedTotal = computed(
+  () => questionBankState.localBanks.filter((item) => !isDraftBank(item)).length
 );
-const filteredRemoteGroups = computed(() => {
-  const grouped = new Map<string, BankListItem[]>();
-  filteredRemoteBanks.value.forEach((item) => {
-    const group = item.groupKey || "other";
-    if (!grouped.has(group)) grouped.set(group, []);
-    grouped.get(group)!.push(item);
-  });
-  return Array.from(grouped.entries()).map(([groupKey, banks]) => ({
-    groupKey,
-    label: banks[0]?.groupLabel || groupKey,
-    banks
-  }));
-});
-const remoteGroupTotalMap = computed(() => {
-  const map = new Map();
-  questionBankState.remoteBanks.forEach((item) => {
-    const group = item.groupKey || "other";
-    map.set(group, (map.get(group) || 0) + 1);
-  });
-  return map;
-});
 
-function applySearch() {
-  sharedSearch.value.quickKeyword = sharedSearch.value.quickKeyword.trimStart();
+function triggerImport() {
+  importFileInput.value?.click();
 }
 
-function isRemoteGroupOpen(groupKey: string) {
-  return Boolean(remoteExpandedState.value[groupKey]);
+function onImportFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  importLocalBanksFromFile(file);
+  input.value = "";
 }
-
-function toggleRemoteGroup(groupKey: string) {
-  remoteExpandedState.value[groupKey] = !remoteExpandedState.value[groupKey];
-}
-
-function startPractice(id: string) {
-  const allBanks = [...questionBankState.localBanks, ...questionBankState.remoteBanks];
-  const target = allBanks.find((item) => item.id === id);
-  if (!target) return;
-  startPracticeFromBank(target, router);
-}
-
-function downloadRemoteToLocal(id: string) {
-  const target = questionBankState.remoteBanks.find((item) => item.id === id);
-  if (!target) return;
-  const result = addBankFromExisting("local", target as Bank);
-  if (!result.ok) {
-    questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
-    setStatusMessage(result.message, "danger");
-    return;
-  }
-  questionBankState.localBanks = result.banks as typeof questionBankState.localBanks;
-  setStatusMessage(`已将网络题库《${target.title || "未命名"}》下载到本地`);
-}
-
-async function loadRemotePapers() {
-  await loadRemoteQuestionBanks({ force: true });
-}
-
-function syncQuestionBankPageData() {
-  reloadLocalBanks();
-}
-
-function handleStorageChanged(event: Event) {
-  if ((event as CustomEvent<{ kind?: string }>).detail?.kind === StorageChangeKind.localBanks) {
-    syncQuestionBankPageData();
-  }
-}
-
-onMounted(() => {
-  syncQuestionBankPageData();
-  loadRemotePapers();
-  subscribeStorageChanged(handleStorageChanged);
-});
-
-onActivated(() => {
-  syncQuestionBankPageData();
-  if (!questionBankState.remoteBanks.length) {
-    loadRemotePapers();
-  }
-});
-
-onBeforeUnmount(() => {
-  unsubscribeStorageChanged(handleStorageChanged);
-  if (statusMessageTimer) {
-    clearTimeout(statusMessageTimer);
-    statusMessageTimer = null;
-  }
-});
 </script>
 
 <template>
   <div class="question-bank-page container py-4">
-    <div class="mb-3">
-      <h2 class="mb-1">题库</h2>
-      <p class="text-muted small mb-0">
-        管理本地与网络题集。新题集请在首页录入后保存到本地；网络题集可直接开练，编辑内容需先下载到本地。
-      </p>
+    <div class="mb-3 d-flex flex-wrap justify-content-between align-items-start gap-2">
+      <div>
+        <h2 class="mb-1">题库</h2>
+        <p class="text-muted small mb-0">
+          管理本地与网络题集。编辑中的未完成题集会自动保存为草稿；发布请在工作台点击「保存/导出」。
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <input
+          ref="importFileInput"
+          type="file"
+          class="d-none"
+          accept=".json,application/json"
+          @change="onImportFileChange"
+        />
+        <button type="button" class="btn btn-outline-secondary btn-sm" @click="triggerImport">
+          <i class="fas fa-file-import me-1" aria-hidden="true"></i>导入
+        </button>
+        <RouterLink class="btn btn-primary btn-sm" to="/editor">
+          <i class="fas fa-pen me-1" aria-hidden="true"></i>题集编辑
+        </RouterLink>
+      </div>
     </div>
 
     <div
@@ -295,14 +85,6 @@ onBeforeUnmount(() => {
     >
       {{ questionBankState.statusMessage }}
     </div>
-
-    <QuestionBankCreatePanel
-      v-if="showEditContentPanel && editingContentBank"
-      :editing-bank="editingContentBank"
-      @close="closeEditContentPanel"
-      @saved="handleEditContentSaved"
-      @practice="handleEditContentPractice"
-    />
 
     <section class="mb-3 question-bank-search">
       <div class="row g-2">
@@ -324,40 +106,32 @@ onBeforeUnmount(() => {
 
     <section class="row g-3">
       <div class="col-12">
-        <div v-if="localEditState.id" class="card shadow-sm mb-3">
-          <div class="card-header">编辑题集信息</div>
-          <div class="card-body">
-            <div class="row g-2">
-              <div class="col-12 col-md-4">
-                <label class="form-label">名称</label>
-                <input v-model="localEditState.title" class="form-control" />
-              </div>
-              <div class="col-12 col-md-4">
-                <label class="form-label">类型</label>
-                <input v-model="localEditState.subject" class="form-control" />
-              </div>
-              <div class="col-12 col-md-4">
-                <label class="form-label">作者</label>
-                <input v-model="localEditState.author" class="form-control" />
-              </div>
-            </div>
-          </div>
-          <div class="card-footer d-flex gap-2">
-            <button class="btn btn-primary btn-sm" @click="saveEditLocalBank">保存修改</button>
-            <button class="btn btn-outline-secondary btn-sm" @click="cancelEditLocalBank">取消</button>
-          </div>
-        </div>
+        <QuestionBankList
+          v-if="localDraftTotal > 0 || filteredLocalDraftBanks.length"
+          class="mb-3"
+          title="题集草稿"
+          :banks="filteredLocalDraftBanks"
+          :total-count="localDraftTotal"
+          :show-edit="true"
+          edit-label="继续编辑"
+          :show-practice="false"
+          :show-remove="true"
+          :show-export="false"
+          :show-upload="false"
+          @edit="openEditInEditor"
+          @remove="handleRemoveLocal"
+        />
 
         <QuestionBankList
           title="本地题库"
           :banks="filteredLocalBanks"
-          :total-count="questionBankState.localBanks.length"
+          :total-count="localPublishedTotal"
           :show-edit="true"
-          :show-edit-content="true"
           :show-practice="true"
+          :show-remove="true"
+          :show-export="true"
           :show-upload="false"
-          @edit="startEditLocalBank"
-          @edit-content="openEditContent"
+          @edit="openEditInEditor"
           @remove="handleRemoveLocal"
           @export="exportBank('local', $event)"
           @practice="startPractice"
@@ -406,6 +180,16 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </section>
+
+    <StartPracticeChoiceModal
+      :visible="startPracticeModalVisible"
+      :bank-name="startPracticeBank?.title || startPracticeBank?.name || '未命名题集'"
+      :latest="startPracticeLatest"
+      :incomplete-count="startPracticeIncompleteCount"
+      @resume="confirmResumePractice"
+      @create="confirmCreatePractice"
+      @cancel="cancelStartPractice"
+    />
   </div>
 </template>
 

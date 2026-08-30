@@ -12,8 +12,10 @@ import {
   syncQuestionProgress
 } from "../models/question/progress";
 import {
+  NotebookKind,
   buildProgressRecord,
-  getProgressRecord,
+  createPracticeNotebook,
+  getNotebook,
   patchProgressRecord,
   saveProgressRecord,
   type BankSource
@@ -130,29 +132,57 @@ function currentStats() {
   };
 }
 
-function persistProgress(forceQuestionsSnapshot = false) {
-  if (typeof window === "undefined") return;
-  if (!props.data?.bankId || !questions.value.length) return;
-
-  const bankSource = (props.data.bankSource || "session") as BankSource;
-  let includeQuestionsSnapshot = false;
-  if (bankSource === "session") {
-    if (forceQuestionsSnapshot) {
-      includeQuestionsSnapshot = true;
-    } else {
-      const existing = getProgressRecord(props.data.bankId);
-      includeQuestionsSnapshot = !Array.isArray(existing?.questions) || existing.questions.length === 0;
-    }
+function ensureNotebookId(): string | null {
+  if (!props.data?.bankId || !questions.value.length) return null;
+  if (props.data.notebookId && getNotebook(props.data.notebookId)) {
+    return props.data.notebookId;
   }
 
-  const record = buildProgressRecord(
+  const bankSource = (props.data.bankSource || "session") as BankSource;
+  const kind =
+    props.data.practiceMode === "wrong" ? NotebookKind.WRONG : NotebookKind.PRACTICE;
+  const notebook = createPracticeNotebook(
     {
+      notebookId: props.data.notebookId,
       bankId: props.data.bankId,
       bankSource,
       name: props.data.name,
       type: props.data.type,
       author: props.data.author,
-      version: props.data.version
+      version: props.data.version,
+      kind
+    },
+    questions.value,
+    {
+      includeQuestionsSnapshot: true
+    }
+  );
+  props.data.notebookId = notebook.id;
+  return notebook.id;
+}
+
+function persistProgress(forceQuestionsSnapshot = false) {
+  if (typeof window === "undefined") return;
+  const notebookId = ensureNotebookId();
+  if (!notebookId || !questions.value.length) return;
+
+  const notebook = getNotebook(notebookId);
+  const bankSource = (props.data.bankSource || notebook?.bankSource || "session") as BankSource;
+  const kind = notebook?.kind ?? NotebookKind.PRACTICE;
+  const includeQuestionsSnapshot =
+    forceQuestionsSnapshot || !notebook?.checkpoint.questions?.length;
+
+  const record = buildProgressRecord(
+    {
+      notebookId,
+      bankId: props.data.bankId,
+      bankSource,
+      name: props.data.name,
+      type: props.data.type,
+      author: props.data.author,
+      version: props.data.version,
+      kind,
+      parentNotebookId: notebook?.parentNotebookId
     },
     questions.value,
     { includeQuestionsSnapshot }
@@ -162,7 +192,8 @@ function persistProgress(forceQuestionsSnapshot = false) {
 
 function persistProgressPatch(questionIndex: number) {
   if (typeof window === "undefined") return;
-  if (!props.data?.bankId || !questions.value.length) return;
+  const notebookId = ensureNotebookId();
+  if (!notebookId || !questions.value.length) return;
 
   const question = questions.value[questionIndex];
   if (!question) {
@@ -170,14 +201,18 @@ function persistProgressPatch(questionIndex: number) {
     return;
   }
 
-  const bankSource = (props.data.bankSource || "session") as BankSource;
+  const notebook = getNotebook(notebookId);
+  const bankSource = (props.data.bankSource || notebook?.bankSource || "session") as BankSource;
   const patched = patchProgressRecord({
+    notebookId,
     bankId: props.data.bankId,
     bankSource,
     name: props.data.name,
     type: props.data.type,
     author: props.data.author,
     version: props.data.version,
+    kind: notebook?.kind,
+    parentNotebookId: notebook?.parentNotebookId,
     questionIndex,
     question,
     questionCount: questions.value.length,
@@ -209,7 +244,11 @@ function flushPersistProgress() {
     clearTimeout(saveTimer);
     saveTimer = null;
   }
+  const index = pendingPatchIndex;
   pendingPatchIndex = null;
+  if (index != null) {
+    persistProgressPatch(index);
+  }
   persistProgress(true);
 }
 

@@ -7,13 +7,16 @@ export async function syncHomeSessionProgress(questions: Question[]): Promise<vo
     import("../utils/questions"),
     import("../models/question/progress")
   ]);
-  const { buildSessionBankId, getProgressRecord, applyProgressToQuestions } = await import(
-    "./practiceProgress"
-  );
+  const {
+    applyProgressToQuestions,
+    buildSessionBankId,
+    listIncompletePracticeNotebooks,
+    notebookToProgressRecord
+  } = await import("./practiceProgress");
 
   appState.questionsJSON.bankSource = "session";
   appState.questionsJSON.version = resolveQuestionBankVersion(questions);
-  appState.questionsJSON.bankId = buildSessionBankId(
+  const nextBankId = buildSessionBankId(
     {
       name: appState.questionsJSON.name,
       type: appState.questionsJSON.type,
@@ -22,10 +25,16 @@ export async function syncHomeSessionProgress(questions: Question[]): Promise<vo
     },
     questions
   );
+  appState.questionsJSON.bankId = nextBankId;
+  appState.questionsJSON.practiceMode = "resume";
 
-  const saved = getProgressRecord(appState.questionsJSON.bankId);
-  if (saved) {
-    applyProgressToQuestions(questions, saved);
+  const incomplete = listIncompletePracticeNotebooks(nextBankId);
+  const latest = incomplete[0];
+  if (latest) {
+    appState.questionsJSON.notebookId = latest.id;
+    applyProgressToQuestions(questions, notebookToProgressRecord(latest));
+  } else {
+    appState.questionsJSON.notebookId = "";
   }
   resetQuestionProgress(questions);
 }

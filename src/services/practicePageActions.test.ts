@@ -2,12 +2,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Question } from "../models/question/types";
 import {
   __clearAllProgressForTests,
-  getProgressRecord
+  getNotebook,
+  getProgressRecord,
+  listNotebooks,
+  NotebookKind,
+  saveProgressRecord,
+  buildProgressRecord
 } from "./practiceProgress";
 import {
+  applyRetryWrongQuestions,
   clearAllQuestionResults,
   saveProgressToBrowser,
-  saveQuestionBankToLocal
+  saveQuestionBankToLocal,
+  type QuestionsJSON
 } from "./practicePageActions";
 import { APP_STORAGE_KEYS } from "./browserStorage";
 
@@ -82,7 +89,7 @@ describe("practicePageActions", () => {
   });
 
   it("saves progress to browser storage", () => {
-    const questionsJSON = {
+    const questionsJSON: QuestionsJSON = {
       bankId: "local-1",
       bankSource: "local",
       name: "测试题集",
@@ -94,7 +101,8 @@ describe("practicePageActions", () => {
 
     const result = saveProgressToBrowser(questionsJSON);
     expect(result.ok).toBe(true);
-    const saved = getProgressRecord("local-1");
+    expect(questionsJSON.notebookId).toBeTruthy();
+    const saved = getProgressRecord(questionsJSON.notebookId!);
     expect(saved?.results[0][0]).toBe("2");
     expect(saved?.results[1][0]).toBe("4");
   });
@@ -182,5 +190,62 @@ describe("practicePageActions", () => {
     expect(result.ok).toBe(false);
     expect(result.message).toContain("存储空间不足");
     expect(window.localStorage.getItem(APP_STORAGE_KEYS.localBanks)).toBeNull();
+  });
+
+  it("saves checkpoint for wrong notebooks", () => {
+    const parent = buildProgressRecord(
+      { bankId: "mode-1", bankSource: "local", name: "题集" },
+      sampleQuestions
+    );
+    saveProgressRecord(parent);
+
+    const result = saveProgressToBrowser({
+      notebookId: parent.notebookId,
+      bankId: "mode-1",
+      bankSource: "local",
+      name: "题集",
+      practiceMode: "wrong",
+      questions: JSON.parse(JSON.stringify(sampleQuestions)) as Question[]
+    });
+
+    expect(result.ok).toBe(true);
+    expect(getProgressRecord(parent.notebookId)?.results[1]?.[0]).toBe("4");
+  });
+
+  it("generates a wrong notebook without switching the current session", () => {
+    const parent = buildProgressRecord(
+      { bankId: "retry-1", bankSource: "local", name: "原题集" },
+      sampleQuestions
+    );
+    saveProgressRecord(parent);
+
+    const questionsJSON = {
+      notebookId: parent.notebookId,
+      bankId: "retry-1",
+      bankSource: "local",
+      name: "原题集",
+      type: "",
+      author: "",
+      version: "0.0.2",
+      practiceMode: "resume" as const,
+      questions: JSON.parse(JSON.stringify(sampleQuestions)) as Question[]
+    };
+
+    const result = applyRetryWrongQuestions(questionsJSON, {
+      banks: [{ id: "retry-1", questions: sampleQuestions }]
+    });
+
+    expect(result.ok).toBe(true);
+    expect(questionsJSON.bankId).toBe("retry-1");
+    expect(questionsJSON.practiceMode).toBe("resume");
+    expect(questionsJSON.questions).toHaveLength(2);
+    expect(questionsJSON.notebookId).toBe(parent.notebookId);
+    expect(getNotebook(parent.notebookId)?.checkpoint.results[0]?.[0]).toBe("2");
+
+    const wrongChildren = listNotebooks({}, [{ id: "retry-1", questions: sampleQuestions }]).filter(
+      (item) => item.kind === NotebookKind.WRONG && item.parentNotebookId === parent.notebookId
+    );
+    expect(wrongChildren).toHaveLength(1);
+    expect(wrongChildren[0]?.checkpoint.questions).toHaveLength(1);
   });
 });

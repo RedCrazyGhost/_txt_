@@ -1,0 +1,39 @@
+/* Shared editor page tokens — align with Settings / QuestionBank */
+
+.editor-page {
+  --editor-radius: 0.65rem;
+  --editor-shadow: 0 0.125rem 0.35rem rgba(0, 0, 0, 0.05);
+  color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] .editor-page {
+  --editor-shadow: 0 0.125rem 0.45rem rgba(0, 0, 0, 0.28);
+}
+
+.editor-page .editor-surface {
+  background: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color-translucent);
+  border-radius: var(--editor-radius);
+  box-shadow: var(--editor-shadow);
+}
+
+.editor-page .editor-surface-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+  font-weight: 600;
+  color: var(--bs-emphasis-color);
+}
+
+.editor-page .editor-surface-body {
+  padding: 1rem;
+}
+
+.editor-page .editor-sticky-bar {
+  border-top: 1px solid var(--bs-border-color);
+  background: color-mix(in srgb, var(--bs-body-bg) 88%, var(--bs-card-bg));
+  backdrop-filter: blur(10px);
+}
+
+[data-bs-theme="dark"] .editor-page .editor-sticky-bar {
+  background: color-mix(in srgb, var(--bs-body-bg) 82%, var(--bs-card-bg));
+}

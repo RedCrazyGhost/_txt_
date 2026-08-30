@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import AppName from "./AppName.vue";
-import { listIncompleteRecords, type BankLike } from "../services/practiceProgress";
+import { listActionableNotebooks, type BankLike } from "../services/practiceProgress";
 import {
   StorageChangeKind,
   subscribeStorageChanged,
@@ -19,13 +19,13 @@ const props = defineProps<{
 }>();
 
 const route = useRoute();
-const incompleteCount = ref(0);
+const actionableCount = ref(0);
 const isLightTheme = computed(() => props.state.webSiteConfig.appColor === "light");
 
 function refreshIncompleteCount() {
   if (typeof window === "undefined") return;
   const banks = [...questionBankState.localBanks, ...questionBankState.remoteBanks];
-  incompleteCount.value = listIncompleteRecords(banks as BankLike[]).length;
+  actionableCount.value = listActionableNotebooks(banks as BankLike[]).length;
 }
 
 function handleStorageChanged(event: Event) {
@@ -135,11 +135,11 @@ function changeAppColor() {
               <template v-else>
                 {{ router.label || router.name }}
                 <span
-                  v-if="router.name === 'PracticeProgress' && incompleteCount > 0"
+                  v-if="router.name === 'PracticeProgress' && actionableCount > 0"
                   class="nav-progress-badge"
-                  :aria-label="`${incompleteCount} 份未完成题集进度`"
+                  :aria-label="`${actionableCount} 本未完成做题记录`"
                 >
-                  {{ incompleteCount > 99 ? "99+" : incompleteCount }}
+                  {{ actionableCount > 99 ? "99+" : actionableCount }}
                 </span>
               </template>
             </router-link>

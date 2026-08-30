@@ -1,35 +1,24 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute } from "vue-router";
 import { appState } from "./state/appState";
 import AppTopNav from "./components/AppTopNav.vue";
 import AppBottomNav from "./components/AppBottomNav.vue";
-
-const route = useRoute();
-const isImmersive = computed(() => Boolean(route.meta?.immersive));
 </script>
 
 <template>
   <div
     class="app-root bg-body"
-    :class="{ 'app-root--immersive': isImmersive }"
     :data-bs-theme="appState.webSiteConfig.appColor === 'dark' ? 'dark' : 'light'"
     :style="`font-family:${appState.webSiteConfig.appFontFamily};`"
   >
-    <template v-if="isImmersive">
-      <router-view />
-    </template>
-    <template v-else>
-      <AppTopNav :state="appState" />
-      <main class="app-main">
-        <router-view v-slot="{ Component }">
-          <keep-alive :max="5">
-            <component :is="Component" />
-          </keep-alive>
-        </router-view>
-      </main>
-      <AppBottomNav :state="appState" />
-    </template>
+    <AppTopNav :state="appState" />
+    <main class="app-main">
+      <router-view v-slot="{ Component }">
+        <keep-alive :max="5">
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
+    </main>
+    <AppBottomNav :state="appState" />
   </div>
 </template>
 
@@ -47,9 +36,5 @@ const isImmersive = computed(() => Boolean(route.meta?.immersive));
 
 .app-main {
   flex: 1 0 auto;
-}
-
-.app-root--immersive {
-  min-height: 100dvh;
 }
 </style>

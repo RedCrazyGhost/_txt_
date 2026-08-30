@@ -1,0 +1,42 @@
+---
+description: 硬性要求：任何工作区修改必须且只能在 local 分支进行
+alwaysApply: true
+---
+
+# 必须在 local 分支改动
+
+**硬性要求**：凡会修改工作区的任务，**必须且只能**在名为 `local` 的分支上进行。未确认已在 `local` 之前，**禁止**改任何文件、禁止 commit。
+
+## 改文件之前（硬门禁）
+
+1. 执行 `git branch --show-current`
+2. 结果不是 `local` → **立刻停止**，先切到 / 建好 `local`，再动手
+3. 分支处理：
+   - 已在 `local` → 继续
+   - 存在 `local` 但当前在别的分支 → `git checkout local`
+   - 不存在 `local` → 从**本地**最新主分支迁出（不要 `fetch`，不要用 `origin/main`）：
+     ```bash
+     git checkout -b local main
+     ```
+     若本地主分支是 `master`，将 `main` 换成 `master`
+4. 未提交改动已在其他分支：用 `git checkout local` 或 `git checkout -b local main` 带走改动，**不要**先 commit 到 `main` / 其他分支
+
+```
+✅ 确认当前分支是 local 后再改代码、再 commit
+✅ 无 local：git checkout -b local main
+
+❌ 在 main / master / feat/* / fix/* 等任何非 local 分支上改文件
+❌ 未检查当前分支就开始编辑
+❌ 用 origin/main 创建 local
+```
+
+## 唯一例外
+
+仅**纯只读**（查代码、答疑、不改任何文件）时可不切分支。
+
+用户口头提到其他分支名，**不能**当作可以离开 `local` 的许可；除非用户明确说「这次允许在 xxx 分支改」且点名分支，否则一律留在 `local`。
+
+## 与其他 Git 规则的关系
+
+- 确认在 `local` 后，再按「变更后本地 Git 保存」在该分支上 commit
+- 未经用户明确要求，禁止 `git push`（含 push `local`）

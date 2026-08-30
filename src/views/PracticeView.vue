@@ -3,6 +3,10 @@ import { computed, onBeforeUnmount, ref } from "vue";
 import { appState } from "../state/appState";
 import AppQuestion from "../components/AppQuestion.vue";
 import PracticeTimerBar from "../components/practice/PracticeTimerBar.vue";
+import PracticePageToolbar from "../components/practice/PracticePageToolbar.vue";
+import GenerateWrongNotebookModal, {
+  type GenerateWrongNotebookTarget
+} from "../components/practice/GenerateWrongNotebookModal.vue";
 import { questionProgressState } from "../state/questionProgressState";
 import { usePracticeTimer, type ApplySessionConfigParams } from "../composables/usePracticeTimer";
 import {
@@ -11,6 +15,14 @@ import {
   saveProgressToBrowser,
   saveQuestionBankToLocal
 } from "../services/practicePageActions";
+import {
+  PracticeMode,
+  getPracticeModeLabel,
+  getNotebookKindLabel,
+  NotebookKind,
+  type BankLike
+} from "../services/practiceProgress";
+import { questionBankState } from "../state/questionBankState";
 
 type StatusTone = "success" | "warning" | "info";
 
@@ -18,9 +30,17 @@ const statusMessage = ref("");
 const statusTone = ref<StatusTone>("success");
 let statusTimer: ReturnType<typeof setTimeout> | null = null;
 
+const wrongModalOpen = ref(false);
+
 const hasQuestions = computed(
   () => Array.isArray(appState.questionsJSON.questions) && appState.questionsJSON.questions.length > 0
 );
+
+const practiceMode = computed(
+  () => appState.questionsJSON.practiceMode || PracticeMode.RESUME
+);
+
+const modeLabel = computed(() => getPracticeModeLabel(practiceMode.value));
 
 const canSaveProgress = computed(
   () => hasQuestions.value && Boolean(appState.questionsJSON.bankId)
@@ -36,6 +56,29 @@ const canRetryWrongWithPartial = computed(
   () =>
     questionProgressState.wrongQuestionCount + questionProgressState.partialQuestionCount > 0
 );
+
+const canGenerateWrong = computed(
+  () => canRetryWrong.value || canRetryWrongWithPartial.value
+);
+
+const wrongWithPartialCount = computed(
+  () => questionProgressState.wrongQuestionCount + questionProgressState.partialQuestionCount
+);
+
+const backToBankLabel = computed(() => (hasQuestions.value ? "返回题库" : "前往题库"));
+
+const wrongModalTarget = computed<GenerateWrongNotebookTarget | null>(() => {
+  if (!wrongModalOpen.value || !hasQuestions.value) return null;
+  const kind =
+    practiceMode.value === PracticeMode.WRONG ? NotebookKind.WRONG : NotebookKind.PRACTICE;
+  return {
+    key: appState.questionsJSON.notebookId || appState.questionsJSON.bankId || "current",
+    name: appState.questionsJSON.name || "未命名题集",
+    kindLabel: getNotebookKindLabel(kind),
+    wrongQuestionCount: questionProgressState.wrongQuestionCount,
+    wrongWithPartialCount: wrongWithPartialCount.value
+  };
+});
 
 function showStatus(message: string, tone: StatusTone = "success") {
   statusMessage.value = message;
@@ -92,19 +135,25 @@ function handleRedoAll() {
   }
 }
 
-function handleRetryWrong(includePartial = false) {
+function requestWrongNotebook() {
+  if (!canGenerateWrong.value) return;
+  wrongModalOpen.value = true;
+}
+
+function cancelWrongNotebook() {
+  wrongModalOpen.value = false;
+}
+
+function confirmWrongNotebook(includePartial = false) {
   const canRetry = includePartial ? canRetryWrongWithPartial.value : canRetryWrong.value;
   if (!canRetry) return;
-  const name = appState.questionsJSON.name || "未命名题集";
-  const label = includePartial ? "错题（含半对）" : "错题";
-  const ok = window.confirm(`确定仅保留《${name}》的${label}并清空其答案？`);
-  if (!ok) return;
-  const result = applyRetryWrongQuestions(appState.questionsJSON, { includePartial });
+  wrongModalOpen.value = false;
+  const banks = [...questionBankState.localBanks, ...questionBankState.remoteBanks] as BankLike[];
+  const result = applyRetryWrongQuestions(appState.questionsJSON, {
+    includePartial,
+    banks
+  });
   showStatus(result.message, result.ok ? "success" : "warning");
-  if (result.ok) {
-    reset();
-    scrollToTop();
-  }
 }
 
 function handleTimerReset() {
@@ -136,62 +185,25 @@ onBeforeUnmount(() => {
         </h2>
         <div v-if="hasQuestions" class="text-muted small">
           <span class="me-3">类型：{{ appState.questionsJSON.type || "-" }}</span>
-          <span>作者：{{ appState.questionsJSON.author || "-" }}</span>
+          <span class="me-3">作者：{{ appState.questionsJSON.author || "-" }}</span>
+          <span class="badge text-bg-light border">{{ modeLabel }}</span>
         </div>
         <p v-else class="text-muted small mb-0">
-          从题库选题开始练习；未完成进度可在「全部记录」中继续。
+          从题库选题开始练习；未完成做题本可在「练习档案」中继续。
         </p>
       </div>
-      <div class="d-flex flex-wrap gap-2 justify-content-end">
-        <template v-if="hasQuestions">
-          <button
-            type="button"
-            class="btn btn-outline-primary btn-sm"
-            :disabled="!canSaveProgress"
-            @click="handleSaveProgress"
-          >
-            <i class="fas fa-cloud-upload-alt me-1"></i>保存进度到浏览器
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            :disabled="!canSaveToLocalBank"
-            @click="handleSaveToLocalBank"
-          >
-            <i class="fas fa-book me-1"></i>保存到本地题库
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-warning btn-sm"
-            :disabled="!canRedoAll"
-            @click="handleRedoAll"
-          >
-            <i class="fas fa-undo me-1"></i>重做全卷
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-danger btn-sm"
-            :disabled="!canRetryWrong"
-            @click="handleRetryWrong(false)"
-          >
-            <i class="fas fa-redo me-1"></i>重做错题
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-warning btn-sm"
-            :disabled="!canRetryWrongWithPartial"
-            @click="handleRetryWrong(true)"
-          >
-            <i class="fas fa-redo me-1"></i>重做错题（含半对）
-          </button>
-        </template>
-        <router-link class="btn btn-outline-secondary btn-sm" to="/practice-progress">
-          <i class="fas fa-history me-1"></i>全部记录
-        </router-link>
-        <router-link class="btn btn-outline-secondary btn-sm" to="/question-bank">
-          <i class="fas fa-book me-1"></i>{{ hasQuestions ? "返回题库" : "前往题库" }}
-        </router-link>
-      </div>
+      <PracticePageToolbar
+        :has-questions="hasQuestions"
+        :can-save-progress="canSaveProgress"
+        :can-save-to-local-bank="canSaveToLocalBank"
+        :can-redo-all="canRedoAll"
+        :can-generate-wrong="canGenerateWrong"
+        :back-to-bank-label="backToBankLabel"
+        @save-progress="handleSaveProgress"
+        @save-to-local-bank="handleSaveToLocalBank"
+        @redo-all="handleRedoAll"
+        @request-wrong="requestWrongNotebook"
+      />
     </div>
 
     <div
@@ -242,5 +254,11 @@ onBeforeUnmount(() => {
         :practice-locked="locked"
       />
     </div>
+
+    <GenerateWrongNotebookModal
+      :target="wrongModalTarget"
+      @cancel="cancelWrongNotebook"
+      @confirm="confirmWrongNotebook"
+    />
   </div>
 </template>

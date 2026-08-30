@@ -45,7 +45,7 @@ const breakdownItems = computed(() => {
   return [
     { label: "本地题库", value: breakdown.localBanks },
     { label: "远程缓存", value: breakdown.remoteBanks },
-    { label: "题集进度", value: breakdown.practiceProgress }
+    { label: "练习档案", value: breakdown.practiceProgress }
   ];
 });
 

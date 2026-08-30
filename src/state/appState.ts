@@ -46,7 +46,10 @@ export interface TxtEntry {
   explanation?: string;
 }
 
+export type PracticeMode = "resume" | "wrong";
+
 export interface QuestionsJSON {
+  notebookId?: string;
   bankId: string;
   bankSource: string;
   version: string;
@@ -55,13 +58,14 @@ export interface QuestionsJSON {
   author: string;
   questions: Question[];
   CreateTime?: string;
+  /** resume：做题本；wrong：错题本。两者都写断点 */
+  practiceMode?: PracticeMode;
 }
 
 export interface AppState {
   webSiteConfig: WebSiteConfig;
   txts: TxtEntry[];
   questionsJSON: QuestionsJSON;
-  papers: unknown[];
 }
 
 export const appState = reactive<AppState>({
@@ -107,9 +111,8 @@ export const appState = reactive<AppState>({
     appCoinPerson: [{ name: "莲", src: "", iclass: "kiss" }],
     appRouters: [
       { to: "/home", name: "Home", label: "首页" },
-      { to: "/intro?flow=product", name: "Intro", label: "介绍" },
       { to: "/question-bank", name: "QuestionBank", label: "题库" },
-      { to: "/practice-progress", name: "PracticeProgress", label: "题集进度" },
+      { to: "/practice-progress", name: "PracticeProgress", label: "练习档案" },
       { to: "/settings", name: "Settings", label: "配置" }
     ],
     appAuthor: {
@@ -126,13 +129,14 @@ export const appState = reactive<AppState>({
   },
   txts: [{ txt: "", MD5: false, image: "", noDelete: false }],
   questionsJSON: {
+    notebookId: "",
     bankId: "",
     bankSource: "",
     version: "0.0.2",
     name: "",
     type: "",
     author: "",
-    questions: []
-  },
-  papers: []
+    questions: [],
+    practiceMode: "resume"
+  }
 });

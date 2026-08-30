@@ -1,16 +1,5 @@
 <script setup lang="ts">
-import { saveAs } from "file-saver";
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import {
-  buildPracticeRecordExportJson,
-  buildPracticeRecordFilename
-} from "../../models/question/practiceExport";
-import {
-  buildWrongQuestionsExportJson,
-  buildWrongQuestionsFilename,
-  buildWrongQuestionsSet
-} from "../../models/question/wrongQuestions";
-import { resetQuestionProgress } from "../../models/question/progress";
 import { questionProgressState } from "../../state/questionProgressState";
 import type { QuestionsJSON } from "../../state/appState";
 import { numberToPercent } from "../../utils/questions";
@@ -25,7 +14,7 @@ interface SummaryItem {
   tone?: SummaryTone;
 }
 
-const props = defineProps<{
+defineProps<{
   bank: QuestionsJSON;
 }>();
 
@@ -35,10 +24,6 @@ const isCompactUi = ref(false);
 const hoverDismissed = ref(false);
 
 let compactMediaQuery: MediaQueryList | null = null;
-
-const questions = computed(() =>
-  Array.isArray(props.bank?.questions) ? props.bank.questions : []
-);
 
 const progress = computed(() => ({
   totalQuestions: questionProgressState.totalQuestions,
@@ -54,20 +39,6 @@ const progress = computed(() => ({
   wrongQuestionCount: questionProgressState.wrongQuestionCount,
   partialQuestionCount: questionProgressState.partialQuestionCount
 }));
-
-const wrongWithPartialCount = computed(
-  () => progress.value.wrongQuestionCount + progress.value.partialQuestionCount
-);
-
-const canExportWrong = computed(() => progress.value.wrongQuestionCount > 0);
-
-const canExportWrongWithPartial = computed(() => wrongWithPartialCount.value > 0);
-
-const canExportPractice = computed(() => progress.value.attemptedSlots > 0);
-
-const canRetryWrong = computed(() => progress.value.wrongQuestionCount > 0);
-
-const canRetryWrongWithPartial = computed(() => wrongWithPartialCount.value > 0);
 
 const correctPercent = computed(() =>
   numberToPercent(progress.value.correctSlots, progress.value.totalSlots)
@@ -148,39 +119,6 @@ function onFabMouseLeave() {
   hoverDismissed.value = false;
 }
 
-function exportWrongQuestions(includePartial = false) {
-  if (includePartial ? !canExportWrongWithPartial.value : !canExportWrong.value) return;
-  const json = buildWrongQuestionsExportJson(props.bank, questions.value, { includePartial });
-  const filename = buildWrongQuestionsFilename(props.bank.name, { includePartial });
-  saveAs(new Blob([json], { type: "application/json;charset=utf-8" }), filename);
-}
-
-function exportPracticeRecord() {
-  if (!canExportPractice.value) return;
-  const json = buildPracticeRecordExportJson(props.bank, questions.value);
-  const filename = buildPracticeRecordFilename(props.bank.name);
-  saveAs(new Blob([json], { type: "application/json;charset=utf-8" }), filename);
-}
-
-function retryWrongQuestions(includePartial = false) {
-  if (includePartial ? !canRetryWrongWithPartial.value : !canRetryWrong.value) return;
-
-  const retrySet = buildWrongQuestionsSet(props.bank, questions.value, {
-    includePartial,
-    clearResults: true
-  });
-  props.bank.name = retrySet.name;
-  props.bank.type = retrySet.type;
-  props.bank.author = retrySet.author;
-  props.bank.version = retrySet.version;
-  props.bank.questions = retrySet.questions;
-  resetQuestionProgress(retrySet.questions);
-
-  if (typeof window !== "undefined") {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-}
-
 onMounted(() => {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
   compactMediaQuery = window.matchMedia(COMPACT_MEDIA_QUERY);
@@ -226,104 +164,57 @@ onUnmounted(() => {
       </div>
 
       <div class="question-progress-fab-body">
-          <div class="question-progress-fab-headline">
-            <div class="question-progress-fab-headline-row">
-              <div id="question-progress-fab-title" class="question-progress-fab-title">答题进度</div>
-              <button
-                v-if="isCompactUi ? expanded : true"
-                type="button"
-                class="question-progress-fab-close question-progress-fab-close-inline"
-                aria-label="关闭"
-                @click="handleClose"
-              >
-                <i class="fas fa-times" aria-hidden="true"></i>
-              </button>
-            </div>
-            <div class="question-progress-fab-subtitle">
-              正确 {{ progress.correctSlots }} · 半对 {{ progress.partialSlots }} · 已答
-              {{ progress.attemptedSlots }} · 总计 {{ progress.totalSlots }}
-            </div>
+        <div class="question-progress-fab-headline">
+          <div class="question-progress-fab-headline-row">
+            <div id="question-progress-fab-title" class="question-progress-fab-title">答题进度</div>
+            <button
+              v-if="isCompactUi ? expanded : true"
+              type="button"
+              class="question-progress-fab-close question-progress-fab-close-inline"
+              aria-label="关闭"
+              @click="handleClose"
+            >
+              <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
           </div>
+          <div class="question-progress-fab-subtitle">
+            正确 {{ progress.correctSlots }} · 半对 {{ progress.partialSlots }} · 已答
+            {{ progress.attemptedSlots }} · 总计 {{ progress.totalSlots }}
+          </div>
+        </div>
 
-          <div class="progress question-progress-fab-bar">
-            <div class="progress-bar bg-success" :style="{ width: `${correctPercent}%` }"></div>
-            <div class="progress-bar bg-warning" :style="{ width: `${partialPercent}%` }"></div>
-            <div class="progress-bar bg-danger" :style="{ width: `${wrongPercent}%` }"></div>
+        <div class="progress question-progress-fab-bar">
+          <div class="progress-bar bg-success" :style="{ width: `${correctPercent}%` }"></div>
+          <div class="progress-bar bg-warning" :style="{ width: `${partialPercent}%` }"></div>
+          <div class="progress-bar bg-danger" :style="{ width: `${wrongPercent}%` }"></div>
+          <div
+            class="progress-bar bg-secondary bg-opacity-25"
+            :style="{ width: `${unansweredPercent}%` }"
+          ></div>
+        </div>
+
+        <div class="question-progress-fab-legend">
+          <span><i class="legend-dot legend-dot-success"></i>正确 {{ correctPercent.toFixed(1) }}%</span>
+          <span><i class="legend-dot legend-dot-warning"></i>半对 {{ partialPercent.toFixed(1) }}%</span>
+          <span><i class="legend-dot legend-dot-danger"></i>错误 {{ wrongPercent.toFixed(1) }}%</span>
+          <span><i class="legend-dot legend-dot-muted"></i>未答 {{ unansweredPercent.toFixed(1) }}%</span>
+        </div>
+
+        <div class="question-progress-fab-grid">
+          <div
+            v-for="item in summaryItems"
+            :key="item.label"
+            class="question-progress-fab-stat"
+          >
+            <div class="question-progress-fab-stat-label">{{ item.label }}</div>
             <div
-              class="progress-bar bg-secondary bg-opacity-25"
-              :style="{ width: `${unansweredPercent}%` }"
-            ></div>
-          </div>
-
-          <div class="question-progress-fab-legend">
-            <span><i class="legend-dot legend-dot-success"></i>正确 {{ correctPercent.toFixed(1) }}%</span>
-            <span><i class="legend-dot legend-dot-warning"></i>半对 {{ partialPercent.toFixed(1) }}%</span>
-            <span><i class="legend-dot legend-dot-danger"></i>错误 {{ wrongPercent.toFixed(1) }}%</span>
-            <span><i class="legend-dot legend-dot-muted"></i>未答 {{ unansweredPercent.toFixed(1) }}%</span>
-          </div>
-
-          <div class="question-progress-fab-grid">
-            <div
-              v-for="item in summaryItems"
-              :key="item.label"
-              class="question-progress-fab-stat"
+              class="question-progress-fab-stat-value"
+              :class="item.tone ? `text-${item.tone}` : ''"
             >
-              <div class="question-progress-fab-stat-label">{{ item.label }}</div>
-              <div
-                class="question-progress-fab-stat-value"
-                :class="item.tone ? `text-${item.tone}` : ''"
-              >
-                {{ item.value }}
-              </div>
+              {{ item.value }}
             </div>
           </div>
-
-          <div class="question-progress-fab-actions">
-            <button
-              type="button"
-              class="btn btn-outline-danger"
-              :disabled="!canExportWrong"
-              @click="exportWrongQuestions(false)"
-            >
-              <i class="fas fa-file-export me-1"></i>导出错题
-              <span v-if="progress.wrongQuestionCount" class="ms-1"
-                >({{ progress.wrongQuestionCount }})</span
-              >
-            </button>
-            <button
-              type="button"
-              class="btn btn-outline-warning"
-              :disabled="!canExportWrongWithPartial"
-              @click="exportWrongQuestions(true)"
-            >
-              <i class="fas fa-file-export me-1"></i>导出错题（含半对）
-              <span v-if="wrongWithPartialCount" class="ms-1">({{ wrongWithPartialCount }})</span>
-            </button>
-            <button
-              type="button"
-              class="btn btn-outline-primary"
-              :disabled="!canExportPractice"
-              @click="exportPracticeRecord"
-            >
-              <i class="fas fa-save me-1"></i>导出做题记录
-            </button>
-            <button
-              type="button"
-              class="btn btn-danger"
-              :disabled="!canRetryWrong"
-              @click="retryWrongQuestions(false)"
-            >
-              <i class="fas fa-redo me-1"></i>重做错题
-            </button>
-            <button
-              type="button"
-              class="btn btn-warning"
-              :disabled="!canRetryWrongWithPartial"
-              @click="retryWrongQuestions(true)"
-            >
-              <i class="fas fa-redo me-1"></i>重做错题（含半对）
-            </button>
-          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -524,6 +415,7 @@ onUnmounted(() => {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   pointer-events: auto;
+  padding-bottom: 14px;
 }
 
 .question-progress-fab.is-compact.is-expanded .question-progress-fab-grid {
@@ -603,7 +495,7 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.55rem;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .question-progress-fab-stat {
@@ -624,18 +516,6 @@ onUnmounted(() => {
   font-size: clamp(0.9375rem, 3.2vw, 1.05rem);
   font-weight: 700;
   line-height: 1.25;
-}
-
-.question-progress-fab-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  padding-bottom: 0.25rem;
-}
-
-.question-progress-fab-actions .btn {
-  font-size: 0.875rem;
-  padding: 0.45rem 0.75rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

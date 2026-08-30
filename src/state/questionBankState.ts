@@ -1,8 +1,10 @@
 import { reactive } from "vue";
 import {
   deleteBankById,
-  loadBanks
+  loadBanks,
+  type BankStatus
 } from "../services/questionBank";
+import type { TxtEntry } from "./appState";
 
 export type BankSource = "local" | "remote";
 
@@ -14,6 +16,8 @@ export interface QuestionBankRecord {
   author: string;
   updatedAt: string;
   questions: unknown[];
+  status?: BankStatus;
+  editorTxts?: TxtEntry[];
   /** 兼容旧字段 / 导入元数据 */
   name?: string;
   type?: string;

@@ -1,11 +1,9 @@
 import type { RouteRecordRaw } from "vue-router";
-import { isOnboardingDone } from "../services/appPrefsStorage";
 
 declare module "vue-router" {
   interface RouteMeta {
     title?: string;
     description?: string;
-    immersive?: boolean;
   }
 }
 
@@ -20,14 +18,8 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    name: "Intro",
     path: "/intro",
-    component: () => import("../views/IntroView.vue"),
-    meta: {
-      immersive: true,
-      title: "介绍 - _txt_",
-      description: "题集编辑、题库管理、练习巩固，一图了解 _txt_ 怎么用。"
-    }
+    redirect: "/home"
   },
   {
     name: "QuestionBank",
@@ -39,11 +31,32 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    name: "Editor",
+    path: "/editor",
+    component: () => import("../views/editor/EditorWorkspaceView.vue"),
+    meta: {
+      title: "题集编辑 - _txt_",
+      description: "工作台双栏题集编辑：录入、导入、保存到本地题库或导出。"
+    }
+  },
+  {
+    path: "/editor/workspace",
+    redirect: "/editor"
+  },
+  {
+    path: "/editor/focus",
+    redirect: "/editor"
+  },
+  {
+    path: "/editor/studio",
+    redirect: "/editor"
+  },
+  {
     name: "Practice",
     path: "/practice",
     component: () => import("../views/PracticeView.vue"),
     meta: {
-      title: "Step 3 做题页 - _txt_",
+      title: "做题页 - _txt_",
       description: "从题库选择题集后开始练习与巩固。"
     }
   },
@@ -52,8 +65,8 @@ const routes: RouteRecordRaw[] = [
     path: "/practice-progress",
     component: () => import("../views/PracticeProgressView.vue"),
     meta: {
-      title: "题集进度 - _txt_",
-      description: "查看与管理本地保存的题集进度，继续未完成练习。"
+      title: "练习档案 - _txt_",
+      description: "按题库管理做题本，并从错题生成错题本复习。"
     }
   },
   {
@@ -72,7 +85,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: "/",
-    redirect: () => (isOnboardingDone() ? "/home" : "/intro")
+    redirect: "/home"
   },
   { path: "/:pathMatch(.*)*", redirect: "/home" }
 ];

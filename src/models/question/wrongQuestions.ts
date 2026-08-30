@@ -51,7 +51,7 @@ export function cloneQuestionWithEmptyResults(question: Question): Question {
   return clone;
 }
 
-function stripWrongBankSuffix(name: string | undefined): string {
+export function stripWrongBankSuffix(name: string | undefined): string {
   return (name || "未命名题集")
     .replace(/-错题含半对$/, "")
     .replace(/-错题$/, "");

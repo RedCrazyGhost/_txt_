@@ -3,18 +3,6 @@ import { computed } from "vue";
 import { appState } from "../../state/appState";
 import { setTheme, type AppTheme } from "../../services/appPrefsStorage";
 
-type ThemeVariant = "default" | "intro";
-
-withDefaults(
-  defineProps<{
-    /** Intro 页深色背景下的样式变体 */
-    variant?: ThemeVariant;
-  }>(),
-  {
-    variant: "default"
-  }
-);
-
 const currentTheme = computed(() =>
   appState.webSiteConfig.appColor === "dark" ? "dark" : "light"
 );
@@ -26,8 +14,8 @@ function selectTheme(theme: AppTheme) {
 </script>
 
 <template>
-  <div class="theme-preference" :class="`theme-preference--${variant}`">
-    <p v-if="variant === 'default'" class="form-label mb-2">界面主题</p>
+  <div class="theme-preference">
+    <p class="form-label mb-2">界面主题</p>
     <div class="theme-preference__options" role="group" aria-label="界面主题">
       <button
         type="button"
@@ -76,17 +64,5 @@ function selectTheme(theme: AppTheme) {
   border-color: var(--bs-primary);
   color: var(--bs-primary);
   background: color-mix(in srgb, var(--bs-primary) 12%, transparent);
-}
-
-.theme-preference--intro .theme-preference__btn {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.06);
-  color: #e2e8f0;
-}
-
-.theme-preference--intro .theme-preference__btn.is-active {
-  border-color: #93c5fd;
-  color: #93c5fd;
-  background: rgba(147, 197, 253, 0.14);
 }
 </style>

@@ -1,11 +1,19 @@
 import type { Question } from "../models/question/types";
 import { resetQuestionProgress } from "../models/question/progress";
-import { buildWrongQuestionsSet } from "../models/question/wrongQuestions";
+import { cloneQuestionWithEmptyResults } from "../models/question/wrongQuestions";
 import {
-  buildSessionBankId,
+  NotebookKind,
+  PracticeMode,
   buildProgressRecord,
+  createPracticeNotebook,
+  createWrongNotebook,
+  getNotebook,
+  isResumePracticeMode,
   saveProgressRecord,
-  type BankSource
+  type BankLike,
+  type BankSource,
+  type PracticeMode as PracticeModeType,
+  type PracticeNotebook
 } from "./practiceProgress";
 import {
   addBankFromExisting,
@@ -16,10 +24,12 @@ import { notifyStorageChanged, StorageChangeKind } from "./appStorageSync";
 import { loadRemoteQuestionBanks, reloadRemoteBanksFromCache } from "./remoteQuestionBanks";
 import { reloadLocalBanks, questionBankState } from "../state/questionBankState";
 import { getAnswerSlotCount } from "../utils/questions";
+import type { PracticeMode as AppPracticeMode } from "../state/appState";
 
 export const PROGRESS_CHANGED_EVENT = "txt-storage-changed";
 
 export interface QuestionsJSON {
+  notebookId?: string;
   bankId?: string;
   bankSource?: BankSource | string;
   version?: string;
@@ -27,6 +37,7 @@ export interface QuestionsJSON {
   type?: string;
   author?: string;
   questions?: Question[];
+  practiceMode?: PracticeModeType | AppPracticeMode;
 }
 
 export interface ActionResult {
@@ -36,6 +47,7 @@ export interface ActionResult {
 
 export interface RetryWrongOptions {
   includePartial?: boolean;
+  banks?: BankLike[];
 }
 
 export function notifyProgressChanged(): void {
@@ -44,6 +56,34 @@ export function notifyProgressChanged(): void {
 
 function getQuestions(questionsJSON: QuestionsJSON | null | undefined): Question[] {
   return Array.isArray(questionsJSON?.questions) ? questionsJSON.questions : [];
+}
+
+function ensurePracticeNotebook(questionsJSON: QuestionsJSON, questions: Question[]): PracticeNotebook | null {
+  if (questionsJSON.notebookId) {
+    const existing = getNotebook(questionsJSON.notebookId);
+    if (existing) return existing;
+  }
+  if (!questionsJSON.bankId || !questions.length) return null;
+
+  const bankSource = (questionsJSON.bankSource || "session") as BankSource;
+  const notebook = createPracticeNotebook(
+    {
+      notebookId: questionsJSON.notebookId,
+      bankId: questionsJSON.bankId,
+      bankSource,
+      name: questionsJSON.name,
+      type: questionsJSON.type,
+      author: questionsJSON.author,
+      version: questionsJSON.version,
+      kind: questionsJSON.practiceMode === PracticeMode.WRONG ? NotebookKind.WRONG : NotebookKind.PRACTICE
+    },
+    questions,
+    {
+      includeQuestionsSnapshot: true
+    }
+  );
+  questionsJSON.notebookId = notebook.id;
+  return notebook;
 }
 
 export function clearAllQuestionResults(questions: Question[]): void {
@@ -63,21 +103,31 @@ export function saveProgressToBrowser(questionsJSON: QuestionsJSON): ActionResul
     return { ok: false, message: "缺少题集标识，无法保存进度。" };
   }
 
-  const bankSource = (questionsJSON.bankSource || "session") as BankSource;
+  const notebook = ensurePracticeNotebook(questionsJSON, questions);
+  if (!notebook) {
+    return { ok: false, message: "缺少做题本标识，无法保存进度。" };
+  }
+
+  const bankSource = (questionsJSON.bankSource || notebook.bankSource || "session") as BankSource;
   const record = buildProgressRecord(
     {
+      notebookId: notebook.id,
       bankId: questionsJSON.bankId,
       bankSource,
       name: questionsJSON.name,
       type: questionsJSON.type,
       author: questionsJSON.author,
-      version: questionsJSON.version
+      version: questionsJSON.version,
+      kind: notebook.kind,
+      parentNotebookId: notebook.parentNotebookId
     },
     questions,
-    { includeQuestionsSnapshot: bankSource === "session" }
+    {
+      includeQuestionsSnapshot: !notebook.checkpoint.questions?.length
+    }
   );
   saveProgressRecord(record);
-  return { ok: true, message: "题集进度已保存到浏览器。" };
+  return { ok: true, message: "断点进度已保存到浏览器。" };
 }
 
 function findRemoteBank(bankId: string) {
@@ -156,47 +206,91 @@ export function applyRedoAllQuestions(questionsJSON: QuestionsJSON): ActionResul
   return saveProgressToBrowser(questionsJSON);
 }
 
-export function applyRetryWrongQuestions(
+/**
+ * 从当前卷面生成错题本并写入练习档案，不切换当前做题会话。
+ */
+export function applyGenerateWrongNotebook(
   questionsJSON: QuestionsJSON,
   options: RetryWrongOptions = {}
 ): ActionResult {
-  const { includePartial = false } = options;
+  const { includePartial = false, banks = [] } = options;
   const questions = getQuestions(questionsJSON);
   if (!questions.length) {
     return { ok: false, message: "当前没有可重做的题目。" };
   }
-
-  const retrySet = buildWrongQuestionsSet(questionsJSON, questions, {
-    includePartial,
-    clearResults: true
-  });
-  if (!retrySet.questions.length) {
-    return { ok: false, message: "当前没有错题可重做。" };
+  if (!questionsJSON.bankId) {
+    return { ok: false, message: "缺少题集标识，无法生成错题本。" };
   }
 
-  questionsJSON.name = retrySet.name;
-  questionsJSON.type = retrySet.type;
-  questionsJSON.author = retrySet.author;
-  questionsJSON.version = retrySet.version;
-  questionsJSON.questions = retrySet.questions;
-
-  if ((questionsJSON.bankSource || "session") === "session") {
-    questionsJSON.bankId = buildSessionBankId(
-      {
-        name: questionsJSON.name,
-        type: questionsJSON.type,
-        author: questionsJSON.author,
-        version: questionsJSON.version
-      },
-      retrySet.questions
-    );
-  }
-
-  resetQuestionProgress(retrySet.questions);
   const saveResult = saveProgressToBrowser(questionsJSON);
-  if (!saveResult.ok) {
-    return saveResult;
+  if (!saveResult.ok) return saveResult;
+
+  const parent = questionsJSON.notebookId ? getNotebook(questionsJSON.notebookId) : null;
+  if (!parent) {
+    return { ok: false, message: "找不到对应的做题本，无法生成错题本。" };
   }
 
-  return { ok: true, message: "已切换为错题重做，请重新作答。" };
+  const wrongNotebook = createWrongNotebook(parent, {
+    includePartial,
+    banks,
+    sourceQuestions: questions
+  });
+  if (!wrongNotebook?.checkpoint.questions?.length) {
+    return {
+      ok: false,
+      message: includePartial ? "当前没有错题或半对可生成错题本。" : "当前没有错题可生成错题本。"
+    };
+  }
+
+  notifyProgressChanged();
+  return {
+    ok: true,
+    message: includePartial
+      ? "已生成错题本（含半对），可在练习档案查看。"
+      : "已生成错题本，可在练习档案查看。"
+  };
 }
+
+/** @deprecated 使用 applyGenerateWrongNotebook；保留别名以兼容旧调用。 */
+export function applyRetryWrongQuestions(
+  questionsJSON: QuestionsJSON,
+  options: RetryWrongOptions = {}
+): ActionResult {
+  return applyGenerateWrongNotebook(questionsJSON, options);
+}
+
+export function applyDailyReviewQuestions(): ActionResult {
+  return { ok: false, message: "每日复习已改为错题本，请从练习档案生成错题本。" };
+}
+
+export function startWrongPracticeFromBank(
+  questionsJSON: QuestionsJSON,
+  banks: BankLike[] = []
+): ActionResult {
+  if (!questionsJSON.notebookId) {
+    return { ok: false, message: "缺少做题本标识。" };
+  }
+  const parent = getNotebook(questionsJSON.notebookId);
+  if (!parent) {
+    return { ok: false, message: "找不到对应的做题本。" };
+  }
+  const wrongNotebook = createWrongNotebook(parent, { banks });
+  if (!wrongNotebook?.checkpoint.questions?.length) {
+    return { ok: false, message: "当前没有错题。" };
+  }
+  questionsJSON.notebookId = wrongNotebook.id;
+  questionsJSON.bankId = wrongNotebook.bankId;
+  questionsJSON.bankSource = wrongNotebook.bankSource;
+  questionsJSON.name = wrongNotebook.name;
+  questionsJSON.type = wrongNotebook.type;
+  questionsJSON.author = wrongNotebook.author;
+  questionsJSON.version = wrongNotebook.version;
+  questionsJSON.practiceMode = PracticeMode.WRONG;
+  questionsJSON.questions = wrongNotebook.checkpoint.questions.map((question) =>
+    cloneQuestionWithEmptyResults(question)
+  );
+  resetQuestionProgress(questionsJSON.questions);
+  return { ok: true, message: "已生成错题本，请重新作答。" };
+}
+
+export { isResumePracticeMode };

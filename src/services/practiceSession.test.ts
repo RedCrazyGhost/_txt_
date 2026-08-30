@@ -1,26 +1,49 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appState } from "../state/appState";
-import { ProgressStatus, type EnrichedProgressRecord } from "./practiceProgress";
+import {
+  NotebookKind,
+  ProgressStatus,
+  __clearAllProgressForTests,
+  createPracticeNotebook
+} from "./practiceProgress";
+import { loadBankIntoPractice, resumeNotebook } from "./practiceSession";
 
-vi.mock("./practiceProgress", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./practiceProgress")>();
+const storage: Record<string, string> = {};
+
+function createLocalStorageMock() {
   return {
-    ...actual,
-    getProgressRecord: vi.fn(() => null),
-    applyProgressToQuestions: vi.fn(() => true)
+    getItem: (key: string) => (key in storage ? storage[key] : null),
+    setItem: (key: string, value: unknown) => {
+      storage[key] = String(value);
+    },
+    removeItem: (key: string) => {
+      delete storage[key];
+    },
+    clear: () => {
+      Object.keys(storage).forEach((key) => delete storage[key]);
+    }
   };
-});
-
-vi.mock("../models/question/progress", () => ({
-  resetQuestionProgress: vi.fn()
-}));
-
-import { getProgressRecord } from "./practiceProgress";
-import { loadBankIntoPractice, resumeProgressRecord } from "./practiceSession";
+}
 
 describe("practiceSession", () => {
   beforeEach(() => {
+    Object.keys(storage).forEach((key) => delete storage[key]);
+    vi.stubGlobal(
+      "CustomEvent",
+      class CustomEvent {
+        type: string;
+        constructor(type: string) {
+          this.type = type;
+        }
+      }
+    );
+    vi.stubGlobal("window", {
+      localStorage: createLocalStorageMock(),
+      dispatchEvent: vi.fn()
+    });
+    __clearAllProgressForTests();
     appState.questionsJSON = {
+      notebookId: "",
       bankId: "",
       bankSource: "",
       version: "0.0.2",
@@ -29,7 +52,6 @@ describe("practiceSession", () => {
       author: "",
       questions: []
     };
-    vi.mocked(getProgressRecord).mockReturnValue(null);
   });
 
   it("loadBankIntoPractice writes questionsJSON and returns true", () => {
@@ -45,39 +67,47 @@ describe("practiceSession", () => {
     expect(appState.questionsJSON.bankId).toBe("local-1");
     expect(appState.questionsJSON.name).toBe("函数");
     expect(appState.questionsJSON.questions).toHaveLength(1);
+    expect(appState.questionsJSON.notebookId).toBeTruthy();
   });
 
   it("loadBankIntoPractice returns false for empty questions", () => {
     expect(loadBankIntoPractice({ id: "x", questions: [] })).toBe(false);
   });
 
-  it("resumeProgressRecord loads session snapshot questions", () => {
-    const record = {
-      bankId: "session-abc",
-      bankSource: "session",
-      name: "草稿",
-      type: "",
-      author: "",
-      questionCount: 1,
-      updatedAt: new Date().toISOString(),
-      results: [[undefined]],
-      stats: {
-        totalSlots: 1,
-        attemptedSlots: 0,
-        correctSlots: 0,
-        partialSlots: 0,
-        wrongSlots: 0,
-        unansweredQuestionIndexes: [0],
-        wrongQuestionCount: 0,
-        partialQuestionCount: 0
+  it("resumeNotebook loads session snapshot questions", () => {
+    const notebook = createPracticeNotebook(
+      {
+        bankId: "session-abc",
+        bankSource: "session",
+        name: "草稿",
+        kind: NotebookKind.PRACTICE
       },
-      status: ProgressStatus.IN_PROGRESS,
-      questions: [{ texts: ["a=", ""], answers: [["1"]], image: "", MD5: false }]
-    } as unknown as EnrichedProgressRecord;
+      [{ texts: ["a=", ""], answers: [["1"]], image: "", MD5: false, results: [undefined] }] as never,
+      { includeQuestionsSnapshot: true }
+    );
 
-    const ok = resumeProgressRecord(record, []);
+    const ok = resumeNotebook({ ...notebook, status: ProgressStatus.IN_PROGRESS } as never, []);
     expect(ok).toBe(true);
     expect(appState.questionsJSON.bankId).toBe("session-abc");
     expect(appState.questionsJSON.name).toBe("草稿");
+    expect(appState.questionsJSON.notebookId).toBe(notebook.id);
+  });
+
+  it("resumeNotebook opens a not-started wrong notebook from its snapshot", () => {
+    const notebook = createPracticeNotebook(
+      {
+        bankId: "session-wrong",
+        bankSource: "session",
+        name: "错题复习",
+        kind: NotebookKind.WRONG
+      },
+      [{ texts: ["b=", ""], answers: [["2"]], image: "", MD5: false, results: [undefined] }] as never,
+      { includeQuestionsSnapshot: true, emptyResults: true }
+    );
+
+    const ok = resumeNotebook({ ...notebook, status: ProgressStatus.NOT_STARTED } as never, []);
+    expect(ok).toBe(true);
+    expect(appState.questionsJSON.notebookId).toBe(notebook.id);
+    expect(appState.questionsJSON.questions).toHaveLength(1);
   });
 });

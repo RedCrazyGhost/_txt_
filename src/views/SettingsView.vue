@@ -5,7 +5,6 @@ import { appState } from "../state/appState";
 import AiConfigForm from "../components/settings/AiConfigForm.vue";
 import ThemePreference from "../components/settings/ThemePreference.vue";
 import StorageUsagePanel from "../components/StorageUsagePanel.vue";
-import { listPendingSetupSteps } from "../services/appPrefsStorage";
 
 type SettingsSectionId = "appearance" | "ai" | "storage" | "about";
 
@@ -32,16 +31,10 @@ const githubUrl = computed(
     `https://github.com/${appState.webSiteConfig.githubRepo.owner}/${appState.webSiteConfig.githubRepo.repo}`
 );
 
-const pendingSetupCount = computed(() => listPendingSetupSteps().length);
-
 function selectSection(id: SettingsSectionId) {
   if (!sectionIds.has(id) || activeSection.value === id) return;
   activeSection.value = id;
   router.replace({ query: { ...route.query, section: id } });
-}
-
-function openFullSetupGuide() {
-  router.push({ path: "/intro", query: { flow: "setup-all" } });
 }
 
 watch(
@@ -59,13 +52,7 @@ watch(
   <div class="container py-4 settings-page">
     <header class="mb-4">
       <h2 class="mb-1">设置</h2>
-      <p class="text-muted mb-2">统一管理外观、AI 模型与本地数据相关配置。配置仅保存在本机。</p>
-      <button type="button" class="btn btn-outline-secondary btn-sm" @click="openFullSetupGuide">
-        <i class="fas fa-redo-alt me-1" aria-hidden="true"></i>引导配置
-      </button>
-      <p v-if="pendingSetupCount > 0" class="small text-warning mb-0 mt-2">
-        有 {{ pendingSetupCount }} 项新配置尚未引导，也可从根路径进入只配新增项。
-      </p>
+      <p class="text-muted mb-0">统一管理外观、AI 模型与本地数据相关配置。配置仅保存在本机。</p>
     </header>
 
     <div class="settings-layout">
